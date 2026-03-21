@@ -1,24 +1,143 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: oklch(0.99 0 0);
-  --color-foreground: oklch(0.14 0.03 255);
-  --color-card: oklch(1 0 0);
-  --color-card-foreground: oklch(0.14 0.03 255);
-  --color-popover: oklch(1 0 0);
-  --color-popover-foreground: oklch(0.14 0.03 255);
-  --color-primary: oklch(0.21 0.03 255);
+  /* Dark Glass Theme Colors */
+  --color-background: oklch(0.05 0.02 255);
+  --color-foreground: oklch(0.95 0.01 255);
+  --color-card: oklch(0.12 0.02 255 / 0.8);
+  --color-card-foreground: oklch(0.95 0.01 255);
+  --color-popover: oklch(0.12 0.02 255 / 0.9);
+  --color-popover-foreground: oklch(0.95 0.01 255);
+  --color-primary: oklch(0.55 0.2 280);
   --color-primary-foreground: oklch(0.98 0.01 255);
-  --color-secondary: oklch(0.95 0.01 255);
-  --color-secondary-foreground: oklch(0.21 0.03 255);
-  --color-muted: oklch(0.95 0.01 255);
-  --color-muted-foreground: oklch(0.45 0.02 255);
-  --color-accent: oklch(0.95 0.01 255);
-  --color-accent-foreground: oklch(0.21 0.03 255);
-  --color-destructive: oklch(0.55 0.22 25);
+  --color-secondary: oklch(0.18 0.02 255);
+  --color-secondary-foreground: oklch(0.90 0.01 255);
+  --color-muted: oklch(0.18 0.02 255);
+  --color-muted-foreground: oklch(0.65 0.02 255);
+  --color-accent: oklch(0.22 0.02 255);
+  --color-accent-foreground: oklch(0.95 0.01 255);
+  --color-destructive: oklch(0.60 0.22 25);
   --color-destructive-foreground: oklch(0.98 0.01 255);
-  --color-border: oklch(0.90 0.01 255);
-  --color-input: oklch(0.90 0.01 255);
-  --color-ring: oklch(0.21 0.03 255);
-  --radius: 0.5rem;
+  --color-border: oklch(0.30 0.02 255 / 0.5);
+  --color-input: oklch(0.20 0.02 255);
+  --color-ring: oklch(0.55 0.2 280);
+  --color-success: oklch(0.65 0.2 145);
+  --color-warning: oklch(0.75 0.18 85);
+  --color-info: oklch(0.60 0.15 250);
+  --radius: 0.75rem;
+}
+
+/* Smooth scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: oklch(0.12 0.02 255);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: oklch(0.30 0.02 255 / 0.5);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.35 0.02 255 / 0.7);
+}
+
+/* Glass morphism utilities */
+.glass {
+  background: oklch(0.12 0.02 255 / 0.8);
+  backdrop-filter: blur(16px);
+  border: 1px solid oklch(0.30 0.02 255 / 0.5);
+}
+
+.glass-card {
+  background: oklch(0.12 0.02 255 / 0.8);
+  backdrop-filter: blur(16px);
+  border: 1px solid oklch(0.30 0.02 255 / 0.5);
+  box-shadow: 0 4px 24px oklch(0 0 0 / 0.3);
+}
+
+.glass-dialog {
+  background: oklch(0.10 0.02 255 / 0.95);
+  backdrop-filter: blur(24px);
+  border: 1px solid oklch(0.35 0.02 255 / 0.6);
+}
+
+/* Glow effects */
+.glow-primary {
+  box-shadow: 0 0 20px oklch(0.55 0.2 280 / 0.3);
+}
+
+.glow-success {
+  box-shadow: 0 0 15px oklch(0.65 0.2 145 / 0.3);
+}
+
+.glow-warning {
+  box-shadow: 0 0 15px oklch(0.75 0.18 85 / 0.3);
+}
+
+.glow-info {
+  box-shadow: 0 0 15px oklch(0.60 0.15 250 / 0.3);
+}
+
+.glow-destructive {
+  box-shadow: 0 0 15px oklch(0.60 0.22 25 / 0.3);
+}
+
+/* Status dot indicators */
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-dot-onboarded {
+  background: oklch(0.65 0.2 145);
+  box-shadow: 0 0 6px oklch(0.65 0.2 145 / 0.6);
+}
+
+.status-dot-meeting {
+  background: oklch(0.75 0.18 85);
+  box-shadow: 0 0 6px oklch(0.75 0.18 85 / 0.6);
+}
+
+.status-dot-kyc {
+  background: oklch(0.60 0.15 250);
+  box-shadow: 0 0 6px oklch(0.60 0.15 250 / 0.6);
+}
+
+.status-dot-rejected {
+  background: oklch(0.60 0.22 25);
+  box-shadow: 0 0 6px oklch(0.60 0.22 25 / 0.6);
+}
+
+.status-dot-new {
+  background: oklch(0.65 0.02 255);
+  box-shadow: 0 0 6px oklch(0.65 0.02 255 / 0.6);
+}
+
+/* Sonner toast dark styling */
+[data-sonner-toaster] {
+  --toast-bg: oklch(0.15 0.02 255) !important;
+  --toast-border: oklch(0.35 0.02 255 / 0.5) !important;
+  --toast-text: oklch(0.95 0.01 255) !important;
+}
+
+/* Animation for subtle hover effects */
+@keyframes subtle-glow {
+  0%, 100% {
+    box-shadow: 0 4px 24px oklch(0 0 0 / 0.3);
+  }
+  50% {
+    box-shadow: 0 4px 32px oklch(0.55 0.2 280 / 0.15);
+  }
+}
+
+.hover-glow:hover {
+  animation: subtle-glow 2s ease-in-out;
 }

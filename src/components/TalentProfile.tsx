@@ -140,14 +140,31 @@ export function TalentProfileDialog({
     ],
   });
 
+  const getStatusVariant = (status: string): "default" | "success" | "warning" | "destructive" | "info" => {
+    switch (status) {
+      case "Onboarded":
+        return "success";
+      case "Meeting Required":
+        return "warning";
+      case "KYC Required":
+        return "info";
+      case "Rejected":
+        return "destructive";
+      case "New":
+        return "default";
+      default:
+        return "default";
+    }
+  };
+
   const renderSection = (section: ProfileSection) => {
     const hasValues = section.fields.some((f) => f.value);
     if (!hasValues) return null;
 
     return (
-      <Card key={section.title}>
+      <Card key={section.title} className="bg-card/50">
         <CardHeader className="pb-2">
-          <CardTitle className="text-base font-semibold">{section.title}</CardTitle>
+          <CardTitle className="text-base font-semibold text-foreground">{section.title}</CardTitle>
         </CardHeader>
         <CardContent>
           <dl className="grid grid-cols-2 gap-x-4 gap-y-2">
@@ -155,7 +172,7 @@ export function TalentProfileDialog({
               field.value ? (
                 <div key={field.label} className="text-sm">
                   <dt className="text-muted-foreground font-medium">{field.label}</dt>
-                  <dd className="mt-0.5">{field.value}</dd>
+                  <dd className="mt-0.5 text-foreground">{field.value}</dd>
                 </div>
               ) : null
             )}
@@ -167,10 +184,10 @@ export function TalentProfileDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="glass-dialog max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
+          <DialogTitle className="flex items-center gap-2 text-foreground">
+            <User className="h-5 w-5 text-primary" />
             {name || "Talent Profile"}
           </DialogTitle>
           <DialogDescription>
@@ -180,7 +197,7 @@ export function TalentProfileDialog({
 
         {isLoading && (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         )}
 
@@ -194,7 +211,7 @@ export function TalentProfileDialog({
           <div className="space-y-4 mt-4">
             {/* Status and Manager badges */}
             <div className="flex flex-wrap gap-2">
-              <Badge variant={profile["Status"] === "Onboarded" ? "success" : "secondary"}>
+              <Badge variant={getStatusVariant(profile["Status"])}>
                 {profile["Status"] || "New"}
               </Badge>
               {profile["Talent Manager"] && (
@@ -224,9 +241,9 @@ export function TalentProfileDialog({
 
             {/* Polaroids */}
             {getPolaroids().length > 0 && (
-              <Card>
+              <Card className="bg-card/50">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-base font-semibold">Polaroids</CardTitle>
+                  <CardTitle className="text-base font-semibold text-foreground">Polaroids</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-2">
@@ -236,8 +253,9 @@ export function TalentProfileDialog({
                         href={polaroid.url}
                         target="_blank"
                         rel="noopener noreferrer"
+                        className="inline-block"
                       >
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" className="hover:bg-accent/50">
                           <ExternalLink className="h-4 w-4 mr-1" />
                           {polaroid.label}
                         </Button>

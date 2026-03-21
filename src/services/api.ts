@@ -28,38 +28,28 @@ export async function fetchTalentProfile(name: string): Promise<TalentProfile> {
   }
 }
 
-export async function updateStatus(row: number, status: string): Promise<{ result: string }> {
-  try {
-    const response = await fetch(`${API_URL}?action=update-status`, {
-      method: 'POST',
-      redirect: 'follow',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ row, status }),
-    });
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error("Error updating status:", error);
-    throw error;
-  }
+export async function updateStatus(row: number, status: string): Promise<void> {
+  // Use mode: 'no-cors' because Apps Script Web Apps don't return proper CORS headers
+  // for POST requests from cross-origin frontends (vercel.app → google.com).
+  // With no-cors, we can't read the response, so we send data as URL params instead of body
+  // and wait a fixed timeout to "assume" success.
+  await fetch(`${API_URL}?action=update-status&row=${encodeURIComponent(row)}&status=${encodeURIComponent(status)}`, {
+    method: 'POST',
+    mode: 'no-cors',
+  });
+  // Wait 3 seconds for Apps Script to process (no-cors = opaque response)
+  await new Promise((resolve) => setTimeout(resolve, 3000));
 }
 
-export async function assignManager(row: number, manager: string): Promise<{ result: string }> {
-  try {
-    const response = await fetch(`${API_URL}?action=assign-manager`, {
-      method: 'POST',
-      redirect: 'follow',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ row, manager }),
-    });
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error("Error assigning manager:", error);
-    throw error;
-  }
+export async function assignManager(row: number, manager: string): Promise<void> {
+  // Use mode: 'no-cors' because Apps Script Web Apps don't return proper CORS headers
+  // for POST requests from cross-origin frontends (vercel.app → google.com).
+  // With no-cors, we can't read the response, so we send data as URL params instead of body
+  // and wait a fixed timeout to "assume" success.
+  await fetch(`${API_URL}?action=assign-manager&row=${encodeURIComponent(row)}&manager=${encodeURIComponent(manager)}`, {
+    method: 'POST',
+    mode: 'no-cors',
+  });
+  // Wait 3 seconds for Apps Script to process (no-cors = opaque response)
+  await new Promise((resolve) => setTimeout(resolve, 3000));
 }

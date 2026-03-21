@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Table,
   TableBody,
@@ -20,7 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import type { Talent, StatusValue } from "@/types/talent";
 import { MANAGERS, ACTION_STATUSES } from "@/types/talent";
-import { Search, RefreshCw } from "lucide-react";
+import { Search, RefreshCw, Loader2 } from "lucide-react";
 
 interface TalentTableProps {
   talents: Talent[];
@@ -30,7 +30,49 @@ interface TalentTableProps {
   isLoading: boolean;
   onRefresh: () => void;
   lastUpdated: Date | null;
+  pendingUpdates?: Record<number, "status" | "manager">;
 }
+
+// Helper to render Instagram as clickable link
+const renderInstagramLink = (instagram: string | undefined): React.ReactNode => {
+  if (!instagram || instagram.trim() === "") return "-";
+  const trimmed = instagram.trim();
+  // Check if it's already a full URL
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    return (
+      <a href={trimmed} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+        {trimmed.replace(/^https?:\/\/(www\.)?instagram\.com\//, "@").replace(/\/$/, "")}
+      </a>
+    );
+  }
+  // Check if it's an Instagram handle or link text
+  const handle = trimmed.replace(/^@/, "").replace(/\/$/, "");
+  if (handle) {
+    return (
+      <a href={`https://www.instagram.com/${handle}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+        {trimmed}
+      </a>
+    );
+  }
+  return "-";
+};
+
+const getStatusDot = (status: string): string => {
+  switch (status) {
+    case "Onboarded":
+      return "status-dot status-dot-onboarded";
+    case "Meeting Required":
+      return "status-dot status-dot-meeting";
+    case "KYC Required":
+      return "status-dot status-dot-kyc";
+    case "Rejected":
+      return "status-dot status-dot-rejected";
+    case "New":
+      return "status-dot status-dot-new";
+    default:
+      return "status-dot status-dot-new";
+  }
+};
 
 const getStatusVariant = (status: string): "default" | "success" | "warning" | "destructive" | "info" => {
   switch (status) {
@@ -62,6 +104,7 @@ export function TalentTable({
   isLoading,
   onRefresh,
   lastUpdated,
+  pendingUpdates = {},
 }: TalentTableProps) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -73,8 +116,9 @@ export function TalentTable({
   const uniqueManagers = getUniqueValues(talents, "Talent Manager");
   const uniqueCities = getUniqueValues(talents, "City");
 
+  // Sort talents by rowIndex descending (latest/highest rowIndex first = newest talents)
   const filteredTalents = useMemo(() => {
-    return talents.filter((talent) => {
+    const filtered = talents.filter((talent) => {
       const searchLower = search.toLowerCase();
       const matchesSearch =
         !search ||
@@ -90,11 +134,13 @@ export function TalentTable({
 
       return matchesSearch && matchesStatus && matchesManager && matchesCity;
     });
+    // Sort by rowIndex descending (newest first)
+    return filtered.sort((a, b) => b.rowIndex - a.rowIndex);
   }, [talents, search, statusFilter, managerFilter, cityFilter]);
 
   const handleStatusClick = (talent: Talent, status: StatusValue) => {
     if (status === "Onboarded" && !talent["Talent Manager"]) {
-      alert("Please assign a Talent Manager first");
+      toast.error("Please assign a Talent Manager first");
       return;
     }
     onStatusUpdate(talent.rowIndex, status);
@@ -116,12 +162,12 @@ export function TalentTable({
                 placeholder="Search by name, Instagram, or city..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-10"
+                className="pl-10 bg-input/50"
               />
             </div>
             <div className="flex flex-wrap gap-2">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[160px]">
+                <SelectTrigger className="w-[160px] bg-input/50">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -135,7 +181,7 @@ export function TalentTable({
               </Select>
 
               <Select value={managerFilter} onValueChange={setManagerFilter}>
-                <SelectTrigger className="w-[160px]">
+                <SelectTrigger className="w-[160px] bg-input/50">
                   <SelectValue placeholder="Manager" />
                 </SelectTrigger>
                 <SelectContent>
@@ -149,7 +195,7 @@ export function TalentTable({
               </Select>
 
               <Select value={cityFilter} onValueChange={setCityFilter}>
-                <SelectTrigger className="w-[140px]">
+                <SelectTrigger className="w-[140px] bg-input/50">
                   <SelectValue placeholder="City" />
                 </SelectTrigger>
                 <SelectContent>
@@ -178,6 +224,7 @@ export function TalentTable({
               size="sm"
               onClick={onRefresh}
               disabled={isLoading}
+              className="hover:bg-accent/50"
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
               Refresh
@@ -186,61 +233,80 @@ export function TalentTable({
         </div>
       </Card>
 
-      <div className="rounded-md border overflow-hidden">
+      <div className="glass-card rounded-xl overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead className="w-[200px]">Name</TableHead>
-              <TableHead>Instagram</TableHead>
-              <TableHead>City</TableHead>
-              <TableHead>Gender</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Talent Manager</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+            <TableRow className="hover:bg-transparent border-border/30">
+              <TableHead className="w-[200px] text-muted-foreground">Name</TableHead>
+              <TableHead className="text-muted-foreground">Instagram</TableHead>
+              <TableHead className="text-muted-foreground">City</TableHead>
+              <TableHead className="text-muted-foreground">Gender</TableHead>
+              <TableHead className="text-muted-foreground">Status</TableHead>
+              <TableHead className="text-muted-foreground">Talent Manager</TableHead>
+              <TableHead className="text-right text-muted-foreground">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading && filteredTalents.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8">
-                  Loading talents...
+                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                 </TableCell>
               </TableRow>
             ) : filteredTalents.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8">
+                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                   No talents found
                 </TableCell>
               </TableRow>
             ) : (
-              filteredTalents.map((talent) => (
-                <TableRow key={talent.rowIndex}>
+              filteredTalents.map((talent, index) => (
+                <TableRow 
+                  key={talent.rowIndex} 
+                  className={`hover:bg-zinc-800/40 transition-colors duration-150 ${
+                    index % 2 === 1 ? 'bg-zinc-900/20' : ''
+                  }`}
+                >
                   <TableCell>
                     <button
                       onClick={() => onTalentClick(talent["Full Name"])}
-                      className="text-blue-600 hover:underline font-medium text-left"
+                      className="text-primary hover:underline font-medium text-left truncate max-w-[180px] block"
                     >
                       {talent["Full Name"]}
                     </button>
                   </TableCell>
-                  <TableCell>{talent["Instagram"] || "-"}</TableCell>
-                  <TableCell>{talent["City"] || "-"}</TableCell>
-                  <TableCell>{talent["Gender"] || "-"}</TableCell>
+                  <TableCell className="text-muted-foreground truncate max-w-[120px]">
+                    {renderInstagramLink(talent["Instagram"])}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {talent["City"] || "-"}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {talent["Gender"] || "-"}
+                  </TableCell>
                   <TableCell>
-                    <Badge variant={getStatusVariant(talent["Status"])}>
-                      {talent["Status"] || "New"}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <span className={getStatusDot(talent["Status"])} />
+                      <Badge variant={getStatusVariant(talent["Status"])}>
+                        {talent["Status"] || "New"}
+                      </Badge>
+                    </div>
                   </TableCell>
                   <TableCell>
                     {talent["Talent Manager"] ? (
-                      <span className="text-sm">{talent["Talent Manager"]}</span>
+                      <span className="text-sm text-foreground">{talent["Talent Manager"]}</span>
                     ) : (
                       <Select
                         value={selectedManagers[talent.rowIndex] || ""}
                         onValueChange={(v) => handleManagerSelect(talent.rowIndex, v)}
+                        disabled={!!pendingUpdates[talent.rowIndex]}
                       >
-                        <SelectTrigger className="w-[130px] h-8 text-xs">
-                          <SelectValue placeholder="Assign..." />
+                        <SelectTrigger className="w-[130px] h-8 text-xs bg-input/50">
+                          {pendingUpdates[talent.rowIndex] === "manager" ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <SelectValue placeholder="Assign..." />
+                          )}
                         </SelectTrigger>
                         <SelectContent>
                           {MANAGERS.map((m) => (
@@ -259,11 +325,15 @@ export function TalentTable({
                           key={status}
                           variant="outline"
                           size="sm"
-                          className="text-xs h-7 px-2"
+                          className="text-xs h-7 px-2 hover:bg-accent/50 transition-all duration-200"
                           onClick={() => handleStatusClick(talent, status)}
-                          disabled={talent["Status"] === status}
+                          disabled={talent["Status"] === status || pendingUpdates[talent.rowIndex] === "status"}
                         >
-                          {status}
+                          {pendingUpdates[talent.rowIndex] === "status" ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            status
+                          )}
                         </Button>
                       ))}
                     </div>
@@ -277,3 +347,6 @@ export function TalentTable({
     </div>
   );
 }
+
+// Import toast for validation
+import { toast } from "sonner";
