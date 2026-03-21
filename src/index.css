@@ -1,5 +1,148 @@
 @import "tailwindcss";
 
+/* ========================
+   RESPONSIVE STYLES - Mobile First
+   ======================== */
+
+/* Mobile stats cards - horizontal scroll */
+.stats-scroll {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  gap: 1rem;
+  padding-bottom: 0.5rem;
+}
+
+.stats-scroll > * {
+  scroll-snap-align: start;
+  flex-shrink: 0;
+  min-width: 140px;
+}
+
+/* Hide scrollbar but keep functionality */
+.stats-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.stats-scroll {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Stats card mobile optimization */
+@media (max-width: 767px) {
+  .stats-card {
+    padding: 0.75rem;
+  }
+  
+  .stats-card .text-3xl {
+    font-size: 1.5rem;
+  }
+}
+
+/* Mobile filters - collapsible */
+.filters-collapsible {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.filters-collapsible.open {
+  max-height: 500px;
+}
+
+/* Card grid - mobile 1 col, tablet 2 cols, desktop 3-4 cols */
+.talent-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (max-width: 639px) {
+  .talent-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  .talent-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .talent-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .talent-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Mobile talent card optimizations */
+@media (max-width: 767px) {
+  .talent-card {
+    padding: 0.875rem;
+  }
+  
+  .talent-card .card-actions {
+    display: none;
+  }
+  
+  .talent-card:hover .card-actions,
+  .talent-card:focus-within .card-actions {
+    display: flex;
+  }
+}
+
+/* Touch-friendly tap targets (44px minimum) */
+@media (max-width: 767px) {
+  button, 
+  [role="button"],
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Ensure dropdown menus are easily tappable */
+  [role="menuitem"] {
+    min-height: 44px;
+    padding: 0.75rem 1rem;
+  }
+}
+
+/* Mobile search bar full width */
+@media (max-width: 767px) {
+  .mobile-search {
+    width: 100%;
+  }
+  
+  .mobile-search input {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+}
+
+/* Hide desktop-only elements on mobile */
+@media (max-width: 767px) {
+  .desktop-only {
+    display: none !important;
+  }
+}
+
+/* Hide mobile-only elements on desktop */
+@media (min-width: 768px) {
+  .mobile-only {
+    display: none !important;
+  }
+}
+
+/* ========================
+   ORIGINAL THEME STYLES
+   ======================== */
+
 @theme {
   /* Dark Glass Theme Colors */
   --color-background: oklch(0.05 0.02 255);

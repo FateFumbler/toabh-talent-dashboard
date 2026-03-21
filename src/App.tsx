@@ -5,39 +5,222 @@ import { Card, CardContent, CardHeader, CardTitle } from "./components/ui/card";
 import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
 import { Badge } from "./components/ui/badge";
-import { fetchTalentMaster, updateStatus, assignManager } from "./services/api";
-import type { Talent } from "@/types/talent";
-import { RefreshCw, Users, AlertCircle, LayoutGrid, List, User, Search, ExternalLink } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./components/ui/select";
+import { fetchTalentMaster, fetchTalentDetails, updateStatus, assignManager } from "./services/api";
+import type { Talent, TalentDetails } from "@/types/talent";
+import { RefreshCw, Users, AlertCircle, LayoutGrid, List, User, Search, ExternalLink, FileText, Loader2, ChevronDown } from "lucide-react";
 import { toast, Toaster } from "sonner";
 
 const REFRESH_INTERVAL = 30000; // 30 seconds
 
+// Parse Instagram value to full URL
+function parseInstagram(value: string): string {
+  if (!value) return '';
+  const trimmed = value.trim();
+  // If already a full URL (starts with http/https), use as-is
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed;
+  }
+  // Otherwise treat as username/handle
+  // Remove @ if present
+  let username = trimmed.replace(/^@/, '');
+  // Remove any existing instagram.com prefix
+  username = username.replace(/^(https?:\/\/)?(www\.)?instagram\.com\//, '');
+  // Remove any query params or fragments
+  username = username.split('?')[0].split('#')[0];
+  // Remove trailing slashes
+  username = username.replace(/\/+$/, '');
+  return `https://instagram.com/${username}`;
+}
+
 // Helper to render Instagram as clickable link
 const renderInstagramLink = (instagram: string | undefined): React.ReactNode => {
   if (!instagram || instagram.trim() === "") return <span className="text-muted-foreground">-</span>;
-  const trimmed = instagram.trim();
-  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
-    return (
-      <a href={trimmed} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">
-        {trimmed.replace(/^https?:\/\/(www\.)?instagram\.com\//, "@").replace(/\/$/, "")}
-        <ExternalLink className="h-3 w-3" />
-      </a>
-    );
-  }
-  const handle = trimmed.replace(/^@/, "").replace(/\/$/, "");
-  if (handle) {
-    return (
-      <a href={`https://www.instagram.com/${handle}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">
-        @{handle}
-        <ExternalLink className="h-3 w-3" />
-      </a>
-    );
-  }
-  return <span className="text-muted-foreground">-</span>;
+  const url = parseInstagram(instagram);
+  const display = instagram.trim().replace(/^https?:\/\/(www\.)?instagram\.com\//, "@").replace(/\/+$/, "");
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">
+      {display}
+      <ExternalLink className="h-3 w-3" />
+    </a>
+  );
 };
+
+// Merge talent-master with talent-details by phone number (primary) or email (fallback)
+function mergeTalentWithDetails(talent: Talent, detailsMap: Map<string, TalentDetails>): Talent & Partial<TalentDetails> {
+  const phone = String(talent["Phone"] || "").trim();
+  const email = (talent["Email "] || "").trim().toLowerCase();
+  
+  let details: TalentDetails | undefined;
+  
+  // Try phone match first
+  if (phone) {
+    details = detailsMap.get(phone);
+  }
+  
+  // Fallback to email match
+  if (!details && email) {
+    for (const d of detailsMap.values()) {
+      if ((d["Email Address"] || "").trim().toLowerCase() === email) {
+        details = d;
+        break;
+      }
+    }
+  }
+  
+  if (!details) {
+    return talent;
+  }
+  
+  return {
+    ...talent,
+    // From talent-details - use exact Google Sheet column names
+    "Full Name": details["Full Name"] || talent["Full Name"],
+    "Email Address": details["Email Address"],
+    "Phone Number": details["Phone Number"],
+    "Gender": details["Gender"] || talent["Gender"],
+    "Age": details["Age"] || talent["Age"],
+    "Date of Birth": details["Date of Birth"],
+    "Nationality": details["Nationality"],
+    "City & State": details["City & State"],
+    "Height (in feet & inches)": details["Height (in feet & inches)"] || talent["Height"],
+    "Chest/Bust (in inches)": details["Chest/Bust (in inches)"],
+    "Waist (in inches)": details["Waist (in inches)"],
+    "Hips (in inches)": details["Hips (in inches)"],
+    "Shoe Size (UK)": details["Shoe Size (UK)"],
+    "Hair Color": details["Hair Color"],
+    "Eye Color": details["Eye Color"],
+    "Skin Tone": details["Skin Tone"],
+    "Instagram Link": details["Instagram Link"],
+    "YouTube Channel": details["YouTube Channel"],
+    "IMDb": details["IMDb"],
+    "Prior modelling/acting experience": details["Prior modelling/acting experience"],
+    "Previous Agency": details["Previous Agency"],
+    "Acting Workshop Attended": details["Acting Workshop Attended"],
+    "CINTAA/Union Card": details["CINTAA/Union Card"],
+    "Languages Known": details["Languages Known"],
+    "Dance Forms": details["Dance Forms"],
+    "Extra-Curricular": details["Extra-Curricular"],
+    "Scope of Work Interested In": details["Scope of Work Interested In"],
+    "Open for placement abroad": details["Open for placement abroad"],
+    "Valid Passport": details["Valid Passport"],
+    "Can drive 2-wheeler": details["Can drive 2-wheeler"],
+    "Can drive 4-wheeler": details["Can drive 4-wheeler"],
+    "Can Swim": details["Can Swim"],
+    "Gamer": details["Gamer"],
+    "Lingerie/bikini shoots": details["Lingerie/bikini shoots"],
+    "Bold content for web/films": details["Bold content for web/films"],
+    "Condom brand promotions": details["Condom brand promotions"],
+    "Alcohol brand shoots": details["Alcohol brand shoots"],
+    "Reality TV shows": details["Reality TV shows"],
+    "Daily soaps": details["Daily soaps"],
+    "Mother/father roles": details["Mother/father roles"],
+    "Haircut": details["Haircut"],
+    "Hair color changes": details["Hair color changes"],
+    "Upload Polaroids (Required)": details["Upload Polaroids (Required)"],
+  };
+}
+
+// Extract Google Drive file ID from various URL formats
+function extractDriveFileId(url: string): string | null {
+  if (!url) return null;
+  
+  // Match /file/d/FILE_ID or /open?id=FILE_ID or /thumbnail?id=FILE_ID etc.
+  const patterns = [
+    /\/file\/d\/([a-zA-Z0-9_-]+)/,
+    /\/open\?id=([a-zA-Z0-9_-]+)/,
+    /\/thumbnail\?id=([a-zA-Z0-9_-]+)/,
+    /id=([a-zA-Z0-9_-]+)/,
+    /\/uc\?.*id=([a-zA-Z0-9_-]+)/,
+  ];
+  
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) return match[1];
+  }
+  return null;
+}
+
+// Convert Drive link to thumbnail URL
+function getDriveThumbnailUrl(url: string): string | null {
+  const fileId = extractDriveFileId(url);
+  if (!fileId) return null;
+  return `https://drive.google.com/thumbnail?id=${fileId}&sz=w400`;
+}
+
+// Get full-size Drive image URL
+function getDriveImageUrl(url: string): string | null {
+  const fileId = extractDriveFileId(url);
+  if (!fileId) return null;
+  return `https://drive.google.com/uc?export=view&id=${fileId}`;
+}
+
+// Parse polaroid links (may be comma or newline separated)
+function parsePolaroidLinks(polaroidField: string | undefined): string[] {
+  if (!polaroidField || !polaroidField.trim()) return [];
+  // Split by comma or newline
+  return polaroidField.split(/[,\n]/).map(s => s.trim()).filter(Boolean);
+}
+
+// Render a polaroid thumbnail or link
+function PolaroidGallery({ links }: { links: string[] }) {
+  if (links.length === 0) {
+    return <span className="text-muted-foreground/50">Not provided</span>;
+  }
+  
+  return (
+    <div className="flex flex-wrap gap-2">
+      {links.map((link, idx) => {
+        const thumbnailUrl = getDriveThumbnailUrl(link);
+        const fullUrl = getDriveImageUrl(link);
+        
+        if (thumbnailUrl && fullUrl) {
+          return (
+            <a
+              key={idx}
+              href={fullUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group relative"
+            >
+              <img
+                src={thumbnailUrl}
+                alt={`Polaroid ${idx + 1}`}
+                className="h-20 w-20 object-cover rounded-lg border border-border/50 hover:border-primary/50 transition-colors"
+                onError={(e) => {
+                  // Fallback to text link if image fails
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                }}
+              />
+              <div className="hidden absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg">
+                <ExternalLink className="h-5 w-5 text-white" />
+              </div>
+            </a>
+          );
+        }
+        
+        // Fallback: show text link with icon
+        return (
+          <a
+            key={idx}
+            href={link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-primary hover:underline text-sm"
+          >
+            <FileText className="h-4 w-4" />
+            View {idx + 1}
+          </a>
+        );
+      })}
+    </div>
+  );
+}
 
 function App() {
   const [talents, setTalents] = useState<Talent[]>([]);
+  const [talentDetailsMap, setTalentDetailsMap] = useState<Map<string, TalentDetails>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -48,25 +231,60 @@ function App() {
   // Tab navigation
   const [activeTab, setActiveTab] = useState<"talent-master" | "talent-profile">("talent-master");
   // View mode (list/grid), persisted to localStorage
+  // Auto-detect default based on screen size: mobile (<768) & tablet (<1024) default to grid, desktop to list
   const [viewMode, setViewMode] = useState<"list" | "grid">(() => {
     if (typeof window !== "undefined") {
-      return (localStorage.getItem("toabh-view-mode") as "list" | "grid") || "list";
+      const saved = localStorage.getItem("toabh-view-mode") as "list" | "grid";
+      if (saved) return saved;
+      // Auto-detect based on screen width
+      const width = window.innerWidth;
+      if (width < 1024) return "grid"; // Mobile & tablet default to grid
+      return "list"; // Desktop default to list
     }
     return "list";
   });
   // Profile tab search
   const [profileSearch, setProfileSearch] = useState("");
-  const [selectedProfile, setSelectedProfile] = useState<Talent | null>(null);
+  const [selectedProfile, setSelectedProfile] = useState<(Talent & Partial<TalentDetails>) | null>(null);
+  // Mobile filters visibility
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  // Track window width for responsive behavior
+  const [windowWidth, setWindowWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1200
+  );
+  
+  // Update window width on resize
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+  // Active tile for quick filters (bi-directional sync with status dropdown)
+  const [activeTile, setActiveTile] = useState<string | null>(null);
 
   const loadTalents = useCallback(async () => {
     try {
       setError(null);
-      const data = await fetchTalentMaster();
-      // Filter out empty rows
-      const validTalents = data.filter(
+      const [talentData, detailsData] = await Promise.all([
+        fetchTalentMaster(),
+        fetchTalentDetails()
+      ]);
+      
+      // Filter out empty rows from talent-master
+      const validTalents = talentData.filter(
         (t) => t["Full Name"] && t["Full Name"].trim() !== ""
       );
+      
+      // Build details map keyed by phone number
+      const detailsMap = new Map<string, TalentDetails>();
+      for (const d of detailsData) {
+        if (d["Phone Number"]) {
+          detailsMap.set(String(d["Phone Number"]).trim(), d);
+        }
+      }
+      
       setTalents(validTalents);
+      setTalentDetailsMap(detailsMap);
       setLastUpdated(new Date());
     } catch (err) {
       setError("Failed to load talents. Please check your connection.");
@@ -133,22 +351,46 @@ function App() {
     localStorage.setItem("toabh-view-mode", mode);
   };
 
+  // Handle tile click for quick filtering
+  const handleTileClick = (tile: string) => {
+    if (tile === 'Total') {
+      setActiveTile(null);
+    } else {
+      setActiveTile(tile);
+    }
+  };
+
+  // Handle status filter change from dropdown (bi-directional sync)
+  const handleStatusFilterChange = (status: string) => {
+    if (status === 'all') {
+      setActiveTile(null);
+    } else {
+      setActiveTile(status);
+    }
+  };
+
+  // Get merged talent for profile display
+  const getMergedTalent = useCallback((talent: Talent): (Talent & Partial<TalentDetails>) => {
+    return mergeTalentWithDetails(talent, talentDetailsMap);
+  }, [talentDetailsMap]);
+
   // Stats
   const totalTalents = talents.length;
   const onboardedCount = talents.filter((t) => t["Status"] === "Onboarded").length;
   const meetingRequiredCount = talents.filter((t) => t["Status"] === "Meeting Required").length;
   const kycRequiredCount = talents.filter((t) => t["Status"] === "KYC Required").length;
 
-  // Profile search filtering
+  // Profile search filtering - using merged data
   const profileSearchResults = useMemo(() => {
-    if (!profileSearch.trim()) return talents.slice(0, 20); // Show first 20 if no search
+    const mergedResults = talents.map(t => getMergedTalent(t));
+    if (!profileSearch.trim()) return mergedResults.slice(0, 20); // Show first 20 if no search
     const search = profileSearch.toLowerCase();
-    return talents.filter(t =>
+    return mergedResults.filter(t =>
       t["Full Name"]?.toLowerCase().includes(search) ||
-      t["Instagram"]?.toLowerCase().includes(search) ||
-      t["City"]?.toLowerCase().includes(search)
+      (t["Instagram Link"] || t["Instagram"] || "")?.toLowerCase().includes(search) ||
+      (t["City & State"] || t["City"] || "")?.toLowerCase().includes(search)
     ).slice(0, 20);
-  }, [talents, profileSearch]);
+  }, [talents, profileSearch, getMergedTalent]);
 
   const getStatusVariant = (status: string): "default" | "success" | "warning" | "destructive" | "info" => {
     switch (status) {
@@ -174,6 +416,46 @@ function App() {
       <div className="text-sm">
         <dt className="text-muted-foreground font-medium">{label}</dt>
         <dd className="mt-0.5 text-foreground">{value}</dd>
+      </div>
+    );
+  };
+
+  const renderClickableLink = (label: string, value: string | undefined, baseUrl: string = "") => {
+    if (!value || value.trim() === "") {
+      return renderProfileField(label, value);
+    }
+    const trimmed = value.trim();
+    let href = trimmed;
+    if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) {
+      href = baseUrl + trimmed;
+    }
+    return (
+      <div className="text-sm">
+        <dt className="text-muted-foreground font-medium">{label}</dt>
+        <dd className="mt-0.5">
+          <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">
+            {trimmed}
+            <ExternalLink className="h-3 w-3" />
+          </a>
+        </dd>
+      </div>
+    );
+  };
+
+  const renderYesNoField = (label: string, value: string | undefined) => {
+    if (!value || value.trim() === "") {
+      return renderProfileField(label, value);
+    }
+    const trimmed = value.trim();
+    const isYes = /^(yes|y|true|1)$/i.test(trimmed);
+    // Capitalize first letter: "no" -> "No", "yes" -> "Yes"
+    const displayValue = trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
+    return (
+      <div className="text-sm">
+        <dt className="text-muted-foreground font-medium">{label}</dt>
+        <dd className={`mt-0.5 ${isYes ? "text-green-500" : "text-muted-foreground"}`}>
+          {displayValue}
+        </dd>
       </div>
     );
   };
@@ -244,54 +526,97 @@ function App() {
       </div>
 
       <main className="container mx-auto px-4 py-6">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <Card className="hover-glow transition-all duration-300">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Talents
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-foreground">{totalTalents}</div>
-            </CardContent>
-          </Card>
-          <Card className="hover-glow transition-all duration-300">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Onboarded
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-success glow-success rounded-lg p-2">
-                {onboardedCount}
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="hover-glow transition-all duration-300">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Meeting Required
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-warning glow-warning rounded-lg p-2">
-                {meetingRequiredCount}
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="hover-glow transition-all duration-300">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                KYC Required
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-info glow-info rounded-lg p-2">
-                {kycRequiredCount}
-              </div>
-            </CardContent>
-          </Card>
+        {/* Stats Cards - horizontally scrollable on mobile */}
+        <div className="relative">
+          {activeTile !== null && (
+            <button
+              onClick={() => handleTileClick('Total')}
+              className="absolute -top-2 right-0 z-10 flex items-center gap-1 px-2 py-1 text-xs bg-indigo-500/20 text-indigo-400 rounded-full hover:bg-indigo-500/30 transition-colors border border-indigo-500/50"
+            >
+              <span>Clear filter</span>
+              <span>✕</span>
+            </button>
+          )}
+          <div className="stats-scroll mb-6 md:grid md:grid-cols-4 md:gap-4">
+            <Card 
+              className={`hover-glow transition-all duration-300 cursor-pointer stats-card ${
+                activeTile === null ? 'ring-2 ring-indigo-500/50 bg-zinc-800/80' : ''
+              }`}
+              onClick={() => handleTileClick('Total')}
+            >
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
+                  Total Talents
+                  {activeTile === null && (
+                    <span className="h-2 w-2 rounded-full bg-indigo-500" />
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-foreground">{totalTalents}</div>
+              </CardContent>
+            </Card>
+            <Card 
+              className={`hover-glow transition-all duration-300 cursor-pointer stats-card ${
+                activeTile === 'Onboarded' ? 'ring-2 ring-indigo-500/50 bg-zinc-800/80' : ''
+              }`}
+              onClick={() => handleTileClick('Onboarded')}
+            >
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
+                  Onboarded
+                  {activeTile === 'Onboarded' && (
+                    <span className="h-2 w-2 rounded-full bg-indigo-500" />
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-success glow-success rounded-lg p-2">
+                  {onboardedCount}
+                </div>
+              </CardContent>
+            </Card>
+            <Card 
+              className={`hover-glow transition-all duration-300 cursor-pointer stats-card ${
+                activeTile === 'Meeting Required' ? 'ring-2 ring-indigo-500/50 bg-zinc-800/80' : ''
+              }`}
+              onClick={() => handleTileClick('Meeting Required')}
+            >
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
+                  Meeting Required
+                  {activeTile === 'Meeting Required' && (
+                    <span className="h-2 w-2 rounded-full bg-indigo-500" />
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-warning glow-warning rounded-lg p-2">
+                  {meetingRequiredCount}
+                </div>
+              </CardContent>
+            </Card>
+            <Card 
+              className={`hover-glow transition-all duration-300 cursor-pointer stats-card ${
+                activeTile === 'KYC Required' ? 'ring-2 ring-indigo-500/50 bg-zinc-800/80' : ''
+              }`}
+              onClick={() => handleTileClick('KYC Required')}
+            >
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
+                  KYC Required
+                  {activeTile === 'KYC Required' && (
+                    <span className="h-2 w-2 rounded-full bg-indigo-500" />
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-info glow-info rounded-lg p-2">
+                  {kycRequiredCount}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {/* Error Message */}
@@ -310,6 +635,14 @@ function App() {
             {/* View Toggle */}
             <div className="flex justify-end mb-4">
               <div className="flex items-center gap-1 bg-secondary/50 rounded-lg p-1">
+                {/* Mobile: Show filter toggle */}
+                <button
+                  onClick={() => setFiltersOpen(!filtersOpen)}
+                  className="md:hidden p-2 rounded-md transition-colors text-muted-foreground hover:text-foreground"
+                  title="Toggle Filters"
+                >
+                  <Search className="h-4 w-4" />
+                </button>
                 <button
                   onClick={() => handleViewModeChange("list")}
                   className={`p-2 rounded-md transition-colors ${
@@ -335,7 +668,8 @@ function App() {
               </div>
             </div>
 
-            {viewMode === "list" ? (
+            {/* List view: only show on desktop when in list mode */}
+            {viewMode === "list" && windowWidth >= 1024 && (
               <TalentTable
                 talents={talents}
                 onStatusUpdate={handleStatusUpdate}
@@ -345,8 +679,13 @@ function App() {
                 onRefresh={loadTalents}
                 lastUpdated={lastUpdated}
                 pendingUpdates={pendingUpdates}
+                statusFilter={activeTile || "all"}
+                onStatusFilterChange={handleStatusFilterChange}
               />
-            ) : (
+            )}
+            
+            {/* Grid view: shown on mobile/tablet OR when grid mode is selected on desktop */}
+            {viewMode === "grid" || windowWidth < 1024 ? (
               <TalentGridView
                 talents={talents}
                 isLoading={isLoading}
@@ -354,8 +693,12 @@ function App() {
                 pendingUpdates={pendingUpdates}
                 onStatusUpdate={handleStatusUpdate}
                 onManagerAssign={handleManagerAssign}
+                filtersOpen={filtersOpen}
+                onFiltersToggle={() => setFiltersOpen(!filtersOpen)}
+                statusFilter={activeTile || "all"}
+                onStatusFilterChange={handleStatusFilterChange}
               />
-            )}
+            ) : null}
           </>
         )}
 
@@ -402,7 +745,7 @@ function App() {
                             {talent["Full Name"]}
                           </div>
                           <div className="text-sm text-muted-foreground truncate">
-                            {renderInstagramLink(talent["Instagram"])}
+                            {renderInstagramLink(talent["Instagram"] || talent["Instagram Link"])}
                           </div>
                           <div className="flex items-center gap-2 mt-2">
                             <Badge variant={getStatusVariant(talent["Status"])} className="text-xs">
@@ -444,32 +787,116 @@ function App() {
                   )}
                 </div>
 
-                {/* Basic Info */}
+                {/* Basic Information */}
                 <Card className="p-4">
                   <h4 className="text-base font-semibold text-foreground mb-4">Basic Information</h4>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {renderProfileField("Full Name", selectedProfile["Full Name"])}
-                    {renderProfileField("Email", (selectedProfile as any)["Email "] || (selectedProfile as any)["Email"])}
-                    {renderProfileField("Phone", selectedProfile["Phone"])}
-                    {renderProfileField("City", selectedProfile["City"])}
+                    {renderProfileField("Email", selectedProfile["Email Address"] || (selectedProfile as any)["Email "])}
+                    {renderProfileField("Phone", selectedProfile["Phone Number"] || selectedProfile["Phone"])}
+                    {renderProfileField("City", selectedProfile["City & State"] || selectedProfile["City"])}
                     {renderProfileField("Gender", selectedProfile["Gender"])}
                     {renderProfileField("Age", selectedProfile["Age"])}
-                    {renderProfileField("Height", selectedProfile["Height"])}
-                    {renderProfileField("Instagram", selectedProfile["Instagram"])}
+                    {renderProfileField("Date of Birth", selectedProfile["Date of Birth"])}
+                    {renderProfileField("Nationality", selectedProfile["Nationality"])}
+                    {renderProfileField("Height (in feet & inches)", (selectedProfile as any)["Height (in feet & inches)"] || selectedProfile["Height"])}
                   </div>
                 </Card>
 
-                {/* Physical Info */}
+                {/* Physical Attributes */}
                 <Card className="p-4">
                   <h4 className="text-base font-semibold text-foreground mb-4">Physical Attributes</h4>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {renderProfileField("Measurements - Chest", (selectedProfile as any)["Measurements - Chest"])}
-                    {renderProfileField("Measurements - Waist", (selectedProfile as any)["Measurements - Waist"])}
-                    {renderProfileField("Measurements - Hips", (selectedProfile as any)["Measurements - Hips"])}
-                    {renderProfileField("Measurements - Shoe", (selectedProfile as any)["Measurements - Shoe"])}
-                    {renderProfileField("Hair Color", (selectedProfile as any)["Measurements - Hair Color"])}
-                    {renderProfileField("Hair Length", (selectedProfile as any)["Measurements - Hair Length"])}
-                    {renderProfileField("Eye Color", (selectedProfile as any)["Measurements - Eye Color"])}
+                    {renderProfileField("Height (in feet & inches)", (selectedProfile as any)["Height (in feet & inches)"])}
+                    {renderProfileField("Chest/Bust (in inches)", (selectedProfile as any)["Chest/Bust (in inches)"])}
+                    {renderProfileField("Waist (in inches)", (selectedProfile as any)["Waist (in inches)"])}
+                    {renderProfileField("Hips (in inches)", (selectedProfile as any)["Hips (in inches)"])}
+                    {renderProfileField("Shoe Size (UK)", (selectedProfile as any)["Shoe Size (UK)"])}
+                    {renderProfileField("Hair Color", selectedProfile["Hair Color"])}
+                    {renderProfileField("Eye Color", selectedProfile["Eye Color"])}
+                    {renderProfileField("Skin Tone", selectedProfile["Skin Tone"])}
+                  </div>
+                </Card>
+
+                {/* Social & Media */}
+                <Card className="p-4">
+                  <h4 className="text-base font-semibold text-foreground mb-4">Social & Media</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {(selectedProfile["Instagram Link"] || selectedProfile["Instagram"]) ? (() => {
+                      const ig = selectedProfile["Instagram Link"] || selectedProfile["Instagram"];
+                      const url = parseInstagram(ig);
+                      const display = ig.trim().replace(/^https?:\/\/(www\.)?instagram\.com\//, "@").replace(/\/+$/, "");
+                      return (
+                        <div className="text-sm">
+                          <dt className="text-muted-foreground font-medium">Instagram</dt>
+                          <dd className="mt-0.5">
+                            <a href={url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">
+                              {display}
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
+                          </dd>
+                        </div>
+                      );
+                    })() : renderProfileField("Instagram", undefined)}
+                    {renderClickableLink("YouTube", selectedProfile["YouTube Channel"], "https://www.youtube.com/")}
+                    {renderClickableLink("IMDb", selectedProfile["IMDb"], "https://www.imdb.com/name/")}
+                  </div>
+                </Card>
+
+                {/* Experience */}
+                <Card className="p-4">
+                  <h4 className="text-base font-semibold text-foreground mb-4">Experience</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {renderProfileField("Prior modelling/acting experience", selectedProfile["Prior modelling/acting experience"])}
+                    {renderProfileField("Previous Agency", selectedProfile["Previous Agency"])}
+                    {renderProfileField("Acting Workshop Attended", selectedProfile["Acting Workshop Attended"])}
+                    {renderProfileField("CINTAA/Union Card", selectedProfile["CINTAA/Union Card"])}
+                    {renderProfileField("Languages Known", selectedProfile["Languages Known"])}
+                    {renderProfileField("Dance Forms", selectedProfile["Dance Forms"])}
+                    {renderProfileField("Extra-Curricular", selectedProfile["Extra-Curricular"])}
+                  </div>
+                </Card>
+
+                {/* Work Preferences */}
+                <Card className="p-4">
+                  <h4 className="text-base font-semibold text-foreground mb-4">Work Preferences</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {renderProfileField("Scope of Work Interested In", selectedProfile["Scope of Work Interested In"])}
+                    {renderYesNoField("Open for placement abroad", selectedProfile["Open for placement abroad"])}
+                    {renderYesNoField("Valid Passport", selectedProfile["Valid Passport"])}
+                    {renderYesNoField("Can drive 2-wheeler", selectedProfile["Can drive 2-wheeler"])}
+                    {renderYesNoField("Can drive 4-wheeler", selectedProfile["Can drive 4-wheeler"])}
+                    {renderYesNoField("Can Swim", selectedProfile["Can Swim"])}
+                    {renderYesNoField("Gamer", selectedProfile["Gamer"])}
+                  </div>
+                </Card>
+
+                {/* Comfort/Consent */}
+                <Card className="p-4">
+                  <h4 className="text-base font-semibold text-foreground mb-4">Comfort & Consent</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {renderYesNoField("Lingerie/bikini shoots", selectedProfile["Lingerie/bikini shoots"])}
+                    {renderYesNoField("Bold content for web/films", selectedProfile["Bold content for web/films"])}
+                    {renderYesNoField("Condom brand promotions", selectedProfile["Condom brand promotions"])}
+                    {renderYesNoField("Alcohol brand shoots", selectedProfile["Alcohol brand shoots"])}
+                    {renderYesNoField("Reality TV shows", selectedProfile["Reality TV shows"])}
+                    {renderYesNoField("Daily soaps", selectedProfile["Daily soaps"])}
+                    {renderYesNoField("Mother/father roles", selectedProfile["Mother/father roles"])}
+                    {renderYesNoField("Haircut", selectedProfile["Haircut"])}
+                    {renderYesNoField("Hair color changes", selectedProfile["Hair color changes"])}
+                  </div>
+                </Card>
+
+                {/* Documents - Polaroids */}
+                <Card className="p-4">
+                  <h4 className="text-base font-semibold text-foreground mb-4">Documents</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <dt className="text-sm text-muted-foreground font-medium mb-2">Upload Polaroids (Required)</dt>
+                      <dd>
+                        <PolaroidGallery links={parsePolaroidLinks(selectedProfile["Upload Polaroids (Required)"])} />
+                      </dd>
+                    </div>
                   </div>
                 </Card>
 
@@ -483,20 +910,6 @@ function App() {
                     {renderProfileField("Notes", selectedProfile["Notes"])}
                   </div>
                 </Card>
-
-                {/* Skills */}
-                {(selectedProfile as any)["Skills - Languages"] && (
-                  <Card className="p-4">
-                    <h4 className="text-base font-semibold text-foreground mb-4">Skills</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {renderProfileField("Languages", (selectedProfile as any)["Skills - Languages"])}
-                      {renderProfileField("Acting", (selectedProfile as any)["Skills - Acting"])}
-                      {renderProfileField("Dancing", (selectedProfile as any)["Skills - Dancing"])}
-                      {renderProfileField("Singing", (selectedProfile as any)["Skills - Singing"])}
-                      {renderProfileField("Modeling", (selectedProfile as any)["Skills - Modeling"])}
-                    </div>
-                  </Card>
-                )}
               </div>
             )}
           </div>
@@ -541,16 +954,12 @@ interface TalentGridViewProps {
   pendingUpdates: Record<number, "status" | "manager">;
   onStatusUpdate: (row: number, status: string) => void;
   onManagerAssign: (row: number, manager: string) => void;
+  filtersOpen?: boolean;
+  onFiltersToggle?: () => void;
+  // Controlled status filter for bi-directional sync with quick filters
+  statusFilter?: string;
+  onStatusFilterChange?: (status: string) => void;
 }
-
-import { Loader2 } from "lucide-react";
-import { ACTION_STATUSES, MANAGERS } from "@/types/talent";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 function TalentGridView({
   talents,
@@ -559,19 +968,56 @@ function TalentGridView({
   pendingUpdates,
   onStatusUpdate,
   onManagerAssign,
+  filtersOpen = true,
+  onFiltersToggle,
+  statusFilter: externalStatusFilter,
+  onStatusFilterChange: externalOnStatusFilterChange,
 }: TalentGridViewProps) {
-  // Sort by rowIndex descending (newest first)
-  const sortedTalents = useMemo(() => {
-    return [...talents].sort((a, b) => b.rowIndex - a.rowIndex);
-  }, [talents]);
-
-  const handleStatusClick = (talent: Talent, status: string) => {
-    if (status === "Onboarded" && !talent["Talent Manager"]) {
-      toast.error("Please assign a Talent Manager first");
-      return;
+  // Search and filter state
+  const [search, setSearch] = useState("");
+  const [internalStatusFilter, setInternalStatusFilter] = useState<string>("all");
+  const [managerFilter, setManagerFilter] = useState<string>("all");
+  const [cityFilter, setCityFilter] = useState<string>("all");
+  
+  // Use external status filter if provided (controlled), otherwise use internal
+  const statusFilter = externalStatusFilter !== undefined ? externalStatusFilter : internalStatusFilter;
+  const setStatusFilter = (value: string) => {
+    if (externalOnStatusFilterChange) {
+      externalOnStatusFilterChange(value);
+    } else {
+      setInternalStatusFilter(value);
     }
-    onStatusUpdate(talent.rowIndex, status);
   };
+
+  // Get unique values for filters
+  const getUniqueValues = (arr: Talent[], key: keyof Talent): string[] => {
+    const values = arr.map((t) => t[key]).filter((v) => v && v.toString().trim() !== "");
+    return [...new Set(values)].sort() as string[];
+  };
+
+  const uniqueStatuses = getUniqueValues(talents, "Status");
+  const uniqueManagers = getUniqueValues(talents, "Talent Manager");
+  const uniqueCities = getUniqueValues(talents, "City");
+
+  // Filter and sort talents
+  const filteredTalents = useMemo(() => {
+    const filtered = talents.filter((talent) => {
+      const searchLower = search.toLowerCase();
+      const matchesSearch =
+        !search ||
+        talent["Full Name"]?.toLowerCase().includes(searchLower) ||
+        talent["Instagram"]?.toLowerCase().includes(searchLower) ||
+        talent["City"]?.toLowerCase().includes(searchLower);
+
+      const matchesStatus = statusFilter === "all" || talent["Status"] === statusFilter;
+      const matchesManager = managerFilter === "all" || talent["Talent Manager"] === managerFilter;
+      const matchesCity = cityFilter === "all" || talent["City"] === cityFilter;
+
+      return matchesSearch && matchesStatus && matchesManager && matchesCity;
+    });
+    // Sort by rowIndex descending (newest first)
+    return filtered.sort((a, b) => b.rowIndex - a.rowIndex);
+  }, [talents, search, statusFilter, managerFilter, cityFilter]);
 
   const handleManagerSelect = (rowIndex: number, manager: string) => {
     onManagerAssign(rowIndex, manager);
@@ -605,105 +1051,206 @@ function TalentGridView({
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-      {sortedTalents.map((talent) => (
-        <Card
-          key={talent.rowIndex}
-          className="p-4 hover:bg-accent/30 transition-colors cursor-pointer glass-card"
-          onClick={() => onTalentClick(talent["Full Name"])}
-        >
-          <div className="flex flex-col gap-3">
-            {/* Header: Name + Status */}
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex-1 min-w-0">
-                <div className="font-medium text-foreground truncate">
-                  {talent["Full Name"]}
-                </div>
-                <div className="text-sm text-muted-foreground truncate">
-                  {renderInstagramLink(talent["Instagram"])}
-                </div>
-              </div>
-              <Badge variant={getStatusVariant(talent["Status"])} className="shrink-0">
-                {talent["Status"] || "New"}
-              </Badge>
-            </div>
+    <div className="space-y-4">
+      {/* Search Bar - Always visible on mobile */}
+      <Card className="p-4">
+        <div className="relative mobile-search">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by name, Instagram, or city..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-10 bg-input/50"
+          />
+        </div>
+        
+        {/* Filter toggle button - visible on mobile */}
+        <div className="flex items-center justify-between mt-3 md:hidden">
+          <span className="text-sm text-muted-foreground">
+            {filteredTalents.length} of {talents.length} talents
+          </span>
+          <button
+            onClick={onFiltersToggle}
+            className="text-sm text-primary hover:underline flex items-center gap-1"
+          >
+            {filtersOpen ? "Hide" : "Show"} Filters
+            <ChevronDown className={`h-4 w-4 transition-transform ${filtersOpen ? "rotate-180" : ""}`} />
+          </button>
+        </div>
 
-            {/* Info */}
-            <div className="text-sm text-muted-foreground space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="w-16 text-xs">City:</span>
-                <span className="text-foreground">{talent["City"] || "Not provided"}</span>
+        {/* Filters - Collapsible on mobile, always visible on desktop */}
+        <div className={`filters-collapsible ${filtersOpen ? "open" : ""} mt-3`}>
+          <div className="flex flex-wrap gap-2">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[150px] bg-input/50 text-sm">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                {uniqueStatuses.map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {status}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={managerFilter} onValueChange={setManagerFilter}>
+              <SelectTrigger className="w-[150px] bg-input/50 text-sm">
+                <SelectValue placeholder="Manager" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Managers</SelectItem>
+                {uniqueManagers.map((manager) => (
+                  <SelectItem key={manager} value={manager}>
+                    {manager}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={cityFilter} onValueChange={setCityFilter}>
+              <SelectTrigger className="w-[130px] bg-input/50 text-sm">
+                <SelectValue placeholder="City" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Cities</SelectItem>
+                {uniqueCities.map((city) => (
+                  <SelectItem key={city} value={city}>
+                    {city}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {/* Desktop: show count */}
+          <div className="hidden md:block text-sm text-muted-foreground mt-2">
+            Showing {filteredTalents.length} of {talents.length} talents
+          </div>
+        </div>
+      </Card>
+
+      {/* Talent Cards Grid */}
+      <div className="talent-grid">
+        {filteredTalents.map((talent) => (
+          <Card
+            key={talent.rowIndex}
+            className="p-4 hover:bg-accent/30 transition-colors cursor-pointer glass-card talent-card"
+            onClick={() => onTalentClick(talent["Full Name"])}
+          >
+            <div className="flex flex-col gap-3">
+              {/* Header: Photo/Initials + Name + Status */}
+              <div className="flex items-start gap-3">
+                {/* Photo or Initials Avatar */}
+                <div className="bg-primary/20 p-2 rounded-lg shrink-0">
+                  <User className="h-5 w-5 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-foreground truncate">
+                    {talent["Full Name"]}
+                  </div>
+                  <div className="text-sm text-muted-foreground truncate">
+                    {talent["Instagram"] ? (
+                      renderInstagramLink(talent["Instagram"])
+                    ) : (
+                      <span className="text-muted-foreground/50">No Instagram</span>
+                    )}
+                  </div>
+                </div>
+                <Badge variant={getStatusVariant(talent["Status"])} className="shrink-0 text-xs">
+                  {talent["Status"] || "New"}
+                </Badge>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="w-16 text-xs">Gender:</span>
-                <span className="text-foreground">{talent["Gender"] || "Not provided"}</span>
+
+              {/* Info Row - City | Manager */}
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-muted-foreground truncate">
+                  {talent["City"] || "Unknown city"}
+                </span>
+                <span className="text-muted-foreground/30">•</span>
+                <span className="text-muted-foreground truncate">
+                  {talent["Talent Manager"] || "No manager"}
+                </span>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="w-16 text-xs">Manager:</span>
-                {talent["Talent Manager"] ? (
-                  <span className="text-foreground">{talent["Talent Manager"]}</span>
-                ) : (
+
+              {/* Actions Dropdown - Mobile friendly */}
+              <div className="pt-2 border-t border-border/30 card-actions">
+                <div className="flex items-center justify-between">
+                  {/* Status dropdown */}
+                  <StatusDropdown
+                    currentStatus={(talent["Status"] as any) || "New"}
+                    rowIndex={talent.rowIndex}
+                    onStatusChange={onStatusUpdate}
+                    disabled={!!pendingUpdates[talent.rowIndex]}
+                    isLoading={pendingUpdates[talent.rowIndex] === "status"}
+                    hasManager={!!talent["Talent Manager"]}
+                  />
+                  
+                  {/* More actions menu */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
-                        className="h-6 text-xs"
-                        disabled={!!pendingUpdates[talent.rowIndex]}
+                        className="h-8 w-8 p-0"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        {pendingUpdates[talent.rowIndex] === "manager" ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          "Assign"
-                        )}
+                        <span className="sr-only">Open menu</span>
+                        <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                          <circle cx="12" cy="5" r="2" />
+                          <circle cx="12" cy="12" r="2" />
+                          <circle cx="12" cy="19" r="2" />
+                        </svg>
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      {MANAGERS.map((m) => (
+                    <DropdownMenuContent align="end" className="min-w-[160px]">
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleManagerSelect(talent.rowIndex, "");
+                        }}
+                        disabled={!!talent["Talent Manager"]}
+                      >
+                        {talent["Talent Manager"] ? "Change Manager" : "Assign Manager"}
+                      </DropdownMenuItem>
+                      {MANAGERS.filter(m => m !== talent["Talent Manager"]).map((m) => (
                         <DropdownMenuItem
                           key={m}
                           onClick={(e) => {
                             e.stopPropagation();
                             handleManagerSelect(talent.rowIndex, m);
                           }}
+                          className="pl-6"
                         >
                           {m}
                         </DropdownMenuItem>
                       ))}
                     </DropdownMenuContent>
                   </DropdownMenu>
-                )}
+                </div>
               </div>
             </div>
+          </Card>
+        ))}
+      </div>
 
-            {/* Action Buttons */}
-            <div className="flex flex-wrap gap-1 pt-2 border-t border-border/30">
-              {ACTION_STATUSES.map((status) => (
-                <Button
-                  key={status}
-                  variant="outline"
-                  size="sm"
-                  className="text-xs h-7 px-2 hover:bg-accent/50 transition-all duration-200"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleStatusClick(talent, status);
-                  }}
-                  disabled={talent["Status"] === status || pendingUpdates[talent.rowIndex] === "status"}
-                >
-                  {pendingUpdates[talent.rowIndex] === "status" ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : (
-                    status
-                  )}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </Card>
-      ))}
+      {filteredTalents.length === 0 && (
+        <div className="text-center py-12 text-muted-foreground">
+          No talents match your filters
+        </div>
+      )}
     </div>
   );
 }
+
+import { MANAGERS } from "@/types/talent";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { StatusDropdown } from "@/components/StatusDropdown";
 
 export default App;

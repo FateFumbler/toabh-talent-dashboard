@@ -1,4 +1,4 @@
-import type { Talent, TalentProfile } from "../types/talent";
+import type { Talent, TalentProfile, TalentDetails } from "../types/talent";
 
 const API_URL = "https://script.google.com/macros/s/AKfycbyrHsfBPmcSb9YeAUKH9cQ0taILerK7VQ8kNjpI_OZvwSYgD2zw6Sh-xSgVKV40_bWIPQ/exec";
 
@@ -28,28 +28,41 @@ export async function fetchTalentProfile(name: string): Promise<TalentProfile> {
   }
 }
 
+export async function fetchTalentDetails(): Promise<TalentDetails[]> {
+  try {
+    const response = await fetch(`${API_URL}?action=talent-details`, {
+      redirect: 'follow',
+    });
+    const text = await response.text();
+    return JSON.parse(text) as TalentDetails[];
+  } catch (error) {
+    console.error("Error fetching talent details:", error);
+    throw error;
+  }
+}
+
 export async function updateStatus(row: number, status: string): Promise<void> {
-  // Use mode: 'no-cors' because Apps Script Web Apps don't return proper CORS headers
-  // for POST requests from cross-origin frontends (vercel.app → google.com).
-  // With no-cors, we can't read the response, so we send data as URL params instead of body
-  // and wait a fixed timeout to "assume" success.
-  await fetch(`${API_URL}?action=update-status&row=${encodeURIComponent(row)}&status=${encodeURIComponent(status)}`, {
+  const formData = new URLSearchParams();
+  formData.append('action', 'update-status');
+  formData.append('row', String(row));
+  formData.append('status', status);
+
+  await fetch(API_URL, {
     method: 'POST',
-    mode: 'no-cors',
+    redirect: 'follow',
+    body: formData,
   });
-  // Wait 3 seconds for Apps Script to process (no-cors = opaque response)
-  await new Promise((resolve) => setTimeout(resolve, 3000));
 }
 
 export async function assignManager(row: number, manager: string): Promise<void> {
-  // Use mode: 'no-cors' because Apps Script Web Apps don't return proper CORS headers
-  // for POST requests from cross-origin frontends (vercel.app → google.com).
-  // With no-cors, we can't read the response, so we send data as URL params instead of body
-  // and wait a fixed timeout to "assume" success.
-  await fetch(`${API_URL}?action=assign-manager&row=${encodeURIComponent(row)}&manager=${encodeURIComponent(manager)}`, {
+  const formData = new URLSearchParams();
+  formData.append('action', 'assign-manager');
+  formData.append('row', String(row));
+  formData.append('manager', manager);
+
+  await fetch(API_URL, {
     method: 'POST',
-    mode: 'no-cors',
+    redirect: 'follow',
+    body: formData,
   });
-  // Wait 3 seconds for Apps Script to process (no-cors = opaque response)
-  await new Promise((resolve) => setTimeout(resolve, 3000));
 }

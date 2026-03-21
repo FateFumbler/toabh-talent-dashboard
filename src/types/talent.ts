@@ -14,6 +14,67 @@ export interface Talent {
   "rowIndex": number;
 }
 
+export interface TalentDetails {
+  // Matching key
+  "Phone Number": string;
+  "Email Address": string;
+  
+  // Basic Info
+  "Full Name": string;
+  "Gender": string;
+  "Age": string;
+  "Date of Birth": string;
+  "Nationality": string;
+  "City & State": string;
+  
+  // Physical Attributes - use exact Google Sheet column names
+  "Height (in feet & inches)": string;
+  "Chest/Bust (in inches)": string;
+  "Waist (in inches)": string;
+  "Hips (in inches)": string;
+  "Shoe Size (UK)": string;
+  "Hair Color": string;
+  "Eye Color": string;
+  "Skin Tone": string;
+  
+  // Social & Media
+  "Instagram Link": string;
+  "YouTube Channel": string;
+  "IMDb": string;
+  
+  // Experience
+  "Prior modelling/acting experience": string;
+  "Previous Agency": string;
+  "Acting Workshop Attended": string;
+  "CINTAA/Union Card": string;
+  "Languages Known": string;
+  "Dance Forms": string;
+  "Extra-Curricular": string;
+  
+  // Work Preferences
+  "Scope of Work Interested In": string;
+  "Open for placement abroad": string;
+  "Valid Passport": string;
+  "Can drive 2-wheeler": string;
+  "Can drive 4-wheeler": string;
+  "Can Swim": string;
+  "Gamer": string;
+  
+  // Comfort/Consent
+  "Lingerie/bikini shoots": string;
+  "Bold content for web/films": string;
+  "Condom brand promotions": string;
+  "Alcohol brand shoots": string;
+  "Reality TV shows": string;
+  "Daily soaps": string;
+  "Mother/father roles": string;
+  "Haircut": string;
+  "Hair color changes": string;
+  
+  // Documents
+  "Upload Polaroids (Required)": string;
+}
+
 export interface TalentProfile extends Talent {
   // Additional fields from Talent_Details sheet
   // Basic Info

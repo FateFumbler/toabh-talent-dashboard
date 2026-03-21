@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -19,8 +19,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import type { Talent, StatusValue } from "@/types/talent";
-import { MANAGERS, ACTION_STATUSES } from "@/types/talent";
+import { MANAGERS } from "@/types/talent";
 import { Search, RefreshCw, Loader2 } from "lucide-react";
+import { ColumnVisibility, type ColumnName, getInitialColumns, saveColumnPreferences } from "./ColumnVisibility";
+import { StatusDropdown } from "./StatusDropdown";
 
 interface TalentTableProps {
   talents: Talent[];
@@ -31,30 +33,43 @@ interface TalentTableProps {
   onRefresh: () => void;
   lastUpdated: Date | null;
   pendingUpdates?: Record<number, "status" | "manager">;
+  visibleColumns?: ColumnName[];
+  onColumnsChange?: (columns: ColumnName[]) => void;
+  // Controlled status filter for bi-directional sync with quick filters
+  statusFilter?: string;
+  onStatusFilterChange?: (status: string) => void;
+}
+
+// Parse Instagram value to full URL
+function parseInstagram(value: string): string {
+  if (!value) return '';
+  const trimmed = value.trim();
+  // If already a full URL (starts with http/https), use as-is
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed;
+  }
+  // Otherwise treat as username/handle
+  // Remove @ if present
+  let username = trimmed.replace(/^@/, '');
+  // Remove any existing instagram.com prefix
+  username = username.replace(/^(https?:\/\/)?(www\.)?instagram\.com\//, '');
+  // Remove any query params or fragments
+  username = username.split('?')[0].split('#')[0];
+  // Remove trailing slashes
+  username = username.replace(/\/+$/, '');
+  return `https://instagram.com/${username}`;
 }
 
 // Helper to render Instagram as clickable link
 const renderInstagramLink = (instagram: string | undefined): React.ReactNode => {
   if (!instagram || instagram.trim() === "") return "-";
-  const trimmed = instagram.trim();
-  // Check if it's already a full URL
-  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
-    return (
-      <a href={trimmed} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-        {trimmed.replace(/^https?:\/\/(www\.)?instagram\.com\//, "@").replace(/\/$/, "")}
-      </a>
-    );
-  }
-  // Check if it's an Instagram handle or link text
-  const handle = trimmed.replace(/^@/, "").replace(/\/$/, "");
-  if (handle) {
-    return (
-      <a href={`https://www.instagram.com/${handle}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-        {trimmed}
-      </a>
-    );
-  }
-  return "-";
+  const url = parseInstagram(instagram);
+  const display = instagram.trim().replace(/^https?:\/\/(www\.)?instagram\.com\//, "@").replace(/\/+$/, "");
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+      {display}
+    </a>
+  );
 };
 
 const getStatusDot = (status: string): string => {
@@ -105,12 +120,41 @@ export function TalentTable({
   onRefresh,
   lastUpdated,
   pendingUpdates = {},
+  visibleColumns: externalVisibleColumns,
+  onColumnsChange: externalOnColumnsChange,
+  statusFilter: externalStatusFilter,
+  onStatusFilterChange: externalOnStatusFilterChange,
 }: TalentTableProps) {
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [internalStatusFilter, setInternalStatusFilter] = useState<string>("all");
   const [managerFilter, setManagerFilter] = useState<string>("all");
   const [cityFilter, setCityFilter] = useState<string>("all");
   const [selectedManagers, setSelectedManagers] = useState<Record<number, string>>({});
+  
+  // Use external status filter if provided (controlled), otherwise use internal
+  const statusFilter = externalStatusFilter !== undefined ? externalStatusFilter : internalStatusFilter;
+  const setStatusFilter = (value: string) => {
+    if (externalOnStatusFilterChange) {
+      externalOnStatusFilterChange(value);
+    } else {
+      setInternalStatusFilter(value);
+    }
+  };
+  
+  // Column visibility state - use external if provided, otherwise internal
+  const [internalVisibleColumns, setInternalVisibleColumns] = useState<ColumnName[]>(getInitialColumns);
+  const visibleColumns = externalVisibleColumns || internalVisibleColumns;
+  const onColumnsChange = externalOnColumnsChange || ((cols: ColumnName[]) => {
+    setInternalVisibleColumns(cols);
+    saveColumnPreferences(cols);
+  });
+
+  // Initialize from localStorage on mount
+  useEffect(() => {
+    if (!externalVisibleColumns) {
+      setInternalVisibleColumns(getInitialColumns());
+    }
+  }, [externalVisibleColumns]);
 
   const uniqueStatuses = getUniqueValues(talents, "Status");
   const uniqueManagers = getUniqueValues(talents, "Talent Manager");
@@ -137,14 +181,6 @@ export function TalentTable({
     // Sort by rowIndex descending (newest first)
     return filtered.sort((a, b) => b.rowIndex - a.rowIndex);
   }, [talents, search, statusFilter, managerFilter, cityFilter]);
-
-  const handleStatusClick = (talent: Talent, status: StatusValue) => {
-    if (status === "Onboarded" && !talent["Talent Manager"]) {
-      toast.error("Please assign a Talent Manager first");
-      return;
-    }
-    onStatusUpdate(talent.rowIndex, status);
-  };
 
   const handleManagerSelect = (rowIndex: number, manager: string) => {
     setSelectedManagers((prev) => ({ ...prev, [rowIndex]: manager }));
@@ -219,16 +255,22 @@ export function TalentTable({
                 </span>
               )}
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onRefresh}
-              disabled={isLoading}
-              className="hover:bg-accent/50"
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
-              Refresh
-            </Button>
+            <div className="flex items-center gap-2">
+              <ColumnVisibility 
+                visibleColumns={visibleColumns} 
+                onColumnsChange={onColumnsChange} 
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onRefresh}
+                disabled={isLoading}
+                className="hover:bg-accent/50"
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
+                Refresh
+              </Button>
+            </div>
           </div>
         </div>
       </Card>
@@ -237,25 +279,43 @@ export function TalentTable({
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent border-border/30">
-              <TableHead className="w-[200px] text-muted-foreground">Name</TableHead>
-              <TableHead className="text-muted-foreground">Instagram</TableHead>
-              <TableHead className="text-muted-foreground">City</TableHead>
-              <TableHead className="text-muted-foreground">Gender</TableHead>
-              <TableHead className="text-muted-foreground">Status</TableHead>
-              <TableHead className="text-muted-foreground">Talent Manager</TableHead>
+              {visibleColumns.includes("Full Name") && (
+                <TableHead className="w-[200px] text-muted-foreground">Name</TableHead>
+              )}
+              {visibleColumns.includes("Instagram") && (
+                <TableHead className="text-muted-foreground">Instagram</TableHead>
+              )}
+              {visibleColumns.includes("City") && (
+                <TableHead className="text-muted-foreground">City</TableHead>
+              )}
+              {visibleColumns.includes("Gender") && (
+                <TableHead className="text-muted-foreground">Gender</TableHead>
+              )}
+              {visibleColumns.includes("Age") && (
+                <TableHead className="text-muted-foreground">Age</TableHead>
+              )}
+              {visibleColumns.includes("Height") && (
+                <TableHead className="text-muted-foreground">Height</TableHead>
+              )}
+              {visibleColumns.includes("Status") && (
+                <TableHead className="text-muted-foreground">Status</TableHead>
+              )}
+              {visibleColumns.includes("Talent Manager") && (
+                <TableHead className="text-muted-foreground">Talent Manager</TableHead>
+              )}
               <TableHead className="text-right text-muted-foreground">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading && filteredTalents.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={visibleColumns.length + 1} className="text-center py-8 text-muted-foreground">
                   <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                 </TableCell>
               </TableRow>
             ) : filteredTalents.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={visibleColumns.length + 1} className="text-center py-8 text-muted-foreground">
                   No talents found
                 </TableCell>
               </TableRow>
@@ -275,68 +335,78 @@ export function TalentTable({
                       {talent["Full Name"]}
                     </button>
                   </TableCell>
-                  <TableCell className="text-muted-foreground truncate max-w-[120px]">
-                    {renderInstagramLink(talent["Instagram"])}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {talent["City"] || "-"}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {talent["Gender"] || "-"}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <span className={getStatusDot(talent["Status"])} />
-                      <Badge variant={getStatusVariant(talent["Status"])}>
-                        {talent["Status"] || "New"}
-                      </Badge>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {talent["Talent Manager"] ? (
-                      <span className="text-sm text-foreground">{talent["Talent Manager"]}</span>
-                    ) : (
-                      <Select
-                        value={selectedManagers[talent.rowIndex] || ""}
-                        onValueChange={(v) => handleManagerSelect(talent.rowIndex, v)}
-                        disabled={!!pendingUpdates[talent.rowIndex]}
-                      >
-                        <SelectTrigger className="w-[130px] h-8 text-xs bg-input/50">
-                          {pendingUpdates[talent.rowIndex] === "manager" ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <SelectValue placeholder="Assign..." />
-                          )}
-                        </SelectTrigger>
-                        <SelectContent>
-                          {MANAGERS.map((m) => (
-                            <SelectItem key={m} value={m}>
-                              {m}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex flex-wrap justify-end gap-1">
-                      {ACTION_STATUSES.map((status) => (
-                        <Button
-                          key={status}
-                          variant="outline"
-                          size="sm"
-                          className="text-xs h-7 px-2 hover:bg-accent/50 transition-all duration-200"
-                          onClick={() => handleStatusClick(talent, status)}
-                          disabled={talent["Status"] === status || pendingUpdates[talent.rowIndex] === "status"}
+                  {visibleColumns.includes("Instagram") && (
+                    <TableCell className="text-muted-foreground truncate max-w-[120px]">
+                      {renderInstagramLink(talent["Instagram"])}
+                    </TableCell>
+                  )}
+                  {visibleColumns.includes("City") && (
+                    <TableCell className="text-muted-foreground">
+                      {talent["City"] || "-"}
+                    </TableCell>
+                  )}
+                  {visibleColumns.includes("Gender") && (
+                    <TableCell className="text-muted-foreground">
+                      {talent["Gender"] || "-"}
+                    </TableCell>
+                  )}
+                  {visibleColumns.includes("Age") && (
+                    <TableCell className="text-muted-foreground">
+                      {talent["Age"] || "-"}
+                    </TableCell>
+                  )}
+                  {visibleColumns.includes("Height") && (
+                    <TableCell className="text-muted-foreground">
+                      {talent["Height"] || "-"}
+                    </TableCell>
+                  )}
+                  {visibleColumns.includes("Status") && (
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <span className={getStatusDot(talent["Status"])} />
+                        <Badge variant={getStatusVariant(talent["Status"])}>
+                          {talent["Status"] || "New"}
+                        </Badge>
+                      </div>
+                    </TableCell>
+                  )}
+                  {visibleColumns.includes("Talent Manager") && (
+                    <TableCell>
+                      {talent["Talent Manager"] ? (
+                        <span className="text-sm text-foreground">{talent["Talent Manager"]}</span>
+                      ) : (
+                        <Select
+                          value={selectedManagers[talent.rowIndex] || ""}
+                          onValueChange={(v) => handleManagerSelect(talent.rowIndex, v)}
+                          disabled={!!pendingUpdates[talent.rowIndex]}
                         >
-                          {pendingUpdates[talent.rowIndex] === "status" ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            status
-                          )}
-                        </Button>
-                      ))}
-                    </div>
+                          <SelectTrigger className="w-[130px] h-8 text-xs bg-input/50">
+                            {pendingUpdates[talent.rowIndex] === "manager" ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <SelectValue placeholder="Assign..." />
+                            )}
+                          </SelectTrigger>
+                          <SelectContent>
+                            {MANAGERS.map((m) => (
+                              <SelectItem key={m} value={m}>
+                                {m}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </TableCell>
+                  )}
+                  <TableCell className="text-right">
+                    <StatusDropdown
+                      currentStatus={(talent["Status"] as StatusValue) || "New"}
+                      rowIndex={talent.rowIndex}
+                      onStatusChange={onStatusUpdate}
+                      disabled={!!pendingUpdates[talent.rowIndex]}
+                      isLoading={pendingUpdates[talent.rowIndex] === "status"}
+                      hasManager={!!talent["Talent Manager"]}
+                    />
                   </TableCell>
                 </TableRow>
               ))
@@ -347,6 +417,3 @@ export function TalentTable({
     </div>
   );
 }
-
-// Import toast for validation
-import { toast } from "sonner";
