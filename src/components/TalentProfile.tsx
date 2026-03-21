@@ -1,13 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, Component } from "react";
+import type { ReactNode } from "react";
 import {
   Dialog,
   DialogContent,
 } from "@/components/ui/dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+// Card components removed - using custom profile-card styling
 import { Badge } from "@/components/ui/badge";
 import type { Talent, TalentDetails } from "@/types/talent";
 import { fetchTalentMaster, fetchTalentDetails } from "@/services/api";
-import { Loader2, User, FileText } from "lucide-react";
+import { Loader2, User, FileText, AlertTriangle } from "lucide-react";
 
 interface TalentProfileProps {
   name: string | null;
@@ -15,9 +16,51 @@ interface TalentProfileProps {
   onOpenChange: (open: boolean) => void;
 }
 
+// Error Boundary to prevent white screen crashes
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error?: Error;
+}
+
+class ProfileErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundaryState> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error("[ProfileErrorBoundary] Caught error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <AlertTriangle className="h-12 w-12 text-warning mb-4" />
+          <h3 className="text-lg font-semibold text-foreground mb-2">Something went wrong</h3>
+          <p className="text-muted-foreground text-sm max-w-md">
+            {this.state.error?.message || "Failed to render profile. Please try again."}
+          </p>
+          <button
+            onClick={() => this.setState({ hasError: false })}
+            className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:bg-primary/90 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 interface ProfileSection {
   title: string;
-  fields: { label: string; value: string | undefined }[];
+  fields: { label: string; value: string | undefined | ReactNode }[];
 }
 
 // Extract Google Drive file ID from various URL formats
@@ -52,9 +95,48 @@ function getDriveImageUrl(url: string): string | null {
 }
 
 // Parse polaroid links (may be comma or newline separated)
-function parsePolaroidLinks(polaroidField: string | undefined): string[] {
-  if (!polaroidField || !polaroidField.trim()) return [];
-  return polaroidField.split(/[,\n]/).map(s => s.trim()).filter(Boolean);
+function parsePolaroidLinks(polaroidField: unknown): string[] {
+  if (!polaroidField) return [];
+  // Handle non-string values (numbers, arrays, objects)
+  const str = String(polaroidField);
+  if (!str.trim()) return [];
+  return str.split(/[,\n]/).map(s => s.trim()).filter(Boolean);
+}
+
+// Parse Instagram value to full URL
+function parseInstagram(value: string): string {
+  if (!value) return '';
+  const trimmed = value.trim();
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed;
+  }
+  let username = trimmed.replace(/^@/, '');
+  username = username.replace(/^(https?:\/\/)?(www\.)?instagram\.com\//, '');
+  username = username.split('?')[0].split('#')[0];
+  username = username.replace(/\/+$/, '');
+  return `https://instagram.com/${username}`;
+}
+
+// Helper to render Instagram as clickable link
+const renderInstagramLink = (instagram: string | undefined): React.ReactNode => {
+  if (!instagram || instagram.trim() === "") return "-";
+  const url = parseInstagram(instagram);
+  const display = instagram.trim().replace(/^https?:\/\/(www\.)?instagram\.com\//, "@").replace(/\/+$/, "");
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+      {display}
+    </a>
+  );
+};
+
+// Safe field accessor - handles any value type
+function safeField(value: unknown): string | undefined {
+  if (value === null || value === undefined) return undefined;
+  if (typeof value === 'string') return value.trim() || undefined;
+  if (typeof value === 'number') return String(value);
+  if (Array.isArray(value)) return value.join(', ') || undefined;
+  if (typeof value === 'object') return JSON.stringify(value);
+  return String(value);
 }
 
 export function TalentProfileDialog({
@@ -66,8 +148,20 @@ export function TalentProfileDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Reset profile when dialog closes
   useEffect(() => {
-    if (name && open) {
+    if (!open) {
+      setProfile(null);
+      setError(null);
+      setIsLoading(false);
+    }
+  }, [open]);
+
+  // Load profile when name or open state changes
+  useEffect(() => {
+    const trimmedName = name?.trim();
+    if (trimmedName && open) {
+      console.log("[Profile] Loading profile for:", trimmedName);
       loadProfile();
     }
   }, [name, open]);
@@ -114,13 +208,17 @@ export function TalentProfileDialog({
         }
       }
       
-      // Find the talent by name in talent-master
-      const talent = talentData.find(t => t["Full Name"] === name);
+      // Find the talent by name in talent-master (case-insensitive, trim whitespace)
+      const normalizedName = name.toLowerCase().trim();
+      const talent = talentData.find(t => t["Full Name"]?.toLowerCase().trim() === normalizedName);
       if (!talent) {
+        console.error("[Profile] Talent not found in master sheet. Looking for:", name, "Normalized:", normalizedName);
+        console.error("[Profile] Available names:", talentData.map(t => t["Full Name"]));
         setError("Talent not found in master sheet");
         setIsLoading(false);
         return;
       }
+      console.log("[Profile] Found talent:", talent["Full Name"]);
       
       // Try to find matching details
       const talentPhone = normalizePhone(String(talent["Phone"] || ""));
@@ -154,9 +252,14 @@ export function TalentProfileDialog({
       if (matchedDetails) {
         // Copy all fields from details
         Object.assign(merged, matchedDetails);
+        console.log("[Profile] Merged profile with details for:", talent["Full Name"]);
+      } else {
+        console.log("[Profile] No details found for:", talent["Full Name"], "Phone:", talentPhone, "Email:", talentEmail);
       }
       
+      // Always set profile - even if no details matched, we still have basic talent info
       setProfile(merged);
+      console.log("[Profile] Profile set, total fields:", Object.keys(merged).length);
     } catch (err) {
       setError("Failed to load profile");
       console.error(err);
@@ -184,132 +287,156 @@ export function TalentProfileDialog({
 
   // Helper to format field values - capitalize yes/no, keep others as-is
   const formatFieldValue = (value: string | undefined): string | undefined => {
-    if (!value || value.trim() === "") return undefined;
-    const trimmed = value.trim();
+    if (!value) return undefined;
+    // Ensure value is a string
+    const strValue = String(value);
+    if (strValue.trim() === "") return undefined;
+    const trimmed = strValue.trim();
     // Check if it's a yes/no value (case insensitive)
     if (/^(yes|no|y|n|true|false|1|0)$/i.test(trimmed)) {
       // Capitalize first letter: "no" -> "No", "yes" -> "Yes"
       return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
     }
-    return value;
+    return strValue;
   };
 
   const renderSection = (section: ProfileSection) => {
     const hasValues = section.fields.some((f) => f.value);
     if (!hasValues) return null;
 
+    // Check if field contains a URL (Instagram, YouTube, IMDb, etc.)
+    const isUrlField = (label: string) => 
+      /instagram|youtube|imdb|wiki|link|website|facebook|twitter|tiktok/i.test(label);
+
     return (
-      <Card key={section.title} className="bg-card/50">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base font-semibold text-foreground">{section.title}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-2">
-            {section.fields.map((field) =>
-              field.value ? (
-                <div key={field.label} className="text-sm">
-                  <dt className="text-muted-foreground font-medium">{field.label}</dt>
-                  <dd className="mt-0.5 text-foreground">{formatFieldValue(field.value)}</dd>
-                </div>
-              ) : null
-            )}
-          </dl>
-        </CardContent>
-      </Card>
+      <div key={section.title} className="profile-card">
+        <h3 className="profile-section-title">{section.title}</h3>
+        <dl className="grid grid-cols-2 gap-x-3 gap-y-1">
+          {section.fields.map((field) =>
+            field.value ? (
+              <div key={field.label} className="profile-field">
+                <dt className="profile-field-label">{field.label}</dt>
+                <dd className={`profile-field-value ${isUrlField(field.label) ? 'url-text' : ''}`}>
+                  {typeof field.value === 'string' ? formatFieldValue(field.value) : field.value}
+                </dd>
+              </div>
+            ) : null
+          )}
+        </dl>
+      </div>
     );
   };
 
-  const getBasicInfo = (): ProfileSection => ({
-    title: "Basic Information",
-    fields: [
-      { label: "Full Name", value: profile?.["Full Name"] },
-      { label: "Email", value: profile?.["Email Address"] || (profile as any)?.["Email "] },
-      { label: "Phone", value: (profile?.["Phone Number"] || profile?.["Phone"])?.toString() },
-      { label: "City", value: profile?.["City & State"] || profile?.["City"] },
-      { label: "Gender", value: profile?.["Gender"] },
-      { label: "Age", value: profile?.["Age"]?.toString() },
-      { label: "Date of Birth", value: profile?.["Date of Birth"] },
-      { label: "Nationality", value: profile?.["Nationality"] },
-      { label: "Height (in feet & inches)", value: (profile as any)?.["Height (in feet & inches)"] || profile?.["Height"] },
-    ],
-  });
+  // Helper to access profile fields with proper typing for Google Sheet dynamic fields
+  // Uses safeField to handle any value type safely
+  const gf = (key: string): string | undefined => {
+    if (!profile) return undefined;
+    const profileAny = profile as unknown as Record<string, unknown>;
+    return safeField(profileAny?.[key]);
+  };
+
+  const getBasicInfo = (): ProfileSection => {
+    const email = gf("Email Address") || gf("Email ");
+    const phone = (gf("Phone Number") || gf("Phone"))?.toString();
+    return {
+      title: "Basic Information",
+      fields: [
+        { label: "Full Name", value: gf("Full Name") },
+        { label: "Email", value: email ? <a href={`mailto:${email}`} className="text-primary hover:underline">{email}</a> : undefined },
+        { label: "Phone", value: phone ? <a href={`tel:${phone}`} className="text-primary hover:underline">{phone}</a> : undefined },
+        { label: "City", value: gf("City & State (Current location)") || gf("City & State") || gf("City") },
+        { label: "Gender", value: gf("Gender") },
+        { label: "Age", value: gf("Age")?.toString() },
+        { label: "Date of Birth", value: gf("Date of Birth ") },
+        { label: "Nationality", value: gf("Nationality") },
+        { label: "Height (in feet & inches)", value: gf("Height (in feet & inches)") || gf("Height") },
+      ],
+    };
+  };
 
   const getPhysicalAttributes = (): ProfileSection => ({
     title: "Physical Attributes",
     fields: [
-      { label: "Height (in feet & inches)", value: (profile as any)?.["Height (in feet & inches)"] },
-      { label: "Chest/Bust (in inches)", value: (profile as any)?.["Chest/Bust (in inches)"] },
-      { label: "Waist (in inches)", value: (profile as any)?.["Waist (in inches)"] },
-      { label: "Hips (in inches)", value: (profile as any)?.["Hips (in inches)"] },
-      { label: "Shoe Size (UK)", value: (profile as any)?.["Shoe Size (UK)"] },
-      { label: "Hair Color", value: profile?.["Hair Color"] },
-      { label: "Eye Color", value: profile?.["Eye Color"] },
-      { label: "Skin Tone", value: profile?.["Skin Tone"] },
+      { label: "Height (in feet & inches)", value: gf("Height (in feet & inches)") },
+      { label: "Chest/Bust (in inches)", value: gf("Chest/Bust (in inches)") },
+      { label: "Waist (in inches)", value: gf("Waist (in inches)") },
+      { label: "Hips (in inches)", value: gf("Hips (in inches)") },
+      { label: "Shoe Size (UK)", value: gf("Shoe Size (UK)") },
+      { label: "Hair Color", value: gf("Hair Color") },
+      { label: "Eye Color", value: gf("Eye Color") },
+      { label: "Skin Tone", value: gf("Skin Tone") },
     ],
   });
 
   const getSocialMedia = (): ProfileSection => ({
     title: "Social & Media",
     fields: [
-      { label: "Instagram", value: profile?.["Instagram Link"] || profile?.["Instagram"] },
-      { label: "YouTube", value: profile?.["YouTube Channel"] },
-      { label: "IMDb", value: profile?.["IMDb"] },
+      { label: "Instagram", value: renderInstagramLink(gf("Instagram Link") || gf("Instagram")) },
+      { label: "YouTube", value: gf("YouTube Channel (if any)") || gf("YouTube Channel") },
+      { label: "IMDb", value: gf("IMDb / Wikipedia Page (if any) ") || gf("IMDb") },
     ],
   });
 
   const getExperience = (): ProfileSection => ({
     title: "Experience",
     fields: [
-      { label: "Prior modelling/acting experience", value: profile?.["Prior modelling/acting experience"] },
-      { label: "Previous Agency", value: profile?.["Previous Agency"] },
-      { label: "Acting Workshop Attended", value: profile?.["Acting Workshop Attended"] },
-      { label: "CINTAA/Union Card", value: profile?.["CINTAA/Union Card"] },
-      { label: "Languages Known", value: profile?.["Languages Known"] },
-      { label: "Dance Forms", value: profile?.["Dance Forms"] },
-      { label: "Extra-Curricular", value: profile?.["Extra-Curricular"] },
+      { label: "Prior modelling/acting experience", value: gf("Do you have any prior modeling or acting experience?") },
+      { label: "Experience details", value: gf("If Yes, briefly describe your experience or list any brands/projects") },
+      { label: "Previous Agency", value: gf("Any Previous Agency?") },
+      { label: "Acting Workshop Attended", value: gf("Any Acting Workshop Attended?  ") },
+      { label: "CINTAA/Union Card", value: gf("Do you have a CINTAA / Union Card?") },
+      { label: "Languages Known", value: gf("Languages Known") },
+      { label: "Dance Forms", value: gf("Dance Forms Known (if any)") },
+      { label: "Extra-Curricular", value: gf("Extra-Curricular Activities (if any)") },
     ],
   });
 
   const getWorkPreferences = (): ProfileSection => ({
     title: "Work Preferences",
     fields: [
-      { label: "Scope of Work Interested In", value: profile?.["Scope of Work Interested In"] },
-      { label: "Open for placement abroad", value: profile?.["Open for placement abroad"] },
-      { label: "Valid Passport", value: profile?.["Valid Passport"] },
-      { label: "Can drive 2-wheeler", value: profile?.["Can drive 2-wheeler"] },
-      { label: "Can drive 4-wheeler", value: profile?.["Can drive 4-wheeler"] },
-      { label: "Can Swim", value: profile?.["Can Swim"] },
-      { label: "Gamer", value: profile?.["Gamer"] },
+      { label: "Scope of Work Interested In", value: gf("Scope of Work Interested In (e.g., TV, Web, Fashion, Commercials)") },
+      { label: "Open for placement abroad", value: gf("Are you open for placement abroad?") },
+      { label: "Valid Passport", value: gf("Valid Passport?") },
+      { label: "Can drive 2-wheeler", value: gf("Can you drive a 2-wheeler? (Geared / Non-Geared)") },
+      { label: "Can drive 4-wheeler", value: gf("Can you drive a 4-wheeler? ") },
+      { label: "Can Swim", value: gf("Can you swim?  ") },
+      { label: "Gamer", value: gf("Are you a Gamer?") },
     ],
   });
 
   const getComfortConsent = (): ProfileSection => ({
     title: "Comfort & Consent",
     fields: [
-      { label: "Lingerie/bikini shoots", value: profile?.["Lingerie/bikini shoots"] },
-      { label: "Bold content for web/films", value: profile?.["Bold content for web/films"] },
-      { label: "Condom brand promotions", value: profile?.["Condom brand promotions"] },
-      { label: "Alcohol brand shoots", value: profile?.["Alcohol brand shoots"] },
-      { label: "Reality TV shows", value: profile?.["Reality TV shows"] },
-      { label: "Daily soaps", value: profile?.["Daily soaps"] },
-      { label: "Mother/father roles", value: profile?.["Mother/father roles"] },
-      { label: "Haircut", value: profile?.["Haircut"] },
-      { label: "Hair color changes", value: profile?.["Hair color changes"] },
+      { label: "Lingerie/bikini shoots", value: gf("Comfortable with lingerie / bikini / briefs shoots?") },
+      { label: "Bold content for web/films", value: gf("Comfortable with bold content for web series or films?") },
+      { label: "Condom brand promotions", value: gf("Comfortable with condom brand promotions or awareness campaigns?") },
+      { label: "Alcohol brand shoots", value: gf("Comfortable with alcohol brand shoots or commercials?") },
+      { label: "Reality TV shows", value: gf("Comfortable participating in reality TV shows?") },
+      { label: "Daily soaps", value: gf("Comfortable working in daily soaps or TV roles?") },
+      { label: "Mother/father roles", value: gf("Comfortable playing mother or father roles? (for applicants aged 23+)") },
+      { label: "Haircut", value: gf("Comfortable with haircut?") },
+      { label: "Hair color changes", value: gf("Comfortable with hair color changes?") },
     ],
   });
 
   const getManagementInfo = (): ProfileSection => ({
     title: "Management",
     fields: [
-      { label: "Status", value: profile?.["Status"] },
-      { label: "Talent Manager", value: profile?.["Talent Manager"] },
-      { label: "Notes", value: profile?.["Notes"] },
-      { label: "Progress", value: profile?.["Progress"] },
+      { label: "Status", value: gf("Status") },
+      { label: "Talent Manager", value: gf("Talent Manager") },
+      { label: "Notes", value: gf("Notes") },
+      { label: "Progress", value: gf("Progress") },
     ],
   });
 
   // Parse polaroids for gallery display
-  const polaroidLinks = profile ? parsePolaroidLinks(profile["Upload Polaroids (Required)"]) : [];
+  const profileAny = profile as unknown as Record<string, unknown>;
+  const polaroidLinks = profile ? parsePolaroidLinks(profileAny?.["Upload Polaroids (Required)"]) : [];
+
+  // Safe accessors for header section
+  const profileName = gf("Full Name") || "Unknown Talent";
+  const profileStatus = gf("Status") || "New";
+  const profileManager = gf("Talent Manager");
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -328,106 +455,110 @@ export function TalentProfileDialog({
         )}
 
         {profile && !isLoading && (
-          <div className="space-y-6">
-            {/* Header: Name as large heading + Status/Manager */}
-            <div className="space-y-3">
-              <h2 className="text-2xl font-bold text-foreground">
-                {profile["Full Name"]}
-              </h2>
-              <div className="flex flex-wrap gap-2">
-                <Badge variant={getStatusVariant(profile["Status"])} className="text-sm">
-                  {profile["Status"] || "New"}
-                </Badge>
-                {profile["Talent Manager"] && (
-                  <Badge variant="outline" className="text-sm">
-                    Manager: {profile["Talent Manager"]}
+          <ProfileErrorBoundary>
+            <div className="talent-profile space-y-5">
+              {/* Header: Name as large heading + Status/Manager */}
+              <div className="profile-header space-y-2">
+                <h2 className="text-2xl font-bold text-foreground break-words">
+                  {profileName}
+                </h2>
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant={getStatusVariant(profileStatus)} className="text-xs sm:text-sm">
+                    {profileStatus}
                   </Badge>
+                  {profileManager && (
+                    <Badge variant="outline" className="text-xs sm:text-sm break-words">
+                      Manager: {profileManager}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              {/* Image Gallery - prominently displayed */}
+              <div className="space-y-2">
+                <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Photos
+                </h3>
+                {polaroidLinks.length > 0 ? (
+                  <div className="photos-grid">
+                    {polaroidLinks.map((link, idx) => {
+                      const thumbnailUrl = getDriveThumbnailUrl(link);
+                      const fullUrl = getDriveImageUrl(link);
+                      return (
+                        <div
+                          key={idx}
+                          className="photo-item"
+                        >
+                          {thumbnailUrl ? (
+                            <a
+                              href={fullUrl || link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="block w-full h-full"
+                            >
+                              <img
+                                src={thumbnailUrl}
+                                alt={`Photo ${idx + 1}`}
+                                className="w-full h-full object-cover hover:opacity-90 transition-opacity"
+                                loading="lazy"
+                                onError={(e) => {
+                                  const img = e.currentTarget;
+                                  img.style.display = 'none';
+                                  const fallback = img.parentElement?.querySelector('.fallback-div') as HTMLElement | null;
+                                  if (fallback) fallback.classList.remove('hidden');
+                                }}
+                              />
+                              <div className="hidden fallback-div absolute inset-0 flex items-center justify-center bg-muted">
+                                <FileText className="h-6 w-6 text-muted-foreground" />
+                              </div>
+                            </a>
+                          ) : (
+                            <a
+                              href={link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-full h-full flex flex-col items-center justify-center bg-muted hover:bg-muted/80 transition-colors"
+                            >
+                              <FileText className="h-6 w-6 text-muted-foreground mb-1" />
+                              <span className="text-xs text-muted-foreground">View {idx + 1}</span>
+                            </a>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-8 sm:py-12 bg-muted/30 rounded-lg border border-border/50">
+                    <div className="bg-muted p-3 sm:p-4 rounded-full mb-2 sm:mb-3">
+                      <User className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground" />
+                    </div>
+                    <p className="text-muted-foreground text-xs sm:text-sm">No photos yet</p>
+                  </div>
                 )}
               </div>
+
+              {/* Basic Information */}
+              {renderSection(getBasicInfo())}
+
+              {/* Physical Attributes */}
+              {renderSection(getPhysicalAttributes())}
+
+              {/* Social & Media */}
+              {renderSection(getSocialMedia())}
+
+              {/* Experience */}
+              {renderSection(getExperience())}
+
+              {/* Work Preferences */}
+              {renderSection(getWorkPreferences())}
+
+              {/* Comfort & Consent */}
+              {renderSection(getComfortConsent())}
+
+              {/* Management Info */}
+              {renderSection(getManagementInfo())}
             </div>
-
-            {/* Image Gallery - prominently displayed */}
-            <div className="space-y-2">
-              <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                Photos
-              </h3>
-              {polaroidLinks.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                  {polaroidLinks.map((link, idx) => {
-                    const thumbnailUrl = getDriveThumbnailUrl(link);
-                    const fullUrl = getDriveImageUrl(link);
-                    return (
-                      <div
-                        key={idx}
-                        className="relative aspect-square rounded-lg overflow-hidden border border-border/50 bg-card"
-                      >
-                        {thumbnailUrl ? (
-                          <a
-                            href={fullUrl || link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="block w-full h-full"
-                          >
-                            <img
-                              src={thumbnailUrl}
-                              alt={`Photo ${idx + 1}`}
-                              className="w-full h-full object-cover hover:opacity-90 transition-opacity"
-                              loading="lazy"
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                                e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                              }}
-                            />
-                            <div className="hidden absolute inset-0 flex items-center justify-center bg-muted">
-                              <FileText className="h-8 w-8 text-muted-foreground" />
-                            </div>
-                          </a>
-                        ) : (
-                          <a
-                            href={link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="absolute inset-0 flex flex-col items-center justify-center bg-muted hover:bg-muted/80 transition-colors"
-                          >
-                            <FileText className="h-8 w-8 text-muted-foreground mb-2" />
-                            <span className="text-xs text-muted-foreground">View {idx + 1}</span>
-                          </a>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12 bg-muted/30 rounded-lg border border-border/50">
-                  <div className="bg-muted p-4 rounded-full mb-3">
-                    <User className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                  <p className="text-muted-foreground text-sm">No photos yet</p>
-                </div>
-              )}
-            </div>
-
-            {/* Basic Information */}
-            {renderSection(getBasicInfo())}
-
-            {/* Physical Attributes */}
-            {renderSection(getPhysicalAttributes())}
-
-            {/* Social & Media */}
-            {renderSection(getSocialMedia())}
-
-            {/* Experience */}
-            {renderSection(getExperience())}
-
-            {/* Work Preferences */}
-            {renderSection(getWorkPreferences())}
-
-            {/* Comfort & Consent */}
-            {renderSection(getComfortConsent())}
-
-            {/* Management Info */}
-            {renderSection(getManagementInfo())}
-          </div>
+          </ProfileErrorBoundary>
         )}
       </DialogContent>
     </Dialog>

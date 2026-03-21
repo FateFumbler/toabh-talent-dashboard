@@ -8,8 +8,9 @@ import { Badge } from "./components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./components/ui/select";
 import { fetchTalentMaster, fetchTalentDetails, updateStatus, assignManager } from "./services/api";
 import type { Talent, TalentDetails } from "@/types/talent";
-import { RefreshCw, Users, AlertCircle, LayoutGrid, List, User, Search, ExternalLink, FileText, Loader2, ChevronDown } from "lucide-react";
+import { RefreshCw, Users, AlertCircle, LayoutGrid, List, User, Search, ExternalLink, FileText, Loader2, ChevronDown, Settings as SettingsIcon } from "lucide-react";
 import { toast, Toaster } from "sonner";
+import { Settings, type Theme, getStoredTheme, useTheme } from "./components/Settings";
 
 const REFRESH_INTERVAL = 30000; // 30 seconds
 
@@ -37,10 +38,17 @@ function parseInstagram(value: string): string {
 const renderInstagramLink = (instagram: string | undefined): React.ReactNode => {
   if (!instagram || instagram.trim() === "") return <span className="text-muted-foreground">-</span>;
   const url = parseInstagram(instagram);
-  const display = instagram.trim().replace(/^https?:\/\/(www\.)?instagram\.com\//, "@").replace(/\/+$/, "");
+  // Strip URL prefix and any query params/fragments, keep just the handle
+  const display = instagram.trim()
+    .replace(/^https?:\/\/(www\.)?instagram\.com\//, "@")
+    .replace(/\/+$/, "")
+    .split('?')[0]
+    .split('#')[0];
+  // Ensure it starts with @
+  const handle = display.startsWith('@') ? display : `@${display}`;
   return (
     <a href={url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">
-      {display}
+      {handle}
       <ExternalLink className="h-3 w-3" />
     </a>
   );
@@ -229,7 +237,15 @@ function App() {
   // Track pending updates per rowIndex to show loading state on action buttons
   const [pendingUpdates, setPendingUpdates] = useState<Record<number, "status" | "manager">>({});
   // Tab navigation
-  const [activeTab, setActiveTab] = useState<"talent-master" | "talent-profile">("talent-master");
+  const [activeTab, setActiveTab] = useState<"talent-master" | "talent-profile" | "settings">("talent-master");
+  // Theme state
+  const [theme, setThemeState] = useState<Theme>(getStoredTheme);
+  const { setTheme } = useTheme();
+
+  const handleThemeChange = (t: Theme) => {
+    setThemeState(t);
+    setTheme(t);
+  };
   // View mode (list/grid), persisted to localStorage
   // Auto-detect default based on screen size: mobile (<768) & tablet (<1024) default to grid, desktop to list
   const [viewMode, setViewMode] = useState<"list" | "grid">(() => {
@@ -275,6 +291,14 @@ function App() {
         (t) => t["Full Name"] && t["Full Name"].trim() !== ""
       );
       
+      // Sort talents by rowIndex descending (newest first)
+      // Higher rowIndex = newer entry in the sheet
+      const sortedTalents = [...validTalents].sort((a, b) => {
+        const aRow = a.rowIndex || 0;
+        const bRow = b.rowIndex || 0;
+        return bRow - aRow; // Descending: highest rowIndex first
+      });
+      
       // Build details map keyed by phone number
       const detailsMap = new Map<string, TalentDetails>();
       for (const d of detailsData) {
@@ -283,7 +307,7 @@ function App() {
         }
       }
       
-      setTalents(validTalents);
+      setTalents(sortedTalents);
       setTalentDetailsMap(detailsMap);
       setLastUpdated(new Date());
     } catch (err) {
@@ -463,7 +487,7 @@ function App() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <header className="glass sticky top-0 z-10 border-b border-border/50">
+      <header className="glass sticky top-0 z-10 border-b border-border/50" style={{ paddingTop: 'env(safe-area-inset-top, 0)' }}>
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -471,8 +495,8 @@ function App() {
                 <Users className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-foreground">TOABH Talent Dashboard</h1>
-                <p className="text-sm text-muted-foreground">
+                <h1 className="text-lg sm:text-xl font-bold text-foreground">TOABH Talent</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   Talent Management CRM
                 </p>
               </div>
@@ -482,17 +506,17 @@ function App() {
               size="sm"
               onClick={loadTalents}
               disabled={isLoading}
-              className="hover:bg-accent/50"
+              className="hover:bg-accent/50 touch-target"
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
-              Sync
+              <RefreshCw className={`h-4 w-4 mr-0 sm:mr-2 ${isLoading ? "animate-spin" : ""}`} />
+              <span className="hidden sm:inline">Sync</span>
             </Button>
           </div>
         </div>
       </header>
 
       {/* Tab Navigation */}
-      <div className="container mx-auto px-4 py-4">
+      <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
         <div className="flex items-center gap-1 border-b border-border/50 pb-px">
           <button
             onClick={() => setActiveTab("talent-master")}
@@ -522,10 +546,24 @@ function App() {
               <span className="absolute bottom-0 left-0 right-0 h-px bg-primary" />
             )}
           </button>
+          <button
+            onClick={() => setActiveTab("settings")}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors relative ${
+              activeTab === "settings"
+                ? "text-primary"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <SettingsIcon className="h-4 w-4" />
+            Settings
+            {activeTab === "settings" && (
+              <span className="absolute bottom-0 left-0 right-0 h-px bg-primary" />
+            )}
+          </button>
         </div>
       </div>
 
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
         {/* Stats Cards - horizontally scrollable on mobile */}
         <div className="relative">
           {activeTile !== null && (
@@ -741,7 +779,7 @@ function App() {
                           <User className="h-4 w-4 text-primary" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="font-medium text-foreground truncate">
+                          <div className="font-medium text-foreground truncate capitalize">
                             {talent["Full Name"]}
                           </div>
                           <div className="text-sm text-muted-foreground truncate">
@@ -914,6 +952,13 @@ function App() {
             )}
           </div>
         )}
+
+        {/* Settings Tab */}
+        {activeTab === "settings" && (
+          <div className="max-w-2xl">
+            <Settings theme={theme} onThemeChange={handleThemeChange} />
+          </div>
+        )}
       </main>
 
       {/* Talent Profile Dialog */}
@@ -926,12 +971,12 @@ function App() {
       {/* Toast notifications */}
       <Toaster 
         position="top-right" 
-        theme="dark"
+        theme="system"
         toastOptions={{
           style: {
-            background: 'oklch(0.15 0.02 255)',
-            border: '1px solid oklch(0.35 0.02 255 / 0.5)',
-            color: 'oklch(0.95 0.01 255)',
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--border)',
+            color: 'var(--text-primary)',
           },
         }}
       />
@@ -1147,7 +1192,7 @@ function TalentGridView({
                   <User className="h-5 w-5 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-foreground truncate">
+                  <div className="font-semibold text-foreground truncate capitalize">
                     {talent["Full Name"]}
                   </div>
                   <div className="text-sm text-muted-foreground truncate">

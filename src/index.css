@@ -1,23 +1,114 @@
 @import "tailwindcss";
 
 /* ========================
+   THEME SYSTEM - CSS Variables
+   ======================== */
+
+:root,
+[data-theme="dark"] {
+  /* Dark theme (default) */
+  --bg-primary: oklch(0.05 0.02 255);
+  --bg-secondary: oklch(0.12 0.02 255);
+  --bg-card: oklch(0.12 0.02 255 / 0.8);
+  --text-primary: oklch(0.95 0.01 255);
+  --text-secondary: oklch(0.65 0.02 255);
+  --border: oklch(0.30 0.02 255 / 0.5);
+  --accent: oklch(0.22 0.02 255);
+  --accent-foreground: oklch(0.95 0.01 255);
+  --muted: oklch(0.18 0.02 255);
+  --muted-foreground: oklch(0.65 0.02 255);
+  --input: oklch(0.20 0.02 255);
+  --ring: oklch(0.55 0.2 280);
+  --primary: oklch(0.55 0.2 280);
+  --primary-foreground: oklch(0.98 0.01 255);
+  --secondary: oklch(0.18 0.02 255);
+  --secondary-foreground: oklch(0.90 0.01 255);
+  --card: oklch(0.12 0.02 255 / 0.8);
+  --card-foreground: oklch(0.95 0.01 255);
+  --popover: oklch(0.12 0.02 255 / 0.9);
+  --popover-foreground: oklch(0.95 0.01 255);
+  --destructive: oklch(0.60 0.22 25);
+  --destructive-foreground: oklch(0.98 0.01 255);
+  --success: oklch(0.65 0.2 145);
+  --warning: oklch(0.75 0.18 85);
+  --info: oklch(0.60 0.15 250);
+  
+  /* Glass effects */
+  --glass-bg: oklch(0.12 0.02 255 / 0.8);
+  --glass-border: oklch(0.30 0.02 255 / 0.5);
+  
+  /* Scrollbar */
+  --scrollbar-track: oklch(0.12 0.02 255);
+  --scrollbar-thumb: oklch(0.30 0.02 255 / 0.5);
+}
+
+[data-theme="light"] {
+  /* Light theme */
+  --bg-primary: oklch(0.98 0.01 255);
+  --bg-secondary: oklch(0.96 0.01 255);
+  --bg-card: oklch(1 0 0 / 1);
+  --text-primary: oklch(0.15 0.02 255);
+  --text-secondary: oklch(0.50 0.02 255);
+  --border: oklch(0.90 0.01 255);
+  --accent: oklch(0.55 0.15 280);
+  --accent-foreground: oklch(1 0 0 / 1);
+  --muted: oklch(0.93 0.01 255);
+  --muted-foreground: oklch(0.50 0.02 255);
+  --input: oklch(0.93 0.01 255);
+  --ring: oklch(0.55 0.15 280);
+  --primary: oklch(0.55 0.15 280);
+  --primary-foreground: oklch(1 0 0 / 1);
+  --secondary: oklch(0.93 0.01 255);
+  --secondary-foreground: oklch(0.15 0.02 255);
+  --card: oklch(1 0 0 / 1);
+  --card-foreground: oklch(0.15 0.02 255);
+  --popover: oklch(1 0 0 / 1);
+  --popover-foreground: oklch(0.15 0.02 255);
+  --destructive: oklch(0.55 0.20 25);
+  --destructive-foreground: oklch(1 0 0 / 1);
+  --success: oklch(0.55 0.18 145);
+  --warning: oklch(0.70 0.16 85);
+  --info: oklch(0.55 0.13 250);
+  
+  /* Glass effects - lighter in light mode */
+  --glass-bg: oklch(1 0 0 / 0.8);
+  --glass-border: oklch(0.90 0.01 255);
+  
+  /* Scrollbar */
+  --scrollbar-track: oklch(0.93 0.01 255);
+  --scrollbar-thumb: oklch(0.85 0.02 255 / 0.5);
+}
+
+/* ========================
    RESPONSIVE STYLES - Mobile First
    ======================== */
 
-/* Mobile stats cards - horizontal scroll */
-.stats-scroll {
-  display: flex;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-  gap: 1rem;
-  padding-bottom: 0.5rem;
+/* GLOBAL: Prevent horizontal scroll */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
 }
 
-.stats-scroll > * {
-  scroll-snap-align: start;
-  flex-shrink: 0;
-  min-width: 140px;
+* {
+  box-sizing: border-box;
+}
+
+/* Mobile stats - 2x2 GRID, NO scroll */
+.stats-container {
+  overflow-x: hidden;
+  width: 100%;
+}
+
+.stats-scroll {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 0.75rem !important;
+  width: 100% !important;
+  overflow-x: hidden !important;
+  scroll-snap-type: none !important;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 0 !important;
 }
 
 /* Hide scrollbar but keep functionality */
@@ -28,17 +119,6 @@
 .stats-scroll {
   -ms-overflow-style: none;
   scrollbar-width: none;
-}
-
-/* Stats card mobile optimization */
-@media (max-width: 767px) {
-  .stats-card {
-    padding: 0.75rem;
-  }
-  
-  .stats-card .text-3xl {
-    font-size: 1.5rem;
-  }
 }
 
 /* Mobile filters - collapsible */
@@ -56,11 +136,13 @@
 .talent-grid {
   display: grid;
   gap: 1rem;
+  width: 100%;
 }
 
 @media (max-width: 639px) {
   .talent-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
   }
 }
 
@@ -85,7 +167,8 @@
 /* Mobile talent card optimizations */
 @media (max-width: 767px) {
   .talent-card {
-    padding: 0.875rem;
+    padding: 1rem !important;
+    width: 100% !important;
   }
   
   .talent-card .card-actions {
@@ -95,6 +178,23 @@
   .talent-card:hover .card-actions,
   .talent-card:focus-within .card-actions {
     display: flex;
+  }
+}
+
+/* Stats card mobile optimization */
+@media (max-width: 767px) {
+  .stats-card {
+    padding: 0.75rem !important;
+    width: 100% !important;
+  }
+  
+  .stats-card .text-3xl {
+    font-size: 1.5rem;
+  }
+  
+  .stats-scroll > * {
+    min-width: 0 !important;
+    flex-shrink: 0 !important;
   }
 }
 
@@ -144,29 +244,29 @@
    ======================== */
 
 @theme {
-  /* Dark Glass Theme Colors */
-  --color-background: oklch(0.05 0.02 255);
-  --color-foreground: oklch(0.95 0.01 255);
-  --color-card: oklch(0.12 0.02 255 / 0.8);
-  --color-card-foreground: oklch(0.95 0.01 255);
-  --color-popover: oklch(0.12 0.02 255 / 0.9);
-  --color-popover-foreground: oklch(0.95 0.01 255);
-  --color-primary: oklch(0.55 0.2 280);
-  --color-primary-foreground: oklch(0.98 0.01 255);
-  --color-secondary: oklch(0.18 0.02 255);
-  --color-secondary-foreground: oklch(0.90 0.01 255);
-  --color-muted: oklch(0.18 0.02 255);
-  --color-muted-foreground: oklch(0.65 0.02 255);
-  --color-accent: oklch(0.22 0.02 255);
-  --color-accent-foreground: oklch(0.95 0.01 255);
-  --color-destructive: oklch(0.60 0.22 25);
-  --color-destructive-foreground: oklch(0.98 0.01 255);
-  --color-border: oklch(0.30 0.02 255 / 0.5);
-  --color-input: oklch(0.20 0.02 255);
-  --color-ring: oklch(0.55 0.2 280);
-  --color-success: oklch(0.65 0.2 145);
-  --color-warning: oklch(0.75 0.18 85);
-  --color-info: oklch(0.60 0.15 250);
+  /* Theme-aware colors using CSS variables */
+  --color-background: var(--bg-primary);
+  --color-foreground: var(--text-primary);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
   --radius: 0.75rem;
 }
 
@@ -177,40 +277,40 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: oklch(0.12 0.02 255);
+  background: var(--scrollbar-track);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: oklch(0.30 0.02 255 / 0.5);
+  background: var(--scrollbar-thumb);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.35 0.02 255 / 0.7);
+  background: var(--border);
 }
 
 /* Glass morphism utilities */
 .glass {
-  background: oklch(0.12 0.02 255 / 0.8);
+  background: var(--glass-bg);
   backdrop-filter: blur(16px);
-  border: 1px solid oklch(0.30 0.02 255 / 0.5);
+  border: 1px solid var(--glass-border);
 }
 
 .glass-card {
-  background: oklch(0.12 0.02 255 / 0.8);
+  background: var(--glass-bg);
   backdrop-filter: blur(16px);
-  border: 1px solid oklch(0.30 0.02 255 / 0.5);
-  box-shadow: 0 4px 24px oklch(0 0 0 / 0.3);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 4px 24px oklch(0 0 0 / 0.15);
 }
 
 .glass-dialog {
-  background: oklch(0.10 0.02 255 / 0.95);
+  background: var(--glass-bg);
   backdrop-filter: blur(24px);
-  border: 1px solid oklch(0.35 0.02 255 / 0.6);
+  border: 1px solid var(--glass-border);
 }
 
-/* Glow effects */
+/* Glow effects - using CSS variables where possible */
 .glow-primary {
   box-shadow: 0 0 20px oklch(0.55 0.2 280 / 0.3);
 }
@@ -231,7 +331,7 @@
   box-shadow: 0 0 15px oklch(0.60 0.22 25 / 0.3);
 }
 
-/* Status dot indicators */
+/* Status dot indicators - using CSS variables */
 .status-dot {
   width: 8px;
   height: 8px;
@@ -240,41 +340,41 @@
 }
 
 .status-dot-onboarded {
-  background: oklch(0.65 0.2 145);
-  box-shadow: 0 0 6px oklch(0.65 0.2 145 / 0.6);
+  background: var(--success);
+  box-shadow: 0 0 6px var(--success);
 }
 
 .status-dot-meeting {
-  background: oklch(0.75 0.18 85);
-  box-shadow: 0 0 6px oklch(0.75 0.18 85 / 0.6);
+  background: var(--warning);
+  box-shadow: 0 0 6px var(--warning);
 }
 
 .status-dot-kyc {
-  background: oklch(0.60 0.15 250);
-  box-shadow: 0 0 6px oklch(0.60 0.15 250 / 0.6);
+  background: var(--info);
+  box-shadow: 0 0 6px var(--info);
 }
 
 .status-dot-rejected {
-  background: oklch(0.60 0.22 25);
-  box-shadow: 0 0 6px oklch(0.60 0.22 25 / 0.6);
+  background: var(--destructive);
+  box-shadow: 0 0 6px var(--destructive);
 }
 
 .status-dot-new {
-  background: oklch(0.65 0.02 255);
-  box-shadow: 0 0 6px oklch(0.65 0.02 255 / 0.6);
+  background: var(--muted);
+  box-shadow: 0 0 6px var(--muted);
 }
 
-/* Sonner toast dark styling */
+/* Sonner toast styling - uses theme variables */
 [data-sonner-toaster] {
-  --toast-bg: oklch(0.15 0.02 255) !important;
-  --toast-border: oklch(0.35 0.02 255 / 0.5) !important;
-  --toast-text: oklch(0.95 0.01 255) !important;
+  --toast-bg: var(--bg-secondary) !important;
+  --toast-border: var(--border) !important;
+  --toast-text: var(--text-primary) !important;
 }
 
 /* Animation for subtle hover effects */
 @keyframes subtle-glow {
   0%, 100% {
-    box-shadow: 0 4px 24px oklch(0 0 0 / 0.3);
+    box-shadow: 0 4px 24px oklch(0 0 0 / 0.15);
   }
   50% {
     box-shadow: 0 4px 32px oklch(0.55 0.2 280 / 0.15);
@@ -283,4 +383,142 @@
 
 .hover-glow:hover {
   animation: subtle-glow 2s ease-in-out;
+}
+
+/* ========================
+   TALENT PROFILE DIALOG - Mobile Optimized
+   ======================== */
+
+/* Prevent ALL text overflow globally in profile */
+.talent-profile *,
+.talent-profile *::before,
+.talent-profile *::after {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* Global overflow hidden for profile content */
+.talent-profile-content {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+/* Profile section cards */
+.talent-profile .profile-card {
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  border-radius: 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+/* Profile section title */
+.talent-profile .profile-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+/* Profile field wrapper */
+.talent-profile .profile-field {
+  padding: 6px 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Profile field label */
+.talent-profile .profile-field-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  margin-bottom: 2px;
+  line-height: 1.3;
+}
+
+/* Profile field value */
+.talent-profile .profile-field-value {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.3;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+/* URL text handling - truncate with ellipsis for inline display */
+.talent-profile .url-text {
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  max-width: 100%;
+  display: block;
+}
+
+/* Photos grid */
+.talent-profile .photos-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.talent-profile .photo-item {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.talent-profile .photo-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Profile header */
+.talent-profile .profile-header {
+  margin-bottom: 16px;
+}
+
+.talent-profile .profile-header h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  word-break: break-word;
+}
+
+/* Mobile profile optimizations */
+@media (max-width: 767px) {
+  .talent-profile .profile-card {
+    padding: 10px 12px;
+    margin-bottom: 10px;
+  }
+  
+  .talent-profile .profile-section-title {
+    font-size: 13px;
+  }
+  
+  .talent-profile .profile-field-label {
+    font-size: 11px;
+  }
+  
+  .talent-profile .profile-field-value {
+    font-size: 12px;
+  }
+  
+  .talent-profile .profile-header h2 {
+    font-size: 18px;
+  }
+}
+
+/* Ensure dialog doesn't overflow */
+.glass-dialog {
+  max-width: 100vw !important;
+  overflow-x: hidden;
+}
+
+.glass-dialog > * {
+  max-width: 100%;
+  overflow-x: hidden;
 }
