@@ -325,6 +325,36 @@ function StatCard({
   );
 }
 
+// Helper to format height properly
+function formatHeight(height: string | undefined | null): string {
+  if (!height) return "-";
+  const trimmed = String(height).trim();
+  if (!trimmed) return "-";
+  
+  // Handle formats like "5'5 in feet 65 in inches" or "5'6 in feet"
+  // Extract just the feet'inches portion
+  const feetInchesMatch = trimmed.match(/(\d+'\d+"?)/);
+  if (feetInchesMatch) {
+    return feetInchesMatch[1].replace(/"/g, "");
+  }
+  
+  if (trimmed.includes("'") || trimmed.includes("ft")) {
+    // Clean up formats like 5'5" or 5'6
+    return trimmed.replace(/"/g, "").replace(/ ft /g, "'").replace(/ in$/g, "\"").replace(/ inches$/g, "\"");
+  }
+  const inches = parseInt(trimmed, 10);
+  if (!isNaN(inches)) {
+    if (inches >= 12) {
+      const feet = Math.floor(inches / 12);
+      const remainingInches = inches % 12;
+      return remainingInches > 0 ? `${feet}'${remainingInches}"` : `${feet}'`;
+    } else {
+      return `${inches}"`;
+    }
+  }
+  return trimmed;
+}
+
 function App() {
   const [talents, setTalents] = useState<Talent[]>([]);
   const [talentDetailsMap, setTalentDetailsMap] = useState<
@@ -1413,7 +1443,7 @@ function TalentGridView({
               <div className="flex flex-col gap-3">
                 {/* Header */}
                 <div className="flex items-start gap-3">
-                  <div className="bg-primary/10 p-1 rounded-lg shrink-0 overflow-hidden">
+                  <div className="bg-muted p-1 rounded-lg shrink-0 overflow-hidden">
                     {profileImageUrl ? (
                       <img
                         src={profileImageUrl}
@@ -1426,9 +1456,9 @@ function TalentGridView({
                       />
                     ) : null}
                     <div
-                      className={`bg-primary/10 p-2 rounded-lg shrink-0 ${profileImageUrl ? "hidden" : ""}`}
+                      className={`bg-muted p-2 rounded-lg shrink-0 ${profileImageUrl ? "hidden" : ""}`}
                     >
-                      <User className="h-5 w-5 text-primary" />
+                      <User className="h-5 w-5 text-muted-foreground" />
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
@@ -1463,21 +1493,21 @@ function TalentGridView({
                 </div>
 
                 {/* Details Row */}
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
                   {talent["Gender"] && (
-                    <>
-                      <span className="truncate">{talent["Gender"]}</span>
-                      <span className="text-border">•</span>
-                    </>
+                    <span className="whitespace-nowrap">{talent["Gender"]}</span>
+                  )}
+                  {talent["Gender"] && talent["Age"] && (
+                    <span className="text-border">•</span>
                   )}
                   {talent["Age"] && (
-                    <>
-                      <span className="truncate">{talent["Age"]} yrs</span>
-                      <span className="text-border">•</span>
-                    </>
+                    <span className="whitespace-nowrap">{talent["Age"]} yrs</span>
+                  )}
+                  {(talent["Gender"] || talent["Age"]) && talent["Height"] && (
+                    <span className="text-border">•</span>
                   )}
                   {talent["Height"] && (
-                    <span className="truncate">{talent["Height"]}</span>
+                    <span className="whitespace-nowrap">{formatHeight(talent["Height"])}</span>
                   )}
                 </div>
 
@@ -1599,3 +1629,4 @@ function GridMoreMenu({
 }
 
 export default App;
+App;

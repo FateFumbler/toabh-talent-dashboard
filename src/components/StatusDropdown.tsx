@@ -54,7 +54,9 @@ export function StatusDropdown({
   hasManager = true,
 }: StatusDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number; width: number } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -63,6 +65,7 @@ export function StatusDropdown({
         !dropdownRef.current.contains(event.target as Node)
       ) {
         setIsOpen(false);
+        setDropdownPosition(null);
       }
     }
 
@@ -76,6 +79,7 @@ export function StatusDropdown({
     function handleEscape(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setIsOpen(false);
+        setDropdownPosition(null);
       }
     }
 
@@ -88,24 +92,50 @@ export function StatusDropdown({
   const handleSelect = (status: StatusValue) => {
     if (status === currentStatus) {
       setIsOpen(false);
+      setDropdownPosition(null);
       return;
     }
 
     if (status === "Onboarded" && !hasManager) {
       toast.error("Please assign a Talent Manager first");
       setIsOpen(false);
+      setDropdownPosition(null);
       return;
     }
 
     onStatusChange(rowIndex, status);
     setIsOpen(false);
+    setDropdownPosition(null);
     toast.success(`Status updated to ${status}`);
+  };
+
+  const handleTriggerClick = () => {
+    if (disabled || isLoading) return;
+    
+    if (!isOpen && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+      });
+    } else {
+      setDropdownPosition(null);
+    }
+    setIsOpen(!isOpen);
   };
 
   const styles = statusStyles[currentStatus] || statusStyles["New"];
 
-  const dropdownContent = isOpen ? (
-    <div className="dropdown-animate absolute right-0 top-full mt-1 w-full sm:w-56 max-w-full bg-popover border border-border rounded-xl shadow-xl z-[9999] overflow-hidden">
+  const dropdownContent = isOpen && dropdownPosition ? (
+    <div
+      className="dropdown-animate fixed bg-popover border border-border rounded-xl shadow-xl z-[9999] overflow-hidden"
+      style={{
+        top: `${dropdownPosition.top}px`,
+        left: `${dropdownPosition.left}px`,
+        minWidth: `${dropdownPosition.width}px`,
+      }}
+    >
       <div className="py-1">
         {STATUS_VALUES.map((status) => {
           const s = statusStyles[status];
@@ -138,10 +168,8 @@ export function StatusDropdown({
   return (
     <div className="relative dropdown-container" ref={dropdownRef}>
       <button
-        onClick={(e) => {
-          e.stopPropagation();
-          if (!disabled) setIsOpen(!isOpen);
-        }}
+        ref={triggerRef}
+        onClick={handleTriggerClick}
         disabled={disabled || isLoading}
         className={`inline-flex items-center gap-2 px-3 py-2 sm:py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap min-h-[44px] sm:min-h-[auto] border ${styles.btnClass} hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`}
         style={{ minWidth: "140px", justifyContent: "center" }}
@@ -153,7 +181,7 @@ export function StatusDropdown({
         )}
         <span>{currentStatus || "New"}</span>
         <ChevronDown
-          className="h-4 w-4 sm:h-3 sm:w-3 transition-transform"
+          className="h-4 w-4 sm:h-3 sm:w-3 transition-transform duration-200"
           style={{
             transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
           }}

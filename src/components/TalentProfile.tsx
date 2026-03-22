@@ -179,7 +179,16 @@ function formatHeight(height: string | undefined | null): string {
   if (!height) return "-";
   const trimmed = String(height).trim();
   if (!trimmed) return "-";
+  
+  // Handle formats like "5'5 in feet 65 in inches" or "5'6 in feet"
+  // Extract just the feet'inches portion
+  const feetInchesMatch = trimmed.match(/(\d+'\d+"?)/);
+  if (feetInchesMatch) {
+    return feetInchesMatch[1].replace(/"/g, "");
+  }
+  
   if (trimmed.includes("'") || trimmed.includes("ft")) {
+    // Clean up formats like 5'5" or 5'6
     return trimmed
       .replace(/"/g, "")
       .replace(/ ft /g, "'")
@@ -816,7 +825,14 @@ export function TalentProfileDialog({
                           className="inline-flex items-center gap-1.5 px-3 py-2 bg-secondary text-secondary-foreground rounded-full text-sm font-medium hover:bg-secondary/80 transition-all min-h-[44px] sm:min-h-[auto] border border-border"
                         >
                           <span>Manager: {profileManager}</span>
-                          <ChevronDown className="h-4 w-4" />
+                          <ChevronDown
+                            className="h-4 w-4 transition-transform duration-200"
+                            style={{
+                              transform: isManagerDropdownOpen
+                                ? "rotate(180deg)"
+                                : "rotate(0deg)",
+                            }}
+                          />
                         </button>
                       ) : (
                         <Badge variant="outline" className="text-xs sm:text-sm break-words">
@@ -831,7 +847,14 @@ export function TalentProfileDialog({
                         className="inline-flex items-center gap-1.5 px-3 py-2 bg-secondary text-secondary-foreground rounded-full text-sm font-medium hover:bg-secondary/80 transition-all min-h-[44px] sm:min-h-[auto] border border-border"
                       >
                         <span>Assign Manager</span>
-                        <ChevronDown className="h-4 w-4" />
+                        <ChevronDown
+                          className="h-4 w-4 transition-transform duration-200"
+                          style={{
+                            transform: isManagerDropdownOpen
+                              ? "rotate(180deg)"
+                              : "rotate(0deg)",
+                          }}
+                        />
                       </button>
                     ) : (
                       <Badge
@@ -855,10 +878,9 @@ export function TalentProfileDialog({
                               top:
                                 (managerDropdownRef.current?.getBoundingClientRect()
                                   .bottom ?? 0) + 4,
-                              right:
-                                window.innerWidth -
-                                (managerDropdownRef.current?.getBoundingClientRect()
-                                  .right ?? 0),
+                              left:
+                                managerDropdownRef.current?.getBoundingClientRect()
+                                  .left ?? 0,
                             }}
                             onClick={(e) => e.stopPropagation()}
                           >
