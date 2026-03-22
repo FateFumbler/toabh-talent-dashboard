@@ -609,7 +609,7 @@ function App() {
                   <span className="h-2 w-2 rounded-full bg-indigo-500" />
                 )}
               </h3>
-              <p className="text-2xl font-bold text-white mt-auto">{totalTalents}</p>
+              <p className="text-xl font-bold text-white bg-gray-700/50 rounded-xl px-3 py-2 mt-2 text-center">{totalTalents}</p>
             </Card>
             <Card 
               className={`hover-glow transition-all duration-300 cursor-pointer stats-card flex flex-col justify-between h-full p-3 ${
@@ -623,7 +623,7 @@ function App() {
                   <span className="h-2 w-2 rounded-full bg-indigo-500" />
                 )}
               </h3>
-              <p className="text-2xl font-bold text-warning glow-warning mt-auto">{meetingRequiredCount}</p>
+              <p className="text-xl font-bold text-white bg-gray-700/50 rounded-xl px-3 py-2 mt-2 text-center">{meetingRequiredCount}</p>
             </Card>
             <Card 
               className={`hover-glow transition-all duration-300 cursor-pointer stats-card flex flex-col justify-between h-full p-3 ${
@@ -637,7 +637,7 @@ function App() {
                   <span className="h-2 w-2 rounded-full bg-indigo-500" />
                 )}
               </h3>
-              <p className="text-2xl font-bold text-info glow-info mt-auto">{kycRequiredCount}</p>
+              <p className="text-xl font-bold text-white bg-gray-700/50 rounded-xl px-3 py-2 mt-2 text-center">{kycRequiredCount}</p>
             </Card>
             <Card 
               className={`hover-glow transition-all duration-300 cursor-pointer stats-card flex flex-col justify-between h-full p-3 ${
@@ -651,7 +651,7 @@ function App() {
                   <span className="h-2 w-2 rounded-full bg-indigo-500" />
                 )}
               </h3>
-              <p className="text-2xl font-bold text-success glow-success mt-auto">{onboardedCount}</p>
+              <p className="text-xl font-bold text-white bg-gray-700/50 rounded-xl px-3 py-2 mt-2 text-center">{onboardedCount}</p>
             </Card>
           </div>
         </div>

@@ -151,11 +151,6 @@ html, body {
   }
   
   .talent-card .card-actions {
-    display: none;
-  }
-  
-  .talent-card:hover .card-actions,
-  .talent-card:focus-within .card-actions {
     display: flex;
   }
 }
