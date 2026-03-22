@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { TalentTable } from "./components/TalentTable";
 import { TalentProfileDialog } from "./components/TalentProfile";
+import { ContractsTab } from "./components/ContractsTab";
 import { Card, CardContent, CardHeader, CardTitle } from "./components/ui/card";
 import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
@@ -237,7 +238,7 @@ function App() {
   // Track pending updates per rowIndex to show loading state on action buttons
   const [pendingUpdates, setPendingUpdates] = useState<Record<number, "status" | "manager">>({});
   // Tab navigation
-  const [activeTab, setActiveTab] = useState<"talent-master" | "talent-profile" | "settings">("talent-master");
+  const [activeTab, setActiveTab] = useState<"talent-master" | "talent-profile" | "settings" | "contracts">("talent-master");
   // Theme state
   const [theme, setThemeState] = useState<Theme>(getStoredTheme);
   const { setTheme } = useTheme();
@@ -561,6 +562,20 @@ function App() {
             )}
           </button>
           */}
+          <button
+            onClick={() => setActiveTab("contracts")}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors relative ${
+              activeTab === "contracts"
+                ? "text-primary"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <FileText className="h-4 w-4" />
+            Contracts
+            {activeTab === "contracts" && (
+              <span className="absolute bottom-0 left-0 right-0 h-px bg-primary" />
+            )}
+          </button>
           <button
             onClick={() => setActiveTab("settings")}
             className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors relative ${
@@ -967,6 +982,11 @@ function App() {
               </div>
             )}
           </div>
+        )}
+
+        {/* Contracts Tab */}
+        {activeTab === "contracts" && (
+          <ContractsTab />
         )}
 
         {/* Settings Tab */}
