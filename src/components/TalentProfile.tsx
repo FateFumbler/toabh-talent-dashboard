@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef, Component } from "react";
+import { createPortal } from "react-dom";
 import type { ReactNode } from "react";
 import {
   Dialog,
@@ -712,26 +713,37 @@ export function TalentProfileDialog({
                       </Badge>
                     )}
                     
-                    {/* Manager Dropdown Panel */}
-                    {isManagerDropdownOpen && (
-                      <div className="absolute right-0 top-full mt-1 z-[9999] w-full sm:w-56 max-w-full bg-popover border border-border rounded-xl shadow-xl p-2">
-                        <AnimatedList
-                          items={MANAGERS.map(manager => ({ label: manager, value: manager }))}
-                          onItemSelect={(item) => {
-                            if (onManagerAssign && typeof rowIndex === 'number') {
-                              onManagerAssign(rowIndex, item.value);
-                              toast.success(`Manager updated to ${item.value}`);
-                            }
-                            setIsManagerDropdownOpen(false);
+                    {/* Manager Dropdown Panel - Portal to avoid Dialog overflow clipping */}
+                    {isManagerDropdownOpen && typeof document !== 'undefined' && createPortal(
+                      <div className="fixed inset-0 z-[9998]" onClick={() => setIsManagerDropdownOpen(false)}>
+                        <div 
+                          className="absolute right-0 top-full mt-1 w-full sm:w-56 max-w-full bg-popover border border-border rounded-xl shadow-xl p-2"
+                          style={{ 
+                            position: 'fixed',
+                            top: managerDropdownRef.current?.getBoundingClientRect().bottom ?? 0,
+                            right: managerDropdownRef.current ? window.innerWidth - managerDropdownRef.current.getBoundingClientRect().right : 0,
                           }}
-                          showGradients={true}
-                          displayScrollbar={false}
-                          enableArrowNavigation={true}
-                          selectedValue={profileManager || undefined}
-                          className="w-full"
-                          itemClassName=""
-                        />
-                      </div>
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <AnimatedList
+                            items={MANAGERS.map(manager => ({ label: manager, value: manager }))}
+                            onItemSelect={(item) => {
+                              if (onManagerAssign && typeof rowIndex === 'number') {
+                                onManagerAssign(rowIndex, item.value);
+                                toast.success(`Manager updated to ${item.value}`);
+                              }
+                              setIsManagerDropdownOpen(false);
+                            }}
+                            showGradients={true}
+                            displayScrollbar={false}
+                            enableArrowNavigation={true}
+                            selectedValue={profileManager || undefined}
+                            className="w-full"
+                            itemClassName=""
+                          />
+                        </div>
+                      </div>,
+                      document.body
                     )}
                   </div>
                 </div>

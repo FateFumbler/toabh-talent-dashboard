@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { ChevronDown, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import type { StatusValue } from "@/types/talent";
@@ -80,8 +81,40 @@ export function StatusDropdown({
 
   const colors = statusColors[currentStatus] || statusColors["New"];
 
+  const dropdownContent = isOpen ? (
+    <div 
+      className="absolute right-0 top-full mt-1 dropdown-animate w-full sm:w-56 max-w-full bg-popover border border-border rounded-xl shadow-xl"
+      style={{ 
+        zIndex: 9999,
+      }}
+    >
+      <div className="py-1">
+        {STATUS_VALUES.map((status) => {
+          const statusColor = statusColors[status];
+          const isSelected = status === currentStatus;
+          
+          return (
+            <button
+              key={status}
+              onClick={() => handleSelect(status)}
+              className={`w-full flex items-center gap-2 px-3 py-3 sm:py-2.5 text-sm text-popover-foreground hover:bg-accent transition-colors min-h-[44px] ${
+                isSelected ? "bg-accent/60 font-medium" : ""
+              }`}
+            >
+              <span className={`w-2 h-2 rounded-full shrink-0 ${statusColor.dot}`} />
+              <span className="flex-1 text-left">{status}</span>
+              {isSelected && (
+                <span className="text-xs text-muted-foreground">Current</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  ) : null;
+
   return (
-    <div className="relative dropdown-container" ref={dropdownRef} style={{ overflow: 'visible' }}>
+    <div className="relative dropdown-container" ref={dropdownRef}>
       <button
         onClick={(e) => {
           e.stopPropagation();
@@ -100,37 +133,7 @@ export function StatusDropdown({
         <ChevronDown className="h-4 w-4 sm:h-3 sm:w-3 transition-transform" />
       </button>
 
-      {isOpen && (
-        <div 
-          className="absolute right-0 top-full mt-1 dropdown-animate w-full sm:w-56 max-w-full bg-popover border border-border rounded-xl shadow-xl"
-          style={{ 
-            zIndex: 9999,
-          }}
-        >
-          <div className="py-1">
-            {STATUS_VALUES.map((status) => {
-              const statusColor = statusColors[status];
-              const isSelected = status === currentStatus;
-              
-              return (
-                <button
-                  key={status}
-                  onClick={() => handleSelect(status)}
-                  className={`w-full flex items-center gap-2 px-3 py-3 sm:py-2.5 text-sm text-popover-foreground hover:bg-accent transition-colors min-h-[44px] ${
-                    isSelected ? "bg-accent/60 font-medium" : ""
-                  }`}
-                >
-                  <span className={`w-2 h-2 rounded-full shrink-0 ${statusColor.dot}`} />
-                  <span className="flex-1 text-left">{status}</span>
-                  {isSelected && (
-                    <span className="text-xs text-muted-foreground">Current</span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      {typeof document !== 'undefined' && createPortal(dropdownContent, document.body)}
     </div>
   );
 }
