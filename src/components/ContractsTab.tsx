@@ -97,11 +97,20 @@ export function ContractsTab() {
     // Fetch talent master for dropdown
     fetchTalentMaster()
       .then((data) => {
-        if (data) {
-          setTalents(data.filter((t: any) => t["Full Name"]));
+        if (Array.isArray(data)) {
+          setTalents(data.filter((t: any) => t && t["Full Name"]));
+        } else if (data && typeof data === 'object' && Array.isArray((data as any).talents)) {
+          // Handle case where API returns { talents: [...] }
+          setTalents((data as any).talents.filter((t: any) => t && t["Full Name"]));
+        } else {
+          console.warn('Unexpected talent master data format:', data);
+          setTalents([]);
         }
       })
-      .catch(console.error);
+      .catch((err) => {
+        console.error('Failed to fetch talent master:', err);
+        setTalents([]);
+      });
   }, []);
 
   const handleViewContract = (link: string) => {
@@ -153,7 +162,8 @@ export function ContractsTab() {
   });
 
   // Filter talents for searchable dropdown
-  const filteredTalents = talents.filter(t => {
+  const filteredTalents = (talents || []).filter(t => {
+    if (!t) return false;
     const search = talentSearch.toLowerCase();
     const name = (t["Full Name"] || '').toLowerCase();
     const phone = (t["Phone"] || '').toLowerCase();
@@ -230,7 +240,7 @@ export function ContractsTab() {
         <Card className="p-4 border-primary/50">
           <h3 className="font-semibold mb-3">Add Local Contract</h3>
           <form onSubmit={handleAddContract} className="space-y-3">
-            <div className="mb-3">
+            <div className="mb-3 relative">
               <label className="block text-xs font-medium text-gray-400 mb-1">
                 Select Talent (for linking)
               </label>
