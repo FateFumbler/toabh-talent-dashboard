@@ -486,31 +486,90 @@ function App() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Header */}
-      <header className="glass sticky top-0 z-10 border-b border-border/50" style={{ paddingTop: 'env(safe-area-inset-top, 0)' }}>
-        <div className="container mx-auto px-4 py-4">
+      {/* Header - Premium Glassmorphism */}
+      <header
+        className="sticky top-0 z-10"
+        style={{
+          background: 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderBottom: '1px solid rgba(0,0,0,0.05)',
+          padding: '20px 32px',
+          boxShadow: '0 4px 30px rgba(0,0,0,0.05)',
+        }}
+      >
+        <div className="container mx-auto px-4">
           <div className="flex items-center justify-between">
+            {/* Logo Section (Left) */}
             <div className="flex items-center gap-3">
-              <div className="bg-primary/20 p-2.5 rounded-xl glow-primary">
-                <Users className="h-5 w-5 text-primary" />
-              </div>
+              <img
+                src="/logo.png"
+                alt="TOABH"
+                style={{ height: '36px', objectFit: 'contain' }}
+              />
               <div>
-                <h1 className="text-lg sm:text-xl font-bold text-foreground">TOABH Talent</h1>
-                <p className="text-xs sm:text-sm text-muted-foreground">
-                  Talent Management CRM
+                <h1
+                  style={{
+                    fontSize: '18px',
+                    fontWeight: '700',
+                    color: '#1a1a2e',
+                    letterSpacing: '-0.02em',
+                    margin: 0,
+                  }}
+                >
+                  TOABH Onboarding Dashboard
+                </h1>
+                <p
+                  style={{
+                    fontSize: '12px',
+                    color: '#6b7280',
+                    margin: 0,
+                    fontWeight: '400',
+                  }}
+                >
+                  Talent Management System
                 </p>
               </div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
+
+            {/* Sync Button (Right) */}
+            <button
               onClick={loadTalents}
               disabled={isLoading}
-              className="hover:bg-accent/50 touch-target"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '10px 20px',
+                background: 'rgba(99, 102, 241, 0.1)',
+                border: '1px solid rgba(99, 102, 241, 0.2)',
+                borderRadius: '50px',
+                color: '#6366f1',
+                fontSize: '14px',
+                fontWeight: '500',
+                cursor: isLoading ? 'not-allowed' : 'pointer',
+                transition: 'all 0.3s ease',
+                boxShadow: '0 0 0 0 rgba(99, 102, 241, 0)',
+              }}
+              onMouseEnter={(e) => {
+                if (!isLoading) {
+                  e.currentTarget.style.background = 'rgba(99, 102, 241, 0.15)';
+                  e.currentTarget.style.boxShadow = '0 0 20px rgba(99, 102, 241, 0.3)';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(99, 102, 241, 0.1)';
+                e.currentTarget.style.boxShadow = '0 0 0 0 rgba(99, 102, 241, 0)';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
             >
-              <RefreshCw className={`h-4 w-4 mr-0 sm:mr-2 ${isLoading ? "animate-spin" : ""}`} />
-              <span className="hidden sm:inline">Sync</span>
-            </Button>
+              <RefreshCw
+                className={isLoading ? "animate-spin" : ""}
+                style={{ width: '16px', height: '16px' }}
+              />
+              Sync
+            </button>
           </div>
         </div>
       </header>
