@@ -302,7 +302,7 @@ export function ContractsTab() {
           <h2 className="text-lg font-bold text-white">Contracts</h2>
           <p className="text-xs text-gray-400">
             {contracts.length} contract{contracts.length !== 1 ? 's' : ''} found
-            {lastSync && ` • Last synced: ${lastSync.toLocaleTimeString()}`}
+
           </p>
         </div>
         {/* Right side: Buttons */}

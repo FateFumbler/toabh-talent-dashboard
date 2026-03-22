@@ -600,7 +600,7 @@ function App() {
           )}
           <div className="stats-scroll mb-6 grid grid-cols-2 md:grid-cols-4 gap-4">
             <Card 
-              className={`hover-glow transition-all duration-300 cursor-pointer stats-card flex flex-col justify-between h-full p-3 ${
+              className={`hover-glow transition-all duration-300 cursor-pointer stats-card flex flex-col justify-between h-full p-3 border-l-4 border-purple-500 ${
                 activeTile === null ? 'ring-2 ring-indigo-500/50 bg-zinc-800/80' : ''
               }`}
               onClick={() => handleTileClick('Total')}
@@ -614,7 +614,7 @@ function App() {
               <p className="text-xl font-bold text-white bg-gray-700/50 rounded-xl px-3 py-2 mt-2 text-center">{totalTalents}</p>
             </Card>
             <Card 
-              className={`hover-glow transition-all duration-300 cursor-pointer stats-card flex flex-col justify-between h-full p-3 ${
+              className={`hover-glow transition-all duration-300 cursor-pointer stats-card flex flex-col justify-between h-full p-3 border-l-4 border-blue-500 ${
                 activeTile === 'Meeting Required' ? 'ring-2 ring-indigo-500/50 bg-zinc-800/80' : ''
               }`}
               onClick={() => handleTileClick('Meeting Required')}
@@ -628,7 +628,7 @@ function App() {
               <p className="text-xl font-bold text-white bg-gray-700/50 rounded-xl px-3 py-2 mt-2 text-center">{meetingRequiredCount}</p>
             </Card>
             <Card 
-              className={`hover-glow transition-all duration-300 cursor-pointer stats-card flex flex-col justify-between h-full p-3 ${
+              className={`hover-glow transition-all duration-300 cursor-pointer stats-card flex flex-col justify-between h-full p-3 border-l-4 border-orange-500 ${
                 activeTile === 'KYC Required' ? 'ring-2 ring-indigo-500/50 bg-zinc-800/80' : ''
               }`}
               onClick={() => handleTileClick('KYC Required')}
@@ -642,7 +642,7 @@ function App() {
               <p className="text-xl font-bold text-white bg-gray-700/50 rounded-xl px-3 py-2 mt-2 text-center">{kycRequiredCount}</p>
             </Card>
             <Card 
-              className={`hover-glow transition-all duration-300 cursor-pointer stats-card flex flex-col justify-between h-full p-3 ${
+              className={`hover-glow transition-all duration-300 cursor-pointer stats-card flex flex-col justify-between h-full p-3 border-l-4 border-green-500 ${
                 activeTile === 'Onboarded' ? 'ring-2 ring-indigo-500/50 bg-zinc-800/80' : ''
               }`}
               onClick={() => handleTileClick('Onboarded')}
