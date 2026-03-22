@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Settings, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -49,7 +50,20 @@ interface ColumnVisibilityProps {
 
 export function ColumnVisibility({ visibleColumns, onColumnsChange }: ColumnVisibilityProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Calculate position when opening
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setPosition({
+        top: rect.bottom + window.scrollY + 8,
+        left: rect.left + window.scrollX,
+      });
+    }
+  }, [isOpen]);
 
   // Close on click outside
   useEffect(() => {
@@ -94,9 +108,67 @@ export function ColumnVisibility({ visibleColumns, onColumnsChange }: ColumnVisi
     onColumnsChange([]);
   };
 
+  const dropdown = (
+    <div
+      ref={dropdownRef}
+      className="fixed z-[99999] w-56 bg-zinc-900 border border-border rounded-lg shadow-xl"
+      style={{
+        top: position.top,
+        left: position.left,
+      }}
+    >
+      <div className="flex items-center justify-between p-3 border-b border-border/50">
+        <span className="text-sm font-medium text-foreground">Columns</span>
+        <button
+          onClick={() => setIsOpen(false)}
+          className="text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+      
+      <div className="p-2 max-h-80 overflow-y-auto">
+        {ALL_COLUMNS.map((column) => (
+          <label
+            key={column}
+            className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent/50 cursor-pointer"
+          >
+            <input
+              type="checkbox"
+              checked={visibleColumns.includes(column)}
+              onChange={() => toggleColumn(column)}
+              className="rounded border-muted-foreground/30 text-primary focus:ring-primary"
+            />
+            <span className="text-sm text-foreground">{column}</span>
+          </label>
+        ))}
+      </div>
+
+      <div className="flex items-center gap-2 p-2 border-t border-border/50">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={selectAll}
+          className="flex-1 text-xs h-7 hover:bg-accent/50"
+        >
+          Select All
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={deselectAll}
+          className="flex-1 text-xs h-7 hover:bg-accent/50"
+        >
+          Deselect All
+        </Button>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative">
       <Button
+        ref={buttonRef}
         variant="outline"
         size="icon"
         onClick={() => setIsOpen(!isOpen)}
@@ -106,55 +178,7 @@ export function ColumnVisibility({ visibleColumns, onColumnsChange }: ColumnVisi
         <Settings className="h-4 w-4" />
       </Button>
 
-      {isOpen && (
-        <div className="absolute right-0 top-full mt-2 z-[9999] w-56 bg-zinc-900 border border-border rounded-lg shadow-lg overflow-visible">
-          <div className="flex items-center justify-between p-3 border-b border-border/50">
-            <span className="text-sm font-medium text-foreground">Columns</span>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-          
-          <div className="p-2 max-h-80 overflow-y-auto">
-            {ALL_COLUMNS.map((column) => (
-              <label
-                key={column}
-                className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent/50 cursor-pointer"
-              >
-                <input
-                  type="checkbox"
-                  checked={visibleColumns.includes(column)}
-                  onChange={() => toggleColumn(column)}
-                  className="rounded border-muted-foreground/30 text-primary focus:ring-primary"
-                />
-                <span className="text-sm text-foreground">{column}</span>
-              </label>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-2 p-2 border-t border-border/50">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={selectAll}
-              className="flex-1 text-xs h-7 hover:bg-accent/50"
-            >
-              Select All
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={deselectAll}
-              className="flex-1 text-xs h-7 hover:bg-accent/50"
-            >
-              Deselect All
-            </Button>
-          </div>
-        </div>
-      )}
+      {isOpen && typeof document !== "undefined" && createPortal(dropdown, document.body)}
     </div>
   );
 }
