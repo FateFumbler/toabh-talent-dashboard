@@ -818,6 +818,28 @@ html, body {
 }
 
 /* ========================
+   LOGO SWITCHING
+   ======================== */
+
+/* Dark theme: show white logo, hide black logo */
+[data-theme="dark"] .logo-white {
+  display: block;
+}
+
+[data-theme="dark"] .logo-black {
+  display: none;
+}
+
+/* Light theme: show black logo, hide white logo */
+[data-theme="light"] .logo-white {
+  display: none;
+}
+
+[data-theme="light"] .logo-black {
+  display: block;
+}
+
+/* ========================
    FOOTER PREMIUM
    ======================== */
 

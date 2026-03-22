@@ -26,9 +26,9 @@ import type { ColumnName } from "./ColumnVisibility";
 import { getInitialColumns } from "./ColumnVisibility";
 
 // Helper to format height properly
-function formatHeight(height: string | undefined | null): string {
+function formatHeight(height: string | number | undefined | null): string {
   if (!height) return "-";
-  const trimmed = height.trim();
+  const trimmed = String(height).trim();
   if (!trimmed) return "-";
   
   // Handle formats like "5'5 in feet 65 in inches" or "5'6 in feet"

@@ -159,8 +159,8 @@ const AnimatedList: React.FC<AnimatedListProps> = ({
           >
             <div className={`p-2 sm:p-3 rounded-lg transition-all duration-200 ${
               selectedIndex === index 
-                ? 'bg-purple-600/30 ring-1 ring-purple-500/50' 
-                : 'bg-gray-700/50 hover:bg-gray-600/50'
+                ? 'bg-primary/30 ring-1 ring-primary/50' 
+                : 'bg-muted hover:bg-muted/80'
             } ${itemClassName}`}>
               <p className="text-white text-xs sm:text-sm m-0 truncate">{item.label}</p>
             </div>

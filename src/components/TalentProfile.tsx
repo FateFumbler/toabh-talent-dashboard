@@ -175,7 +175,7 @@ function safeField(value: unknown): string | undefined {
   return String(value);
 }
 
-function formatHeight(height: string | undefined | null): string {
+function formatHeight(height: string | number | undefined | null): string {
   if (!height) return "-";
   const trimmed = String(height).trim();
   if (!trimmed) return "-";

@@ -109,7 +109,8 @@ export function StatusDropdown({
     toast.success(`Status updated to ${status}`);
   };
 
-  const handleTriggerClick = () => {
+  const handleTriggerClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (disabled || isLoading) return;
     
     if (!isOpen && triggerRef.current) {
@@ -132,7 +133,8 @@ export function StatusDropdown({
       className="dropdown-animate fixed bg-popover border border-border rounded-xl shadow-xl z-[9999] overflow-hidden"
       style={{
         top: `${dropdownPosition.top}px`,
-        left: `${dropdownPosition.left}px`,
+        left: `${Math.max(8, Math.min(dropdownPosition.left, window.innerWidth - dropdownPosition.width - 8))}px`,
+        maxWidth: `${window.innerWidth - 16}px`,
         minWidth: `${dropdownPosition.width}px`,
       }}
     >

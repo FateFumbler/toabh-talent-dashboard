@@ -118,7 +118,8 @@ export function Settings({ theme, onThemeChange }: SettingsProps) {
   }, []);
 
   const handlePasswordSubmit = () => {
-    if (password === "1231") {
+    const CORRECT_PASSWORD = import.meta.env.VITE_SETTINGS_PASSWORD || "1231";
+    if (password === CORRECT_PASSWORD) {
       setIsAuthenticated(true);
       setPasswordError(false);
     } else {

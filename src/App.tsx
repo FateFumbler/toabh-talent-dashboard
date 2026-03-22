@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { TalentTable } from "./components/TalentTable";
 import { TalentProfileDialog } from "./components/TalentProfile";
 import { ContractsTab } from "./components/ContractsTab";
@@ -326,7 +326,7 @@ function StatCard({
 }
 
 // Helper to format height properly
-function formatHeight(height: string | undefined | null): string {
+function formatHeight(height: string | number | undefined | null): string {
   if (!height) return "-";
   const trimmed = String(height).trim();
   if (!trimmed) return "-";
@@ -661,12 +661,12 @@ function App() {
             <img
               src="/logo_white.png"
               alt="TOABH"
-              className="hidden dark:block h-8 w-auto"
+              className="logo-white h-8 w-auto"
             />
             <img
               src="/logo_black.png"
               alt="TOABH"
-              className="block dark:hidden h-8 w-auto"
+              className="logo-black h-8 w-auto"
             />
             <h1 className="text-base font-bold text-foreground tracking-tight">
               Scouting Dashboard
@@ -1554,12 +1554,30 @@ function GridMoreMenu({
 }) {
   const [open, setOpen] = useState(false);
   const [showAll, setShowAll] = useState(false);
+  const [menuPosition, setMenuPosition] = useState<{ right: number; left: number } | null>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const managers = MANAGERS as string[];
   const visibleManagers = showAll ? managers : managers.slice(0, 4);
+
+  useEffect(() => {
+    if (open && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const menuWidth = 192; // w-48 = 12rem = 192px
+      const leftEdge = rect.left - menuWidth;
+      
+      // Check if menu would overflow on the left
+      if (leftEdge < 8) {
+        setMenuPosition({ right: window.innerWidth - rect.right - 8, left: -1 });
+      } else {
+        setMenuPosition({ right: 0, left: -1 });
+      }
+    }
+  }, [open]);
 
   return (
     <div className="relative">
       <Button
+        ref={buttonRef}
         variant="ghost"
         size="sm"
         className="h-8 w-8 p-0"
@@ -1584,7 +1602,14 @@ function GridMoreMenu({
               setOpen(false);
             }}
           />
-          <div className="dropdown-animate absolute right-0 top-full mt-1 z-50 w-48 bg-popover border border-border rounded-xl shadow-xl p-1">
+          <div 
+            className="dropdown-animate absolute top-full mt-1 z-50 w-48 bg-popover border border-border rounded-xl shadow-xl p-1"
+            style={{
+              right: menuPosition?.right ?? 0,
+              left: menuPosition?.left ?? 'auto',
+              maxWidth: `${window.innerWidth - 16}px`,
+            }}
+          >
             <button
               onClick={(e) => {
                 e.stopPropagation();
