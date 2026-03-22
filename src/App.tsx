@@ -493,12 +493,12 @@ function App() {
             <div className="flex items-center gap-3">
               {/* Logo - white on dark mode, black on light mode */}
               <img 
-                src="/logo_black.png" 
+                src="/logo_white.png" 
                 alt="TOABH" 
                 className="hidden dark:block h-10 w-auto" 
               />
               <img 
-                src="/logo_white.png" 
+                src="/logo_black.png" 
                 alt="TOABH" 
                 className="block dark:hidden h-10 w-auto" 
               />

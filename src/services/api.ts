@@ -52,8 +52,7 @@ const FIELDS = {
   COMFORT_PARENT_ROLES: 45,
   COMFORT_HAIRCUT: 46,
   COMFORT_HAIRCOLOR: 47,
-  DECLARATION: 48,
-  POLAROIDS: 49,
+  POLAROIDS: 48,
 };
 
 // Convert raw array row to object with proper keys
@@ -108,7 +107,6 @@ function mapProfileData(row: any[]): Record<string, any> {
     'Mother/father roles': row[FIELDS.COMFORT_PARENT_ROLES],
     'Haircut': row[FIELDS.COMFORT_HAIRCUT],
     'Hair color changes': row[FIELDS.COMFORT_HAIRCOLOR],
-    'Declaration': row[FIELDS.DECLARATION],
     'Upload Polaroids (Required)': row[FIELDS.POLAROIDS],
   };
 }
