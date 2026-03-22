@@ -8,7 +8,7 @@ import { Badge } from "./components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./components/ui/select";
 import { fetchTalentMaster, fetchTalentDetails, updateStatus, assignManager } from "./services/api";
 import type { Talent, TalentDetails } from "@/types/talent";
-import { RefreshCw, Users, AlertCircle, LayoutGrid, List, User, Search, ExternalLink, FileText, Loader2, ChevronDown, Settings as SettingsIcon } from "lucide-react";
+import { RefreshCw, AlertCircle, LayoutGrid, List, User, Search, ExternalLink, FileText, Loader2, ChevronDown, Settings as SettingsIcon } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import { Settings, type Theme, getStoredTheme, useTheme } from "./components/Settings";
 
@@ -491,15 +491,21 @@ function App() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="bg-primary/20 p-2.5 rounded-xl glow-primary">
-                <Users className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <h1 className="text-lg sm:text-xl font-bold text-foreground">TOABH Talent</h1>
-                <p className="text-xs sm:text-sm text-muted-foreground">
-                  Talent Management CRM
-                </p>
-              </div>
+              {/* Logo - white on dark mode, black on light mode */}
+              <img 
+                src="/logo_black.png" 
+                alt="TOABH" 
+                className="hidden dark:block h-10 w-auto" 
+              />
+              <img 
+                src="/logo_white.png" 
+                alt="TOABH" 
+                className="block dark:hidden h-10 w-auto" 
+              />
+              {/* Title */}
+              <h1 className="text-lg sm:text-xl font-bold text-foreground tracking-tight">
+                TOABH ONBOARDING DASHBOARD
+              </h1>
             </div>
             <Button
               variant="outline"
