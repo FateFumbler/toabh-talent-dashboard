@@ -1178,37 +1178,18 @@ function TalentGridView({
 
       {/* Talent Cards Grid */}
       <div className="talent-grid">
-        {filteredTalents.map((talent) => {
-          // Get merged talent for polaroid images
-          const mergedTalent = getMergedTalent(talent);
-          const polaroidLinks = parsePolaroidLinks(mergedTalent["Upload Polaroids (Required)"]);
-          const profileImageUrl = polaroidLinks.length > 0 ? getDriveThumbnailUrl(polaroidLinks[0]) : null;
-          
-          return (
+        {filteredTalents.map((talent) => (
           <Card
             key={talent.rowIndex}
             className="p-4 hover:bg-accent/30 transition-colors cursor-pointer glass-card talent-card"
             onClick={() => onTalentClick(talent["Full Name"])}
           >
             <div className="flex flex-col gap-3">
-              {/* Header: Photo + Name + Status */}
+              {/* Header: Photo/Initials + Name + Status */}
               <div className="flex items-start gap-3">
-                {/* Profile Photo or Initials Avatar */}
-                <div className="bg-primary/20 p-1 rounded-lg shrink-0 overflow-hidden">
-                  {profileImageUrl ? (
-                    <img 
-                      src={profileImageUrl} 
-                      alt={talent["Full Name"]}
-                      className="h-10 w-10 object-cover rounded-md"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                        e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                      }}
-                    />
-                  ) : null}
-                  <div className={`bg-primary/20 p-2 rounded-lg shrink-0 ${profileImageUrl ? 'hidden' : ''}`}>
-                    <User className="h-5 w-5 text-primary" />
-                  </div>
+                {/* Photo or Initials Avatar */}
+                <div className="bg-primary/20 p-2 rounded-lg shrink-0">
+                  <User className="h-5 w-5 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold text-foreground truncate capitalize">
@@ -1236,25 +1217,6 @@ function TalentGridView({
                 <span className="text-muted-foreground truncate">
                   {talent["Talent Manager"] || "No manager"}
                 </span>
-              </div>
-
-              {/* Additional Info Row - Gender | Age | Height */}
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                {talent["Gender"] && (
-                  <>
-                    <span className="truncate">{talent["Gender"]}</span>
-                    <span className="text-muted-foreground/30">•</span>
-                  </>
-                )}
-                {talent["Age"] && (
-                  <>
-                    <span className="truncate">{talent["Age"]} yrs</span>
-                    <span className="text-muted-foreground/30">•</span>
-                  </>
-                )}
-                {talent["Height"] && (
-                  <span className="truncate">{talent["Height"]}</span>
-                )}
               </div>
 
               {/* Actions Dropdown - Mobile friendly */}
