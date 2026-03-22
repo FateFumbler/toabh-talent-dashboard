@@ -273,6 +273,23 @@ export function TalentProfileDialog({
     }
   }, [isManagerDropdownOpen]);
 
+  // Reposition manager dropdown on scroll
+  useEffect(() => {
+    if (!isManagerDropdownOpen) return;
+    
+    const handleScroll = () => {
+      setIsManagerDropdownOpen(false);
+    };
+    
+    window.addEventListener("scroll", handleScroll, true);
+    window.addEventListener("resize", handleScroll);
+    
+    return () => {
+      window.removeEventListener("scroll", handleScroll, true);
+      window.removeEventListener("resize", handleScroll);
+    };
+  }, [isManagerDropdownOpen]);
+
   const openModal = (index: number) => {
     setCurrentImageIndex(index);
     setIsModalOpen(true);
@@ -869,7 +886,7 @@ export function TalentProfileDialog({
                       typeof document !== "undefined" &&
                       createPortal(
                         <div
-                          className="fixed inset-0 z-[9998]"
+                          className="fixed inset-0 z-50"
                           onClick={() => setIsManagerDropdownOpen(false)}
                         >
                           <div

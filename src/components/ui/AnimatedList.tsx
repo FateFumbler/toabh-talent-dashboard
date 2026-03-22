@@ -140,13 +140,13 @@ const AnimatedList: React.FC<AnimatedListProps> = ({
         ref={listRef}
         className={`max-h-[300px] overflow-y-auto p-2 rounded-lg ${
           displayScrollbar
-            ? '[&::-webkit-scrollbar]:w-[8px] [&::-webkit-scrollbar-track]:bg-gray-800 [&::-webkit-scrollbar-thumb]:bg-gray-600 [&::-webkit-scrollbar-thumb]:rounded-[4px]'
+            ? '[&::-webkit-scrollbar]:w-[8px] [&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 [&::-webkit-scrollbar-thumb]:rounded-[4px]'
             : 'scrollbar-hide'
         }`}
         onScroll={handleScroll}
         style={{
           scrollbarWidth: displayScrollbar ? 'thin' : 'none',
-          scrollbarColor: displayScrollbar ? '#4b5563 #1f2937' : 'transparent transparent'
+          scrollbarColor: displayScrollbar ? 'var(--muted-foreground) var(--muted)' : 'transparent transparent'
         }}
       >
         {items.map((item, index) => (
@@ -162,7 +162,7 @@ const AnimatedList: React.FC<AnimatedListProps> = ({
                 ? 'bg-primary/30 ring-1 ring-primary/50' 
                 : 'bg-muted hover:bg-muted/80'
             } ${itemClassName}`}>
-              <p className="text-white text-xs sm:text-sm m-0 truncate">{item.label}</p>
+              <p className="text-foreground text-xs sm:text-sm m-0 truncate">{item.label}</p>
             </div>
           </AnimatedItem>
         ))}
@@ -170,11 +170,11 @@ const AnimatedList: React.FC<AnimatedListProps> = ({
       {showGradients && (
         <>
           <div
-            className="absolute top-0 left-0 right-0 h-[40px] bg-gradient-to-b from-gray-900 to-transparent pointer-events-none transition-opacity duration-300 ease rounded-t-lg"
+            className="absolute top-0 left-0 right-0 h-[40px] bg-gradient-to-b from-background to-transparent pointer-events-none transition-opacity duration-300 ease rounded-t-lg"
             style={{ opacity: topGradientOpacity }}
           ></div>
           <div
-            className="absolute bottom-0 left-0 right-0 h-[80px] bg-gradient-to-t from-gray-900 to-transparent pointer-events-none transition-opacity duration-300 ease rounded-b-lg"
+            className="absolute bottom-0 left-0 right-0 h-[80px] bg-gradient-to-t from-background to-transparent pointer-events-none transition-opacity duration-300 ease rounded-b-lg"
             style={{ opacity: bottomGradientOpacity }}
           ></div>
         </>

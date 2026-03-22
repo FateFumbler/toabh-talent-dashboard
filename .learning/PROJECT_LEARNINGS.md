@@ -62,3 +62,37 @@ const trimmed = String(height || '').trim();
 - [ ] Extract duplicate functions to shared utils
 - [ ] Use theme tokens (bg-muted, text-foreground) not hardcoded colors
 - [ ] Test dropdown positioning near viewport edges
+
+### 8. Dropdown Stays Fixed When Scrolling
+**Problem:** When scrolling after opening a dropdown, the dropdown stays in place instead of moving with its parent card.
+**Cause:** Using `position: fixed` for portal-rendered dropdowns - fixed positioning is relative to viewport, not parent.
+**Fix options:**
+1. Use `position: absolute` for dropdowns that should move with parent scroll
+2. Add scroll event listeners to reposition dropdown when container scrolls
+3. Consider not using portal for dropdowns inside scrollable containers
+
+**Recommended:** Add scroll event handler to recalculate position:
+```typescript
+useEffect(() => {
+  const handleScroll = () => {
+    if (isOpen) {
+      updatePosition();
+    }
+  };
+  window.addEventListener('scroll', handleScroll, true);
+  return () => window.removeEventListener('scroll', handleScroll, true);
+}, [isOpen]);
+```
+
+### 9. Z-Index Layering Logic
+**Problem:** Dropdowns, modals, and overlays may appear behind or in front of wrong elements.
+**Fix:** Establish consistent z-index stacking:
+- Base content: z-0 to z-10
+- Cards: z-10
+- Dropdowns: z-50
+- Fixed headers: z-40
+- Modals: z-50+
+- Tooltips: z-60
+- Toasts/notifications: z-70
+
+Always use `relative` on parent containers when using `absolute` positioning inside.

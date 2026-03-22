@@ -58,6 +58,16 @@ export function StatusDropdown({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
+  const updatePosition = () => {
+    if (!isOpen || !triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    setDropdownPosition({
+      top: rect.bottom + 4,
+      left: rect.left,
+      width: rect.width,
+    });
+  };
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -89,6 +99,24 @@ export function StatusDropdown({
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    const handleScroll = () => {
+      updatePosition();
+    };
+    
+    // Use capture phase to catch scroll events in parent containers
+    window.addEventListener("scroll", handleScroll, true);
+    // Also handle window resize
+    window.addEventListener("resize", handleScroll);
+    
+    return () => {
+      window.removeEventListener("scroll", handleScroll, true);
+      window.removeEventListener("resize", handleScroll);
+    };
+  }, [isOpen]);
+
   const handleSelect = (status: StatusValue) => {
     if (status === currentStatus) {
       setIsOpen(false);
@@ -114,12 +142,7 @@ export function StatusDropdown({
     if (disabled || isLoading) return;
     
     if (!isOpen && triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      setDropdownPosition({
-        top: rect.bottom + 4,
-        left: rect.left,
-        width: rect.width,
-      });
+      updatePosition();
     } else {
       setDropdownPosition(null);
     }
@@ -130,7 +153,7 @@ export function StatusDropdown({
 
   const dropdownContent = isOpen && dropdownPosition ? (
     <div
-      className="dropdown-animate fixed bg-popover border border-border rounded-xl shadow-xl z-[9999] overflow-hidden"
+      className="dropdown-animate fixed bg-popover border border-border rounded-xl shadow-xl z-50 overflow-hidden"
       style={{
         top: `${dropdownPosition.top}px`,
         left: `${Math.max(8, Math.min(dropdownPosition.left, window.innerWidth - dropdownPosition.width - 8))}px`,
