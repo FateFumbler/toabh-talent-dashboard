@@ -688,7 +688,7 @@ export function TalentProfileDialog({
                       typeof rowIndex === 'number' && onManagerAssign ? (
                         <button
                           onClick={() => setIsManagerDropdownOpen(!isManagerDropdownOpen)}
-                          className="inline-flex items-center gap-1.5 px-3 py-2 sm:py-1.5 bg-gray-700/60 text-gray-100 rounded-full text-sm font-medium hover:bg-gray-600/60 transition-all min-h-[44px] sm:min-h-[auto]"
+                          className="inline-flex items-center gap-1.5 px-3 py-2 sm:py-1.5 bg-muted text-foreground rounded-full text-sm font-medium hover:bg-muted/80 transition-all min-h-[44px] sm:min-h-[auto] border border-border"
                         >
                           <span>Manager: {profileManager}</span>
                           <ChevronDown className="h-4 w-4" />
@@ -701,7 +701,7 @@ export function TalentProfileDialog({
                     ) : typeof rowIndex === 'number' && onManagerAssign ? (
                       <button
                         onClick={() => setIsManagerDropdownOpen(!isManagerDropdownOpen)}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 sm:py-1.5 bg-gray-800 border border-gray-600 text-gray-300 rounded-full text-sm font-medium hover:bg-gray-700 transition-all min-h-[44px] sm:min-h-[auto]"
+                        className="inline-flex items-center gap-1.5 px-3 py-2 sm:py-1.5 bg-secondary border border-border text-secondary-foreground rounded-full text-sm font-medium hover:bg-secondary/80 transition-all min-h-[44px] sm:min-h-[auto]"
                       >
                         <span>Assign Manager</span>
                         <ChevronDown className="h-4 w-4" />
@@ -714,7 +714,7 @@ export function TalentProfileDialog({
                     
                     {/* Manager Dropdown Panel */}
                     {isManagerDropdownOpen && (
-                      <div className="absolute right-0 top-full mt-1 z-[9999] w-full sm:w-56 max-w-full bg-gray-800 border border-gray-600 rounded-lg shadow-xl p-2">
+                      <div className="absolute right-0 top-full mt-1 z-[9999] w-full sm:w-56 max-w-full bg-popover border border-border rounded-xl shadow-xl p-2">
                         <AnimatedList
                           items={MANAGERS.map(manager => ({ label: manager, value: manager }))}
                           onItemSelect={(item) => {

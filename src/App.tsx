@@ -608,69 +608,69 @@ function App() {
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
         {/* Stats Cards - horizontally scrollable on mobile */}
         <div className="relative">
-          <div className="stats-scroll mb-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="stats-scroll mb-6 grid grid-cols-2 md:grid-cols-4 gap-4 stagger-children">
             <Card
-              className={`hover-glow transition-all duration-300 cursor-pointer stats-card flex flex-col justify-between h-full p-3 border-l-8 border-purple-500 ${
-                activeTile === null ? 'ring-2 ring-indigo-500/50 bg-zinc-800/80' : ''
+              className={`hover-glow transition-all duration-300 cursor-pointer stats-card flex flex-col justify-between h-full p-3 border-l-8 border-purple-500 animate-slide-up ${
+                activeTile === null ? 'ring-2 ring-primary/50' : ''
               }`}
               onClick={() => handleTileClick('Total')}
             >
-              <h3 className="text-gray-400 text-xs uppercase flex items-center justify-between">
+              <h3 className="text-muted-foreground text-xs uppercase flex items-center justify-between font-medium tracking-wide">
                 Total Talents
                 {activeTile === null && (
-                  <span className="h-2 w-2 rounded-full bg-indigo-500" />
+                  <span className="h-2 w-2 rounded-full bg-indigo-500 animate-soft-pulse" />
                 )}
               </h3>
               <BorderGlow color="#a855f7" intensity={2.4} className="mt-2">
-                <p className="text-xl font-bold text-white bg-gray-700/50 rounded-xl px-3 py-2 text-center">{totalTalents}</p>
+                <p className="text-xl font-bold text-foreground bg-muted/60 rounded-xl px-3 py-2 text-center animate-count-in">{totalTalents}</p>
               </BorderGlow>
             </Card>
             <Card
-              className={`hover-glow transition-all duration-300 cursor-pointer stats-card flex flex-col justify-between h-full p-3 border-l-8 border-blue-500 ${
-                activeTile === 'Meeting Required' ? 'ring-2 ring-indigo-500/50 bg-zinc-800/80' : ''
+              className={`hover-glow transition-all duration-300 cursor-pointer stats-card flex flex-col justify-between h-full p-3 border-l-8 border-blue-500 animate-slide-up ${
+                activeTile === 'Meeting Required' ? 'ring-2 ring-primary/50' : ''
               }`}
               onClick={() => handleTileClick('Meeting Required')}
             >
-              <h3 className="text-gray-400 text-xs uppercase flex items-center justify-between">
+              <h3 className="text-muted-foreground text-xs uppercase flex items-center justify-between font-medium tracking-wide">
                 Meeting Scheduled
                 {activeTile === 'Meeting Required' && (
-                  <span className="h-2 w-2 rounded-full bg-indigo-500" />
+                  <span className="h-2 w-2 rounded-full bg-indigo-500 animate-soft-pulse" />
                 )}
               </h3>
               <BorderGlow color="#3b82f6" intensity={2.4} className="mt-2">
-                <p className="text-xl font-bold text-white bg-gray-700/50 rounded-xl px-3 py-2 text-center">{meetingRequiredCount}</p>
+                <p className="text-xl font-bold text-foreground bg-muted/60 rounded-xl px-3 py-2 text-center animate-count-in">{meetingRequiredCount}</p>
               </BorderGlow>
             </Card>
             <Card
-              className={`hover-glow transition-all duration-300 cursor-pointer stats-card flex flex-col justify-between h-full p-3 border-l-8 border-orange-500 ${
-                activeTile === 'KYC Required' ? 'ring-2 ring-indigo-500/50 bg-zinc-800/80' : ''
+              className={`hover-glow transition-all duration-300 cursor-pointer stats-card flex flex-col justify-between h-full p-3 border-l-8 border-orange-500 animate-slide-up ${
+                activeTile === 'KYC Required' ? 'ring-2 ring-primary/50' : ''
               }`}
               onClick={() => handleTileClick('KYC Required')}
             >
-              <h3 className="text-gray-400 text-xs uppercase flex items-center justify-between">
+              <h3 className="text-muted-foreground text-xs uppercase flex items-center justify-between font-medium tracking-wide">
                 Contract Signing
                 {activeTile === 'KYC Required' && (
-                  <span className="h-2 w-2 rounded-full bg-indigo-500" />
+                  <span className="h-2 w-2 rounded-full bg-indigo-500 animate-soft-pulse" />
                 )}
               </h3>
               <BorderGlow color="#f97316" intensity={2.4} className="mt-2">
-                <p className="text-xl font-bold text-white bg-gray-700/50 rounded-xl px-3 py-2 text-center">{kycRequiredCount}</p>
+                <p className="text-xl font-bold text-foreground bg-muted/60 rounded-xl px-3 py-2 text-center animate-count-in">{kycRequiredCount}</p>
               </BorderGlow>
             </Card>
             <Card
-              className={`hover-glow transition-all duration-300 cursor-pointer stats-card flex flex-col justify-between h-full p-3 border-l-8 border-green-500 ${
-                activeTile === 'Onboarded' ? 'ring-2 ring-indigo-500/50 bg-zinc-800/80' : ''
+              className={`hover-glow transition-all duration-300 cursor-pointer stats-card flex flex-col justify-between h-full p-3 border-l-8 border-green-500 animate-slide-up $={
+                activeTile === 'Onboarded' ? 'ring-2 ring-primary/50' : ''
               }`}
               onClick={() => handleTileClick('Onboarded')}
             >
-              <h3 className="text-gray-400 text-xs uppercase flex items-center justify-between">
+              <h3 className="text-muted-foreground text-xs uppercase flex items-center justify-between font-medium tracking-wide">
                 Onboarded
                 {activeTile === 'Onboarded' && (
-                  <span className="h-2 w-2 rounded-full bg-indigo-500" />
+                  <span className="h-2 w-2 rounded-full bg-indigo-500 animate-soft-pulse" />
                 )}
               </h3>
               <BorderGlow color="#22c55e" intensity={2.4} className="mt-2">
-                <p className="text-xl font-bold text-white bg-gray-700/50 rounded-xl px-3 py-2 text-center">{onboardedCount}</p>
+                <p className="text-xl font-bold text-foreground bg-muted/60 rounded-xl px-3 py-2 text-center animate-count-in">{onboardedCount}</p>
               </BorderGlow>
             </Card>
           </div>
@@ -691,19 +691,19 @@ function App() {
           <ErrorBoundary>
           <>
             {/* Sync & View Toggle Row */}
-            <div className="flex items-center justify-between mb-4 px-2 py-2 bg-gray-800/50 rounded-lg">
+            <div className="flex items-center justify-between mb-4 px-3 py-2.5 bg-muted/50 rounded-xl border border-border/50">
               {/* Left: Sync button */}
               <button
                 onClick={loadTalents}
                 disabled={isLoading}
-                className="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded-lg transition-colors"
+                className="flex items-center gap-2 bg-secondary hover:bg-secondary/80 text-secondary-foreground px-3 py-2 rounded-lg transition-colors text-sm font-medium border border-border/50"
               >
                 <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
-                <span className="text-sm">Sync</span>
+                <span>Sync</span>
               </button>
               
               {/* Right: View toggle */}
-              <div className="flex items-center gap-1 bg-gray-800 rounded-lg p-1">
+              <div className="flex items-center gap-1 bg-muted rounded-lg p-1 border border-border/50">
                 {/* Mobile: Show filter toggle */}
                 <button
                   onClick={() => setFiltersOpen(!filtersOpen)}
@@ -714,10 +714,10 @@ function App() {
                 </button>
                 <button
                   onClick={() => handleViewModeChange("list")}
-                  className={`px-3 py-2 rounded-md transition-colors ${
+                  className={`px-3 py-2 rounded-md transition-colors text-sm ${
                     viewMode === "list"
-                      ? "bg-purple-600 text-white"
-                      : "text-gray-400 hover:text-white"
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
                   }`}
                   title="List View"
                 >
@@ -725,10 +725,10 @@ function App() {
                 </button>
                 <button
                   onClick={() => handleViewModeChange("grid")}
-                  className={`px-3 py-2 rounded-md transition-colors ${
+                  className={`px-3 py-2 rounded-md transition-colors text-sm ${
                     viewMode === "grid"
-                      ? "bg-purple-600 text-white"
-                      : "text-gray-400 hover:text-white"
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
                   }`}
                   title="Grid View"
                 >

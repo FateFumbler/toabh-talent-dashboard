@@ -28,13 +28,13 @@ export function ContractsTab() {
 
   // ContractCard component for grid view
   const ContractCard = ({ contract }: { contract: Contract }) => (
-    <div className="bg-gray-800 rounded-xl p-4 hover:bg-gray-750 hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer border border-gray-700">
+    <div className="bg-card rounded-xl p-4 hover:bg-accent/30 hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer border border-border">
       {/* Doc icon at top - clickable */}
       {editingId === contract.id ? (
         <input
           value={editForm.contractLink}
           onChange={(e) => setEditForm({ ...editForm, contractLink: e.target.value })}
-          className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm mb-2"
+          className="w-full bg-input border border-border rounded px-2 py-1 text-foreground text-sm mb-2"
           placeholder="Contract link"
         />
       ) : (
@@ -45,7 +45,7 @@ export function ContractsTab() {
           className="block mb-3"
           onClick={(e) => e.stopPropagation()}
         >
-          <FileText className="w-10 h-10 text-purple-400 mx-auto hover:text-purple-300 transition-colors" />
+          <FileText className="w-10 h-10 text-primary mx-auto hover:text-primary/80 transition-colors" />
         </a>
       )}
 
@@ -54,10 +54,10 @@ export function ContractsTab() {
         <input
           value={editForm.name}
           onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-          className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm text-center mb-1"
+          className="w-full bg-input border border-border rounded px-2 py-1 text-foreground text-sm text-center mb-1"
         />
       ) : (
-        <h3 className="font-semibold text-white text-center mb-1">{contract.name || 'N/A'}</h3>
+        <h3 className="font-semibold text-foreground text-center mb-1">{contract.name || 'N/A'}</h3>
       )}
 
       {/* Phone */}
@@ -65,10 +65,10 @@ export function ContractsTab() {
         <input
           value={editForm.phone}
           onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-          className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm text-center mb-1"
+          className="w-full bg-input border border-border rounded px-2 py-1 text-foreground text-sm text-center mb-1"
         />
       ) : (
-        <p className="text-gray-400 text-sm text-center">{contract.phone}</p>
+        <p className="text-muted-foreground text-sm text-center">{contract.phone}</p>
       )}
 
       {/* Email */}
@@ -76,17 +76,17 @@ export function ContractsTab() {
         <input
           value={editForm.email}
           onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-          className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm text-center mb-2"
+          className="w-full bg-input border border-border rounded px-2 py-1 text-foreground text-sm text-center mb-2"
         />
       ) : (
-        <p className="text-gray-500 text-xs text-center mb-2">{contract.email || 'N/A'}</p>
+        <p className="text-muted-foreground text-xs text-center mb-2">{contract.email || 'N/A'}</p>
       )}
 
       {/* Source tag */}
       <span className={`inline-block px-2 py-0.5 rounded text-xs mx-auto ${
         contract.source === 'sheet'
-          ? 'bg-blue-600/20 text-blue-400'
-          : 'bg-green-600/20 text-green-400'
+          ? 'bg-info/20 text-info dark:bg-info/30'
+          : 'bg-success/20 text-success dark:bg-success/30'
       }`}>
         {contract.source === 'sheet' ? 'Sheet' : 'Local'}
       </span>
@@ -101,7 +101,7 @@ export function ContractsTab() {
                   e.stopPropagation();
                   saveEdit();
                 }}
-                className="text-xs text-green-400 hover:text-green-300 transition-colors"
+                className="text-xs text-green-600 dark:text-green-400 hover:text-green-500 dark:hover:text-green-300 transition-colors"
               >
                 Save
               </button>
@@ -110,7 +110,7 @@ export function ContractsTab() {
                   e.stopPropagation();
                   setEditingId(null);
                 }}
-                className="text-xs text-gray-400 hover:text-gray-300 transition-colors"
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
                 Cancel
               </button>
@@ -122,7 +122,7 @@ export function ContractsTab() {
                   e.stopPropagation();
                   startEdit(contract);
                 }}
-                className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 transition-colors"
               >
                 Edit
               </button>
@@ -132,7 +132,7 @@ export function ContractsTab() {
                     e.stopPropagation();
                     handleDeleteLocal(contract.id!);
                   }}
-                  className="text-xs text-red-400 hover:text-red-300 transition-colors"
+                  className="text-xs text-destructive hover:text-destructive/80 transition-colors"
                 >
                   Delete
                 </button>
@@ -297,8 +297,8 @@ export function ContractsTab() {
       <div className="flex items-center justify-between px-4 py-3">
         {/* Left side: Title and metadata */}
         <div>
-          <h2 className="text-lg font-bold text-white">Contracts</h2>
-          <p className="text-xs text-gray-400">
+          <h2 className="text-lg font-bold text-foreground">Contracts</h2>
+          <p className="text-xs text-muted-foreground">
             {contracts.length} contract{contracts.length !== 1 ? 's' : ''} found
 
           </p>
@@ -306,13 +306,13 @@ export function ContractsTab() {
         {/* Right side: Buttons */}
         <div className="flex items-center gap-2">
           {/* View toggle - icon only */}
-          <div className="flex items-center gap-1 bg-gray-800/50 rounded-lg p-1">
+          <div className="flex items-center gap-1 bg-muted rounded-lg p-1 border border-border/50">
             <button
               onClick={() => setView('list')}
               className={`p-2 rounded-md transition-colors ${
                 view === 'list'
-                  ? 'bg-purple-600 text-white'
-                  : 'text-gray-400 hover:text-white'
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/80'
               }`}
               title="List View"
             >
@@ -322,8 +322,8 @@ export function ContractsTab() {
               onClick={() => setView('grid')}
               className={`p-2 rounded-md transition-colors ${
                 view === 'grid'
-                  ? 'bg-purple-600 text-white'
-                  : 'text-gray-400 hover:text-white'
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/80'
               }`}
               title="Grid View"
             >
@@ -363,15 +363,15 @@ export function ContractsTab() {
                   placeholder="Search talent by name, phone, or email..."
                   value={talentSearch}
                   onChange={(e) => setTalentSearch(e.target.value)}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 pr-10 text-white text-sm"
+                  className="w-full bg-input border border-border rounded-lg px-3 py-2 pr-10 text-foreground text-sm"
                 />
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
               </div>
               {/* Dropdown results */}
               {talentSearch && (
-                <div className="absolute z-50 w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-xl shadow-xl max-h-60 overflow-y-auto">
                   {filteredTalents.length === 0 ? (
-                    <div className="px-3 py-2 text-gray-500 text-sm">No talents found</div>
+                    <div className="px-3 py-2 text-muted-foreground text-sm">No talents found</div>
                   ) : (
                     filteredTalents.map((t, i) => (
                       <button
@@ -387,7 +387,7 @@ export function ContractsTab() {
                           });
                           setTalentSearch(''); // Close dropdown
                         }}
-                        className="w-full text-left px-3 py-2 hover:bg-gray-700 text-white text-sm border-b border-gray-700 last:border-b-0"
+                        className="w-full text-left px-3 py-2 hover:bg-accent text-foreground text-sm border-b border-border last:border-b-0"
                       >
                         <div className="font-medium">{t["Full Name"]}</div>
                         <div className="text-xs text-gray-400">{t["Phone"]} • {t["Email "] || t["Email"]}</div>
@@ -512,7 +512,7 @@ export function ContractsTab() {
                           <input
                             value={editForm.name}
                             onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                            className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm"
+                            className="w-full bg-input border border-border rounded px-2 py-1 text-foreground text-sm"
                           />
                         ) : (
                           firstContract.name || 'N/A'
@@ -526,7 +526,7 @@ export function ContractsTab() {
                           <input
                             value={editForm.email}
                             onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                            className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm"
+                            className="w-full bg-input border border-border rounded px-2 py-1 text-foreground text-sm"
                           />
                         ) : (
                           firstContract.email || 'N/A'
@@ -537,7 +537,7 @@ export function ContractsTab() {
                           <input
                             value={editForm.contractLink}
                             onChange={(e) => setEditForm({ ...editForm, contractLink: e.target.value })}
-                            className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm"
+                            className="w-full bg-input border border-border rounded px-2 py-1 text-foreground text-sm"
                             placeholder="Contract link"
                           />
                         ) : (
@@ -567,7 +567,7 @@ export function ContractsTab() {
                               key={idx}
                               className={`inline-flex items-center px-2 py-0.5 rounded text-xs ${
                                 contract.source === 'local'
-                                  ? 'bg-primary/20 text-primary'
+                                  ? 'bg-primary/20 text-primary dark:bg-primary/30'
                                   : 'bg-muted text-muted-foreground'
                               }`}
                             >
@@ -584,13 +584,13 @@ export function ContractsTab() {
                                 <div key={idx} className="flex gap-1 items-center">
                                   <button
                                     onClick={saveEdit}
-                                    className="text-xs text-green-400 hover:text-green-300 px-1"
+                                    className="text-xs text-green-600 dark:text-green-400 hover:text-green-500 dark:hover:text-green-300 px-1"
                                   >
                                     Save
                                   </button>
                                   <button
                                     onClick={() => setEditingId(null)}
-                                    className="text-xs text-gray-400 hover:text-gray-300 px-1"
+                                    className="text-xs text-muted-foreground hover:text-foreground px-1"
                                   >
                                     Cancel
                                   </button>

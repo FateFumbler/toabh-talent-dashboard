@@ -328,14 +328,7 @@ export function TalentTable({
                 size="sm"
                 onClick={clearAllFilters}
                 disabled={!hasActiveFilters()}
-                className="hover:bg-accent/50"
-                style={{
-                  backgroundColor: hasActiveFilters() ? "#dc3545" : "#e0e0e0",
-                  color: hasActiveFilters() ? "#fff" : "#999",
-                  border: "none",
-                  cursor: hasActiveFilters() ? "pointer" : "not-allowed",
-                  fontWeight: hasActiveFilters() ? "600" : "400",
-                }}
+                className={`hover:bg-accent/50 ${!hasActiveFilters() ? 'opacity-50 cursor-not-allowed' : 'bg-destructive/10 text-destructive border-destructive/30 hover:bg-destructive/20'}`}
               >
                 Clear Filters
               </Button>
@@ -403,7 +396,7 @@ export function TalentTable({
                 <TableRow 
                   key={talent.rowIndex} 
                   className={`table-row-hover border-b border-border/30 ${
-                    index % 2 === 1 ? 'bg-zinc-900/10' : ''
+                    index % 2 === 1 ? 'bg-muted/10' : ''
                   }`}
                 >
                   <TableCell className="text-left py-4 px-4 align-middle">
