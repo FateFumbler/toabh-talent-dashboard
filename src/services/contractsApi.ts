@@ -1,4 +1,4 @@
-const API_URL = 'https://script.google.com/macros/s/AKfycbyrHsfBPmcSb9YeAUKH9cQ0taILerK7VQ8kNjpI_OZvwSYgD2zw6Sh-xSgVKV40_bWIPQ/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbx6WHG6jE3ZqQoa-1V4PoeWcwsDnv22ZXlEnIWB4F84ujg4lojZUretZ0gOYsdJGDF5EA/exec';
 
 export async function fetchContracts(): Promise<any[]> {
   try {
