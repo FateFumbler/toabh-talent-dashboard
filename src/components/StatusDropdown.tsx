@@ -193,7 +193,7 @@ export function StatusDropdown({
         </button>
 
         {isOpen && step === null && (
-          <div className="absolute left-0 top-full mt-1 z-50 w-48 bg-zinc-900 border border-border rounded-lg shadow-lg overflow-hidden">
+          <div className="absolute left-0 top-full mt-1 z-[9999] w-48 bg-zinc-900 border border-border rounded-lg shadow-lg overflow-visible">
             <div className="py-1">
               {STATUS_VALUES.map((status) => {
                 const statusColor = statusColors[status];

@@ -107,7 +107,7 @@ export function ColumnVisibility({ visibleColumns, onColumnsChange }: ColumnVisi
       </Button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 z-50 w-56 bg-zinc-900 border border-border rounded-lg shadow-lg overflow-hidden">
+        <div className="absolute right-0 top-full mt-2 z-[9999] w-56 bg-zinc-900 border border-border rounded-lg shadow-lg overflow-visible">
           <div className="flex items-center justify-between p-3 border-b border-border/50">
             <span className="text-sm font-medium text-foreground">Columns</span>
             <button
