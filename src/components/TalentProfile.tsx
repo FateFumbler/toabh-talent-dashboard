@@ -376,6 +376,12 @@ export function TalentProfileDialog({
     );
   };
 
+  // Helper to format date strings (YYYY-MM-DD only, no timestamp)
+  const formatDateField = (value: string | undefined): string | undefined => {
+    if (!value) return undefined;
+    return value.split('T')[0];
+  };
+
   // Helper to access profile fields with proper typing for Google Sheet dynamic fields
   // Uses safeField to handle any value type safely
   const gf = (key: string): string | undefined => {
@@ -396,7 +402,7 @@ export function TalentProfileDialog({
         { label: "City", value: gf("City & State (Current location)") || gf("City & State") || gf("City") },
         { label: "Gender", value: gf("Gender") },
         { label: "Age", value: gf("Age")?.toString() },
-        { label: "Date of Birth", value: gf("Date of Birth ") },
+        { label: "Date of Birth", value: formatDateField(gf("Date of Birth ")) },
         { label: "Nationality", value: gf("Nationality") },
         { label: "Height (in feet & inches)", value: gf("Height (in feet & inches)") || gf("Height") },
       ],

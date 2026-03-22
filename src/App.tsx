@@ -427,6 +427,13 @@ function App() {
     }
   };
 
+  // Helper to format date values (YYYY-MM-DD only, no timestamp)
+  const formatDateValue = (value: string | number | undefined | null): string | number | undefined | null => {
+    if (!value) return value;
+    const str = value.toString();
+    return str.split('T')[0];
+  };
+
   const renderProfileField = (label: string, value: string | number | undefined | null) => {
     if (!value || value.toString().trim() === "") {
       return (
@@ -844,7 +851,7 @@ function App() {
                     {renderProfileField("City", selectedProfile["City & State"] || selectedProfile["City"])}
                     {renderProfileField("Gender", selectedProfile["Gender"])}
                     {renderProfileField("Age", selectedProfile["Age"])}
-                    {renderProfileField("Date of Birth", selectedProfile["Date of Birth"])}
+                    {renderProfileField("Date of Birth", formatDateValue(selectedProfile["Date of Birth"]))}
                     {renderProfileField("Nationality", selectedProfile["Nationality"])}
                     {renderProfileField("Height (in feet & inches)", (selectedProfile as any)["Height (in feet & inches)"] || selectedProfile["Height"])}
                   </div>
