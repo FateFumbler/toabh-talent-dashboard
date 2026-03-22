@@ -12,7 +12,6 @@ export function ContractsTab() {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [lastSync, setLastSync] = useState<Date | null>(null);
   const [view, setView] = useState<'list' | 'grid'>('list');
 
   // Settings state (from existing Settings component)
@@ -167,7 +166,6 @@ export function ContractsTab() {
       ]);
       // Merge: sheet first, then local
       setContracts([...sheetContracts, ...local]);
-      setLastSync(new Date());
     } catch (error) {
       console.error('Failed to load data:', error);
     }

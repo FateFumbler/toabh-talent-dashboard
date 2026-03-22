@@ -523,7 +523,7 @@ function App() {
 
       {/* Tab Navigation */}
       <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
-        <div className="flex items-center justify-between border-b border-border/50 pb-px">
+        <div className="flex items-center justify-center gap-4 sm:gap-8 border-b border-border/50 pb-px">
           <button
             onClick={() => setActiveTab("talent-master")}
             className={`flex items-center gap-2 px-3 sm:px-4 py-2.5 text-sm font-medium transition-colors relative ${
@@ -642,7 +642,7 @@ function App() {
               <p className="text-xl font-bold text-white bg-gray-700/50 rounded-xl px-3 py-2 mt-2 text-center">{kycRequiredCount}</p>
             </Card>
             <Card 
-              className={`hover-glow transition-all duration-300 cursor-pointer stats-card flex flex-col justify-between h-full p-3 border-l-4 border-green-500 ${
+              className={`hover-glow transition-all duration-300 cursor-pointer stats-card flex flex-col justify-between h-full p-3 border-l-8 border-green-500 border border-green-500/30 ${
                 activeTile === 'Onboarded' ? 'ring-2 ring-indigo-500/50 bg-zinc-800/80' : ''
               }`}
               onClick={() => handleTileClick('Onboarded')}
@@ -1364,3 +1364,4 @@ import {
 import { StatusDropdown } from "@/components/StatusDropdown";
 
 export default App;
+
