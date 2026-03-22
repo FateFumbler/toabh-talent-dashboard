@@ -268,7 +268,7 @@ export function ContractsTab() {
     return (
       contract.name?.toLowerCase().includes(searchLower) ||
       contract.email?.toLowerCase().includes(searchLower) ||
-      contract.phone?.toLowerCase().includes(searchLower)
+      String(contract.phone || '').toLowerCase().includes(searchLower)
     );
   });
 
@@ -277,7 +277,7 @@ export function ContractsTab() {
     if (!t) return false;
     const search = talentSearch.toLowerCase();
     const name = (t["Full Name"] || '').toLowerCase();
-    const phone = (t["Phone"] || '').toLowerCase();
+    const phone = String(t["Phone"] || '').toLowerCase();
     const email = (t["Email "] || t["Email"] || '').toLowerCase();
     return name.includes(search) || phone.includes(search) || email.includes(search);
   });
