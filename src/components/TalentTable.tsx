@@ -272,14 +272,14 @@ export function TalentTable({
 
               {/* Sort Dropdown */}
               <Select value={sortBy} onValueChange={(v: "newest" | "oldest" | "az" | "za") => setSortBy(v)}>
-                <SelectTrigger className="w-[110px] bg-input/50 h-9 text-xs">
+                <SelectTrigger className="w-[140px] bg-input/50">
                   <SelectValue placeholder="Sort" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="newest">🕐 Newest</SelectItem>
-                  <SelectItem value="oldest">🕰️ Oldest</SelectItem>
-                  <SelectItem value="az">🔤 A–Z</SelectItem>
-                  <SelectItem value="za">🔤 Z–A</SelectItem>
+                  <SelectItem value="newest">Newest</SelectItem>
+                  <SelectItem value="oldest">Oldest</SelectItem>
+                  <SelectItem value="az">A–Z</SelectItem>
+                  <SelectItem value="za">Z–A</SelectItem>
                 </SelectContent>
               </Select>
             </div>
