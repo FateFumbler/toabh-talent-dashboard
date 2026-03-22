@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card } from './ui/card';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { Search, FileText, ExternalLink, RefreshCw, Plus, Trash2 } from 'lucide-react';
+import { Search, FileText, ExternalLink, RefreshCw, Plus, Trash2, ChevronDown } from 'lucide-react';
 import type { Contract } from '../types/contract';
 import { fetchContracts } from '../services/contractsApi';
 import { fetchTalentMaster } from '../services/api';
@@ -73,6 +73,7 @@ export function ContractsTab() {
   const [formError, setFormError] = useState('');
   const [talents, setTalents] = useState<any[]>([]);
   const [selectedTalentIndex, setSelectedTalentIndex] = useState<number>(-1);
+  const [talentSearch, setTalentSearch] = useState('');
 
   const loadData = async () => {
     setLoading(true);
@@ -151,6 +152,15 @@ export function ContractsTab() {
     );
   });
 
+  // Filter talents for searchable dropdown
+  const filteredTalents = talents.filter(t => {
+    const search = talentSearch.toLowerCase();
+    const name = (t["Full Name"] || '').toLowerCase();
+    const phone = (t["Phone"] || '').toLowerCase();
+    const email = (t["Email "] || t["Email"] || '').toLowerCase();
+    return name.includes(search) || phone.includes(search) || email.includes(search);
+  });
+
   // Group by phone for display
   const contractsByPhone = filteredContracts.reduce(
     (acc, contract) => {
@@ -206,6 +216,7 @@ export function ContractsTab() {
               // Reset form when opening
               setFormData({ name: '', email: '', phone: '', contractLink: '' });
               setSelectedTalentIndex(-1);
+              setTalentSearch('');
             }
           }}>
             <Plus className="h-4 w-4 mr-2" />
@@ -223,33 +234,46 @@ export function ContractsTab() {
               <label className="block text-xs font-medium text-gray-400 mb-1">
                 Select Talent (for linking)
               </label>
-              <select
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm"
-                value={selectedTalentIndex}
-                onChange={(e) => {
-                  const idx = parseInt(e.target.value);
-                  setSelectedTalentIndex(idx);
-                  if (idx === -1) {
-                    // Clear fields
-                    setFormData({ name: '', phone: '', email: '', contractLink: '' });
-                  } else {
-                    const t = talents[idx];
-                    setFormData({
-                      name: t["Full Name"] || '',
-                      phone: t["Phone"]?.toString() || '',
-                      email: t["Email "] || t["Email"] || '',
-                      contractLink: formData.contractLink,
-                    });
-                  }
-                }}
-              >
-                <option value={-1}>-- Select Existing Talent --</option>
-                {talents.map((t, i) => (
-                  <option key={i} value={i}>
-                    {t["Full Name"]} - {t["Phone"] || 'No phone'}
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search talent by name, phone, or email..."
+                  value={talentSearch}
+                  onChange={(e) => setTalentSearch(e.target.value)}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 pr-10 text-white text-sm"
+                />
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              </div>
+              {/* Dropdown results */}
+              {talentSearch && (
+                <div className="absolute z-50 w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                  {filteredTalents.length === 0 ? (
+                    <div className="px-3 py-2 text-gray-500 text-sm">No talents found</div>
+                  ) : (
+                    filteredTalents.map((t, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => {
+                          const talent = t;
+                          setSelectedTalentIndex(talents.indexOf(talent));
+                          setFormData({
+                            name: talent["Full Name"] || '',
+                            phone: talent["Phone"]?.toString() || '',
+                            email: talent["Email "] || talent["Email"] || '',
+                            contractLink: formData.contractLink,
+                          });
+                          setTalentSearch(''); // Close dropdown
+                        }}
+                        className="w-full text-left px-3 py-2 hover:bg-gray-700 text-white text-sm border-b border-gray-700 last:border-b-0"
+                      >
+                        <div className="font-medium">{t["Full Name"]}</div>
+                        <div className="text-xs text-gray-400">{t["Phone"]} • {t["Email "] || t["Email"]}</div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
@@ -296,6 +320,7 @@ export function ContractsTab() {
                 setShowAddForm(false);
                 setSelectedTalentIndex(-1);
                 setFormData({ name: '', email: '', phone: '', contractLink: '' });
+                setTalentSearch('');
               }}>
                 Cancel
               </Button>
