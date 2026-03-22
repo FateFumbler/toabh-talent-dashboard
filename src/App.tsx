@@ -1302,7 +1302,6 @@ function TalentGridView({
                           e.stopPropagation();
                           handleManagerSelect(talent.rowIndex, "");
                         }}
-                        disabled={!!talent["Talent Manager"]}
                       >
                         {talent["Talent Manager"] ? "Change Manager" : "Assign Manager"}
                       </DropdownMenuItem>
