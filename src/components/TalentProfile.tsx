@@ -594,6 +594,14 @@ export function TalentProfileDialog({
                             src={getDriveImageUrl(polaroidLinks[currentImageIndex])}
                             alt={`Photo ${currentImageIndex + 1}`}
                             className="image-modal-image"
+                            onError={(e) => {
+                              // Fallback to thumbnail URL with larger size if direct URL fails
+                              const img = e.currentTarget as HTMLImageElement;
+                              const fileId = extractDriveFileId(polaroidLinks[currentImageIndex]);
+                              if (fileId) {
+                                img.src = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+                              }
+                            }}
                           />
 
                           {/* Navigation arrows */}
