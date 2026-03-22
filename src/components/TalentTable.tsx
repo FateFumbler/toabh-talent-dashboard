@@ -96,7 +96,8 @@ const renderInstagramLink = (
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="text-primary hover:underline"
+      title={url}
+      className="text-primary hover:underline block overflow-hidden text-ellipsis whitespace-nowrap max-w-[150px]"
     >
       {display}
     </a>
@@ -403,7 +404,8 @@ export function TalentTable({
       </Card>
 
       {/* Table */}
-      <div className="table-container">
+      <div className="table-container overflow-x-auto relative">
+        <div className="absolute right-0 top-0 bottom-0 w-6 pointer-events-none bg-gradient-to-l from-background to-transparent z-10 opacity-0 hover:opacity-100 transition-opacity scrollbar-hint" />
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent border-b border-border">

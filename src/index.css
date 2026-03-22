@@ -929,3 +929,16 @@ html, body {
   border-top: 1px solid var(--border-subtle);
   margin: 1rem 0;
 }
+
+/* ========================
+   TABLE SCROLLBAR HINT
+   ======================== */
+
+.scrollbar-hint {
+  background: linear-gradient(to left, hsl(var(--background) / 0.9), transparent);
+}
+
+/* Show scrollbar hint when table is scrollable */
+.table-container:has(> table:first-child::-webkit-scrollbar-thumb) .scrollbar-hint {
+  opacity: 100;
+}
