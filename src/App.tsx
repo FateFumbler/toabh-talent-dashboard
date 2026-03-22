@@ -538,6 +538,7 @@ function App() {
               <span className="absolute bottom-0 left-0 right-0 h-px bg-primary" />
             )}
           </button>
+          {/* [HIDDEN] Talent Profile nav button - kept for future use
           <button
             onClick={() => setActiveTab("talent-profile")}
             className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors relative ${
@@ -552,6 +553,7 @@ function App() {
               <span className="absolute bottom-0 left-0 right-0 h-px bg-primary" />
             )}
           </button>
+          */}
           <button
             onClick={() => setActiveTab("settings")}
             className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors relative ${
