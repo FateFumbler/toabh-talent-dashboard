@@ -493,7 +493,7 @@ export function TalentProfileDialog({
       title: "Basic Information",
       fields: [
         { label: "Full Name", value: gf("Full Name") },
-        { label: "Email", value: email ? <a href={`mailto:${email}`} className="text-primary hover:underline">{email}</a> : undefined },
+        { label: "Email", value: email ? <a href={`mailto:${email}`} className="text-primary hover:underline" style={{ wordBreak: 'break-all' }}>{email}</a> : undefined },
         { label: "Phone", value: phone ? <a href={`tel:${phone}`} className="text-primary hover:underline">{phone}</a> : undefined },
         { label: "City", value: gf("City & State (Current location)") || gf("City & State") || gf("City") },
         { label: "Gender", value: gf("Gender") },

@@ -3,7 +3,6 @@ import { ChevronDown, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import type { StatusValue } from "@/types/talent";
 import { STATUS_VALUES } from "@/types/talent";
-import { AnimatedList } from "./ui/AnimatedList";
 
 const statusColors: Record<StatusValue, { bg: string; text: string; dot: string }> = {
   "New": { bg: "bg-gray-700/60", text: "text-gray-100", dot: "bg-gray-400" },
@@ -104,17 +103,29 @@ export function StatusDropdown({
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-1 z-50 w-64 bg-gray-800 border border-gray-600 rounded-lg shadow-lg overflow-hidden p-2">
-          <AnimatedList
-            items={STATUS_VALUES.map(status => ({ label: status, value: status }))}
-            onItemSelect={(item) => handleSelect(item.value as StatusValue)}
-            showGradients={true}
-            displayScrollbar={false}
-            enableArrowNavigation={true}
-            selectedValue={currentStatus}
-            className="w-full"
-            itemClassName=""
-          />
+        <div className="absolute right-0 top-full mt-1 z-[9999] w-56 bg-gray-800 border border-gray-600 rounded-lg shadow-xl overflow-hidden">
+          <div className="py-1">
+            {STATUS_VALUES.map((status) => {
+              const statusColor = statusColors[status];
+              const isSelected = status === currentStatus;
+              
+              return (
+                <button
+                  key={status}
+                  onClick={() => handleSelect(status)}
+                  className={`w-full flex items-center gap-2 px-3 py-3 sm:py-2 text-sm text-white hover:bg-gray-700 transition-colors min-h-[44px] ${
+                    isSelected ? "bg-gray-700/50" : ""
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full ${statusColor.dot}`} />
+                  <span className="flex-1 text-left">{status}</span>
+                  {isSelected && (
+                    <span className="text-xs text-gray-400">Current</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
