@@ -129,11 +129,7 @@ export function TalentTable({
   const [cityFilter, setCityFilter] = useState<string>("all");
   const [selectedManagers, setSelectedManagers] = useState<Record<number, string>>({});
   
-  // New filters: Age range, Height range, and Sort
-  const [ageMin, setAgeMin] = useState<string>("");
-  const [ageMax, setAgeMax] = useState<string>("");
-  const [heightMin, setHeightMin] = useState<string>("");
-  const [heightMax, setHeightMax] = useState<string>("");
+  // Sort filter
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "az" | "za">("newest");
   
   // Use external status filter if provided (controlled), otherwise use internal
@@ -170,17 +166,7 @@ export function TalentTable({
         managerFilter === "all" || talent["Talent Manager"] === managerFilter;
       const matchesCity = cityFilter === "all" || talent["City"] === cityFilter;
 
-      // Age filter
-      const ageValue = parseInt(talent["Age"]);
-      const matchesAgeMin = !ageMin || (!isNaN(ageValue) && ageValue >= parseInt(ageMin));
-      const matchesAgeMax = !ageMax || (!isNaN(ageValue) && ageValue <= parseInt(ageMax));
-
-      // Height filter (stored as string like "5'7" or just a number)
-      const heightValue = parseFloat(talent["Height"]);
-      const matchesHeightMin = !heightMin || (!isNaN(heightValue) && heightValue >= parseFloat(heightMin));
-      const matchesHeightMax = !heightMax || (!isNaN(heightValue) && heightValue <= parseFloat(heightMax));
-
-      return matchesSearch && matchesStatus && matchesManager && matchesCity && matchesAgeMin && matchesAgeMax && matchesHeightMin && matchesHeightMax;
+      return matchesSearch && matchesStatus && matchesManager && matchesCity;
     });
 
     // Apply sorting
@@ -200,11 +186,31 @@ export function TalentTable({
     }
 
     return filtered;
-  }, [talents, search, statusFilter, managerFilter, cityFilter, ageMin, ageMax, heightMin, heightMax, sortBy]);
+  }, [talents, search, statusFilter, managerFilter, cityFilter, sortBy]);
 
   const handleManagerSelect = (rowIndex: number, manager: string) => {
     setSelectedManagers((prev) => ({ ...prev, [rowIndex]: manager }));
     onManagerAssign(rowIndex, manager);
+  };
+
+  // Check if any filter is currently active
+  const hasActiveFilters = () => {
+    return (
+      statusFilter !== "all" ||
+      managerFilter !== "all" ||
+      cityFilter !== "all" ||
+      search !== "" ||
+      sortBy !== "newest"
+    );
+  };
+
+  // Clear all filters and reset to defaults
+  const clearAllFilters = () => {
+    setStatusFilter("all");
+    setManagerFilter("all");
+    setCityFilter("all");
+    setSearch("");
+    setSortBy("newest");
   };
 
   return (
@@ -264,52 +270,6 @@ export function TalentTable({
                 </SelectContent>
               </Select>
 
-              {/* Age Range Filter */}
-              <div className="flex items-center gap-1">
-                <Input
-                  type="number"
-                  placeholder="Age Min"
-                  value={ageMin}
-                  onChange={(e) => setAgeMin(e.target.value)}
-                  className="w-[70px] bg-input/50 h-9 text-xs"
-                  min={0}
-                  max={100}
-                />
-                <span className="text-muted-foreground text-xs">–</span>
-                <Input
-                  type="number"
-                  placeholder="Age Max"
-                  value={ageMax}
-                  onChange={(e) => setAgeMax(e.target.value)}
-                  className="w-[70px] bg-input/50 h-9 text-xs"
-                  min={0}
-                  max={100}
-                />
-              </div>
-
-              {/* Height Range Filter */}
-              <div className="flex items-center gap-1">
-                <Input
-                  type="number"
-                  placeholder="Ht Min"
-                  value={heightMin}
-                  onChange={(e) => setHeightMin(e.target.value)}
-                  className="w-[70px] bg-input/50 h-9 text-xs"
-                  min={0}
-                  max={100}
-                />
-                <span className="text-muted-foreground text-xs">–</span>
-                <Input
-                  type="number"
-                  placeholder="Ht Max"
-                  value={heightMax}
-                  onChange={(e) => setHeightMax(e.target.value)}
-                  className="w-[70px] bg-input/50 h-9 text-xs"
-                  min={0}
-                  max={100}
-                />
-              </div>
-
               {/* Sort Dropdown */}
               <Select value={sortBy} onValueChange={(v: "newest" | "oldest" | "az" | "za") => setSortBy(v)}>
                 <SelectTrigger className="w-[110px] bg-input/50 h-9 text-xs">
@@ -335,6 +295,22 @@ export function TalentTable({
               )}
             </div>
             <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={clearAllFilters}
+                disabled={!hasActiveFilters()}
+                className="hover:bg-accent/50"
+                style={{
+                  backgroundColor: hasActiveFilters() ? "#dc3545" : "#e0e0e0",
+                  color: hasActiveFilters() ? "#fff" : "#999",
+                  border: "none",
+                  cursor: hasActiveFilters() ? "pointer" : "not-allowed",
+                  fontWeight: hasActiveFilters() ? "600" : "400",
+                }}
+              >
+                Clear Filters
+              </Button>
               <Button
                 variant="outline"
                 size="sm"
