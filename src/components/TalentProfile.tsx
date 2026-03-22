@@ -319,7 +319,7 @@ export function TalentProfileDialog({
         const allContracts = await fetchContracts();
         // Filter contracts by normalized phone number
         const talentContracts = allContracts.filter((contract: Contract) => {
-          const contractPhone = normalizePhone(contract['Phone Number'] || '');
+          const contractPhone = normalizePhone(contract.phone || '');
           return contractPhone === talentPhone;
         });
         setContracts(talentContracts);
@@ -522,17 +522,17 @@ export function TalentProfileDialog({
             <div key={idx} className="flex items-center justify-between p-2 bg-muted/30 rounded-lg">
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium text-foreground truncate">
-                  {contract['Full Name'] || 'Unnamed'}
+                  {contract.name || 'Unnamed'}
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  {contract['Email'] || 'No email'} • {contract['Phone Number'] || 'No phone'}
+                  {contract.email || 'No email'} • {contract.phone || 'No phone'}
                 </div>
               </div>
-              {contract['Contract Drive Link'] && (
+              {contract.contractLink && (
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => window.open(contract['Contract Drive Link'], '_blank', 'noopener,noreferrer')}
+                  onClick={() => window.open(contract.contractLink, '_blank', 'noopener,noreferrer')}
                   className="ml-2 shrink-0"
                 >
                   <FileText className="h-3 w-3 mr-1" />

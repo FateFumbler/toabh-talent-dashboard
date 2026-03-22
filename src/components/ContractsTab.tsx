@@ -18,10 +18,10 @@ export function ContractsTab() {
   // Form state
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
-    fullName: '',
+    name: '',
     email: '',
     phone: '',
-    driveLink: '',
+    contractLink: '',
     talentName: '',
   });
   const [saving, setSaving] = useState(false);
@@ -48,18 +48,23 @@ export function ContractsTab() {
   }, []);
 
   const handleAddContract = async () => {
-    if (!formData.fullName || !formData.phone || !formData.driveLink) {
-      alert('Please fill in Full Name, Phone Number, and Contract Link');
+    if (!formData.name || !formData.phone || !formData.contractLink) {
+      alert('Please fill in Name, Phone, and Contract Link');
       return;
     }
 
     setSaving(true);
     try {
-      const result = await addContract(formData);
+      const result = await addContract({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        contractLink: formData.contractLink,
+      });
       if (result.success) {
-        setFormData({ fullName: '', email: '', phone: '', driveLink: '', talentName: '' });
+        setFormData({ name: '', email: '', phone: '', contractLink: '', talentName: '' });
         setShowForm(false);
-        await loadData(); // Refresh table
+        await loadData();
       } else {
         alert(result.error || 'Failed to add contract. Please try again.');
       }
@@ -77,7 +82,7 @@ export function ContractsTab() {
       setFormData((prev) => ({
         ...prev,
         talentName,
-        fullName: talentAny['Full Name'] || talentName,
+        name: talentAny['Full Name'] || talentName,
         email: talentAny['Email '] || talentAny['Email'] || '',
         phone: talentAny['Phone'] || talentAny['Phone Number'] || '',
       }));
@@ -96,16 +101,16 @@ export function ContractsTab() {
   const filteredContracts = contracts.filter((contract) => {
     const searchLower = search.toLowerCase();
     return (
-      contract['Full Name']?.toLowerCase().includes(searchLower) ||
-      contract['Email']?.toLowerCase().includes(searchLower) ||
-      contract['Phone Number']?.toLowerCase().includes(searchLower)
+      contract.name?.toLowerCase().includes(searchLower) ||
+      contract.email?.toLowerCase().includes(searchLower) ||
+      contract.phone?.toLowerCase().includes(searchLower)
     );
   });
 
   // Group by phone for display
   const contractsByPhone = filteredContracts.reduce(
     (acc, contract) => {
-      const phone = contract['Phone Number'] || 'Unknown';
+      const phone = contract.phone || 'Unknown';
       if (!acc[phone]) acc[phone] = [];
       acc[phone].push(contract);
       return acc;
@@ -178,14 +183,14 @@ export function ContractsTab() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium mb-2 block">
-                Full Name *
+                Name *
               </label>
               <Input
-                value={formData.fullName}
+                value={formData.name}
                 onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, fullName: e.target.value }))
+                  setFormData((prev) => ({ ...prev, name: e.target.value }))
                 }
-                placeholder="Enter full name"
+                placeholder="Enter name"
               />
             </div>
             <div>
@@ -201,7 +206,7 @@ export function ContractsTab() {
             </div>
             <div>
               <label className="text-sm font-medium mb-2 block">
-                Phone Number *
+                Phone *
               </label>
               <Input
                 value={formData.phone}
@@ -216,11 +221,11 @@ export function ContractsTab() {
                 Google Doc Link *
               </label>
               <Input
-                value={formData.driveLink}
+                value={formData.contractLink}
                 onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, driveLink: e.target.value }))
+                  setFormData((prev) => ({ ...prev, contractLink: e.target.value }))
                 }
-                placeholder="Paste Google Drive link..."
+                placeholder="Paste Google Doc link..."
               />
             </div>
           </div>
@@ -281,13 +286,13 @@ export function ContractsTab() {
                 {Object.entries(contractsByPhone).map(([phone, phoneContracts]) => (
                   <tr key={phone} className="border-t">
                     <td className="px-4 py-3 text-sm text-foreground font-medium">
-                      {phoneContracts[0]['Full Name'] || 'N/A'}
+                      {phoneContracts[0].name || 'N/A'}
                     </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">
                       {phone}
                     </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">
-                      {phoneContracts[0]['Email'] || 'N/A'}
+                      {phoneContracts[0].email || 'N/A'}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-2">
@@ -297,7 +302,7 @@ export function ContractsTab() {
                             variant="outline"
                             size="sm"
                             onClick={() =>
-                              handleViewContract(contract['Contract Drive Link'])
+                              handleViewContract(contract.contractLink)
                             }
                             className="text-xs"
                           >
