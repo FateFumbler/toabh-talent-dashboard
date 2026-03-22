@@ -25,37 +25,59 @@ interface ConfirmationModalProps {
   onConfirm: () => void;
   onCancel: () => void;
   isLoading?: boolean;
+  anchorRect?: DOMRect | null;
 }
 
-function ConfirmationModal({ isOpen, title, onConfirm, onCancel, isLoading }: ConfirmationModalProps) {
+function ConfirmationModal({ isOpen, title, onConfirm, onCancel, isLoading, anchorRect }: ConfirmationModalProps) {
   if (!isOpen) return null;
 
+  // Calculate position: place popup below the anchor button, aligned to left edge
+  // Use fixed positioning relative to viewport with coordinates from anchor rect
+  const popupStyle: React.CSSProperties = anchorRect
+    ? {
+        position: 'fixed',
+        top: anchorRect.bottom + 8, // 8px gap below button
+        left: anchorRect.left,
+        zIndex: 1000,
+      }
+    : {
+        position: 'fixed',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        zIndex: 1000,
+      };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
+    <>
+      {/* Backdrop - click to dismiss */}
       <div 
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="fixed inset-0 z-[999]"
         onClick={onCancel}
+        style={{ background: 'transparent' }}
       />
       
-      {/* Modal */}
-      <div className="relative bg-zinc-900 border border-border rounded-xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden">
-        <div className="p-6">
-          <p className="text-foreground text-center">{title}</p>
+      {/* Popup - positioned near the clicked button using fixed coordinates */}
+      <div 
+        className="fixed z-[1000] w-64 bg-zinc-900 border border-border rounded-xl shadow-2xl overflow-hidden"
+        style={popupStyle}
+      >
+        <div className="p-4">
+          <p className="text-foreground text-sm text-center">{title}</p>
         </div>
         
         <div className="flex border-t border-border">
           <button
             onClick={onCancel}
             disabled={isLoading}
-            className="flex-1 px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-accent/50 transition-colors disabled:opacity-50"
+            className="flex-1 px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent/50 transition-colors disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             onClick={onConfirm}
             disabled={isLoading}
-            className="flex-1 px-4 py-3 text-sm font-medium text-primary hover:bg-primary/10 transition-colors disabled:opacity-50 border-l border-border"
+            className="flex-1 px-4 py-2.5 text-sm font-medium text-primary hover:bg-primary/10 transition-colors disabled:opacity-50 border-l border-border"
           >
             {isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin mx-auto" />
@@ -65,7 +87,7 @@ function ConfirmationModal({ isOpen, title, onConfirm, onCancel, isLoading }: Co
           </button>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -89,7 +111,9 @@ export function StatusDropdown({
   const [isOpen, setIsOpen] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<StatusValue | null>(null);
   const [step, setStep] = useState<1 | 2 | null>(null);
+  const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   // Close on click outside
   useEffect(() => {
@@ -98,6 +122,7 @@ export function StatusDropdown({
         setIsOpen(false);
         setPendingStatus(null);
         setStep(null);
+        setAnchorRect(null);
       }
     }
 
@@ -114,6 +139,7 @@ export function StatusDropdown({
         setIsOpen(false);
         setPendingStatus(null);
         setStep(null);
+        setAnchorRect(null);
       }
     }
 
@@ -139,6 +165,11 @@ export function StatusDropdown({
 
     setPendingStatus(status);
 
+    // Get button position for popup anchoring
+    if (buttonRef.current) {
+      setAnchorRect(buttonRef.current.getBoundingClientRect());
+    }
+
     // Check if we need step 1 confirmation
     const needsActionConfirmation = actionConfirmationMessages[status];
     
@@ -158,6 +189,7 @@ export function StatusDropdown({
   const handleActionCancel = () => {
     setPendingStatus(null);
     setStep(null);
+    setAnchorRect(null);
   };
 
   const handleFinalConfirm = () => {
@@ -166,11 +198,13 @@ export function StatusDropdown({
     setIsOpen(false);
     setPendingStatus(null);
     setStep(null);
+    setAnchorRect(null);
   };
 
   const handleFinalCancel = () => {
     setPendingStatus(null);
     setStep(null);
+    setAnchorRect(null);
   };
 
   const colors = statusColors[currentStatus] || statusColors["New"];
@@ -179,6 +213,7 @@ export function StatusDropdown({
     <>
       <div className="relative" ref={dropdownRef}>
         <button
+          ref={buttonRef}
           onClick={() => !disabled && setIsOpen(!isOpen)}
           disabled={disabled || isLoading}
           className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${colors.bg} ${colors.text} hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed`}
@@ -220,21 +255,23 @@ export function StatusDropdown({
         )}
       </div>
 
-      {/* Step 1: Action Confirmation */}
+      {/* Step 1: Action Confirmation - anchored near the clicked button */}
       <ConfirmationModal
         isOpen={step === 1}
         title={pendingStatus ? actionConfirmationMessages[pendingStatus] || "" : ""}
         onConfirm={handleActionConfirm}
         onCancel={handleActionCancel}
+        anchorRect={anchorRect}
       />
 
-      {/* Step 2: Final Confirmation */}
+      {/* Step 2: Final Confirmation - anchored near the clicked button */}
       <ConfirmationModal
         isOpen={step === 2}
         title={pendingStatus ? `Are you sure you want to change status to "${pendingStatus}"?` : ""}
         onConfirm={handleFinalConfirm}
         onCancel={handleFinalCancel}
         isLoading={isLoading}
+        anchorRect={anchorRect}
       />
     </>
   );
