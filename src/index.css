@@ -1,6 +1,21 @@
 @import "tailwindcss";
 
 /* ========================
+   DESIGN SYSTEM - Smooth Transitions & Animations
+   ======================== */
+
+/* Base transitions for smooth interactions */
+* {
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Disable transitions for specific interactions */
+button, a, input, select {
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: 150ms;
+}
+
+/* ========================
    THEME SYSTEM - CSS Variables
    ======================== */
 
@@ -278,19 +293,29 @@ html, body {
 .glass {
   background: var(--glass-bg);
   backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--glass-border);
 }
 
 .glass-card {
   background: var(--glass-bg);
   backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--glass-border);
   box-shadow: 0 4px 24px oklch(0 0 0 / 0.15);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.glass-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px oklch(0 0 0 / 0.25);
+  border-color: var(--primary);
 }
 
 .glass-dialog {
   background: var(--glass-bg);
   backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   border: 1px solid var(--glass-border);
 }
 
@@ -367,6 +392,130 @@ html, body {
 
 .hover-glow:hover {
   animation: subtle-glow 2s ease-in-out;
+}
+
+/* Smooth scale on hover for interactive cards */
+.card-hover-scale {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-hover-scale:hover {
+  transform: scale(1.02);
+}
+
+/* Dropdown animation */
+@keyframes dropdown-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.dropdown-animate {
+  animation: dropdown-enter 0.15s ease-out;
+}
+
+/* Profile section cards with better styling */
+.talent-profile .profile-card {
+  padding: 16px 18px;
+  margin-bottom: 14px;
+  border-radius: 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.talent-profile .profile-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 2px 12px oklch(0 0 0 / 0.1);
+}
+
+/* Better table row styling */
+.table-row-hover {
+  transition: background-color 0.15s ease;
+}
+
+.table-row-hover:hover {
+  background-color: var(--accent) !important;
+}
+
+/* Status badge with pulse animation for active states */
+@keyframes status-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.status-pulse {
+  animation: status-pulse 2s ease-in-out infinite;
+}
+
+/* Smooth tab indicator animation */
+.tab-indicator {
+  transition: left 0.2s ease, right 0.2s ease;
+}
+
+/* Better focus states for accessibility */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Email text wrapping utility */
+.email-text {
+  word-break: break-all;
+  overflow-wrap: anywhere;
+}
+
+/* Ensure long text doesn't overflow */
+.text-overflow-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Ensure dropdowns don't get clipped - CRITICAL for z-index fix */
+.dropdown-container {
+  position: relative;
+  overflow: visible !important;
+}
+
+/* Stats cards hover effect */
+.stats-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.stats-card:hover {
+  transform: translateY(-2px);
+}
+
+/* Talent card in grid view */
+.talent-grid .talent-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.talent-grid .talent-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px oklch(0 0 0 / 0.2);
+  border-color: var(--primary);
+}
+
+/* Dialog backdrop blur improvement */
+dialog, 
+[role="dialog"] {
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
 }
 
 /* ========================

@@ -402,8 +402,8 @@ export function TalentTable({
               filteredTalents.map((talent, index) => (
                 <TableRow 
                   key={talent.rowIndex} 
-                  className={`hover:bg-zinc-800/40 transition-colors duration-150 ${
-                    index % 2 === 1 ? 'bg-zinc-900/20' : ''
+                  className={`table-row-hover border-b border-border/30 ${
+                    index % 2 === 1 ? 'bg-zinc-900/10' : ''
                   }`}
                 >
                   <TableCell className="text-left py-4 px-4 align-middle">

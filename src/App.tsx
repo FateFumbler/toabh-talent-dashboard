@@ -456,6 +456,22 @@ function App() {
     );
   };
 
+  // Special renderer for email fields with proper word-break
+  const renderEmailField = (label: string, value: string | number | undefined | null) => {
+    if (!value || value.toString().trim() === "") {
+      return renderProfileField(label, value);
+    }
+    const emailStr = value.toString();
+    return (
+      <div className="text-sm">
+        <dt className="text-muted-foreground font-medium">{label}</dt>
+        <dd className="mt-0.5 text-foreground" style={{ wordBreak: 'break-all' }}>
+          <a href={`mailto:${emailStr}`} className="text-primary hover:underline">{emailStr}</a>
+        </dd>
+      </div>
+    );
+  };
+
   const renderClickableLink = (label: string, value: string | undefined, baseUrl: string = "") => {
     if (!value || value.trim() === "") {
       return renderProfileField(label, value);
@@ -847,7 +863,7 @@ function App() {
                   <h4 className="text-base font-semibold text-foreground mb-4">Basic Information</h4>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {renderProfileField("Full Name", selectedProfile["Full Name"])}
-                    {renderProfileField("Email", selectedProfile["Email Address"] || (selectedProfile as any)["Email "])}
+                    {renderEmailField("Email", selectedProfile["Email Address"] || (selectedProfile as any)["Email "])}
                     {renderProfileField("Phone", selectedProfile["Phone Number"] || selectedProfile["Phone"])}
                     {renderProfileField("City", selectedProfile["City & State"] || selectedProfile["City"])}
                     {renderProfileField("Gender", selectedProfile["Gender"])}

@@ -83,7 +83,7 @@ export function StatusDropdown({
   const colors = statusColors[currentStatus] || statusColors["New"];
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative dropdown-container" ref={dropdownRef} style={{ overflow: 'visible' }}>
       <button
         onClick={(e) => {
           e.stopPropagation();
@@ -99,11 +99,17 @@ export function StatusDropdown({
           <span className={`w-2 h-2 rounded-full ${colors.dot}`} />
         )}
         <span>{currentStatus || "New"}</span>
-        <ChevronDown className="h-4 w-4 sm:h-3 sm:w-3" />
+        <ChevronDown className="h-4 w-4 sm:h-3 sm:w-3 transition-transform" />
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-1 z-[9999] w-full sm:w-56 max-w-full bg-gray-800 border border-gray-600 rounded-lg shadow-xl">
+        <div 
+          className="absolute right-0 top-full mt-1 dropdown-animate w-full sm:w-56 max-w-full bg-gray-800 border border-gray-600 rounded-lg"
+          style={{ 
+            zIndex: 9999,
+            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.4)'
+          }}
+        >
           <div className="py-1">
             {STATUS_VALUES.map((status) => {
               const statusColor = statusColors[status];
