@@ -354,7 +354,7 @@ export function TalentTable({
         </div>
       </Card>
 
-      <div className="glass-card rounded-xl overflow-hidden">
+      <div className="glass-card rounded-xl overflow-visible">
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent border-border/30">
