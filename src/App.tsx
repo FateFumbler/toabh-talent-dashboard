@@ -498,52 +498,41 @@ function App() {
       {/* Header */}
       <header className="glass sticky top-0 z-10 border-b border-border/50" style={{ paddingTop: 'env(safe-area-inset-top, 0)' }}>
         <div className="container mx-auto px-4 py-4">
-          <div className="flex flex-col items-center gap-2 md:flex-row md:justify-between">
-            {/* Mobile: logo centered on top, title below */}
-            <div className="flex flex-col items-center md:flex-row md:gap-3">
-              {/* Logo - white on dark mode, black on light mode */}
-              <img 
-                src="/logo_white.png" 
-                alt="TOABH" 
-                className="hidden dark:block h-8 w-auto" 
-              />
-              <img 
-                src="/logo_black.png" 
-                alt="TOABH" 
-                className="block dark:hidden h-8 w-auto" 
-              />
-              {/* Title */}
-              <h1 className="text-lg font-bold text-foreground tracking-tight">
-                Scouting Dashboard
-              </h1>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={loadTalents}
-              disabled={isLoading}
-              className="hover:bg-accent/50 touch-target"
-            >
-              <RefreshCw className={`h-4 w-4 mr-0 sm:mr-2 ${isLoading ? "animate-spin" : ""}`} />
-              <span className="hidden sm:inline">Sync</span>
-            </Button>
+          {/* Mobile: logo centered on top with title below, tight spacing */}
+          <div className="flex flex-col items-center gap-1">
+            {/* Logo - white on dark mode, black on light mode */}
+            <img 
+              src="/logo_white.png" 
+              alt="TOABH" 
+              className="hidden dark:block h-8 w-auto" 
+            />
+            <img 
+              src="/logo_black.png" 
+              alt="TOABH" 
+              className="block dark:hidden h-8 w-auto" 
+            />
+            {/* Title */}
+            <h1 className="text-base font-bold text-foreground tracking-tight">
+              Scouting Dashboard
+            </h1>
           </div>
         </div>
       </header>
 
       {/* Tab Navigation */}
       <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
-        <div className="flex items-center gap-1 border-b border-border/50 pb-px">
+        <div className="flex items-center justify-between border-b border-border/50 pb-px">
           <button
             onClick={() => setActiveTab("talent-master")}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors relative ${
+            className={`flex items-center gap-2 px-3 sm:px-4 py-2.5 text-sm font-medium transition-colors relative ${
               activeTab === "talent-master"
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <List className="h-4 w-4" />
-            Talent Master
+            <span className="hidden xs:inline">Talent Master</span>
+            <span className="xs:hidden">Talent</span>
             {activeTab === "talent-master" && (
               <span className="absolute bottom-0 left-0 right-0 h-px bg-primary" />
             )}
@@ -566,28 +555,28 @@ function App() {
           */}
           <button
             onClick={() => setActiveTab("contracts")}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors relative ${
+            className={`flex items-center gap-2 px-3 sm:px-4 py-2.5 text-sm font-medium transition-colors relative ${
               activeTab === "contracts"
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <FileText className="h-4 w-4" />
-            Contracts
+            <span className="hidden xs:inline">Contracts</span>
             {activeTab === "contracts" && (
               <span className="absolute bottom-0 left-0 right-0 h-px bg-primary" />
             )}
           </button>
           <button
             onClick={() => setActiveTab("settings")}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors relative ${
+            className={`flex items-center gap-2 px-3 sm:px-4 py-2.5 text-sm font-medium transition-colors relative ${
               activeTab === "settings"
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <SettingsIcon className="h-4 w-4" />
-            Settings
+            <span className="hidden xs:inline">Settings</span>
             {activeTab === "settings" && (
               <span className="absolute bottom-0 left-0 right-0 h-px bg-primary" />
             )}
@@ -680,9 +669,20 @@ function App() {
         {/* Talent Master Tab */}
         {activeTab === "talent-master" && (
           <>
-            {/* View Toggle */}
-            <div className="flex justify-end mb-4">
-              <div className="flex items-center gap-1 bg-secondary/50 rounded-lg p-1">
+            {/* Sync & View Toggle Row */}
+            <div className="flex items-center justify-between mb-4 px-2 py-2 bg-gray-800/50 rounded-lg">
+              {/* Left: Sync button */}
+              <button
+                onClick={loadTalents}
+                disabled={isLoading}
+                className="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded-lg transition-colors"
+              >
+                <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
+                <span className="text-sm">Sync</span>
+              </button>
+              
+              {/* Right: View toggle */}
+              <div className="flex items-center gap-1 bg-gray-800 rounded-lg p-1">
                 {/* Mobile: Show filter toggle */}
                 <button
                   onClick={() => setFiltersOpen(!filtersOpen)}
@@ -693,10 +693,10 @@ function App() {
                 </button>
                 <button
                   onClick={() => handleViewModeChange("list")}
-                  className={`p-2 rounded-md transition-colors ${
+                  className={`px-3 py-1.5 rounded-md transition-colors ${
                     viewMode === "list"
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "bg-purple-600 text-white"
+                      : "text-gray-400 hover:text-white"
                   }`}
                   title="List View"
                 >
@@ -704,10 +704,10 @@ function App() {
                 </button>
                 <button
                   onClick={() => handleViewModeChange("grid")}
-                  className={`p-2 rounded-md transition-colors ${
+                  className={`px-3 py-1.5 rounded-md transition-colors ${
                     viewMode === "grid"
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "bg-purple-600 text-white"
+                      : "text-gray-400 hover:text-white"
                   }`}
                   title="Grid View"
                 >
