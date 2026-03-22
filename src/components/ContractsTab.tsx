@@ -213,7 +213,7 @@ export function ContractsTab() {
             </div>
             <div>
               <label className="text-sm font-medium mb-2 block">
-                Contract Drive Link *
+                Google Doc Link *
               </label>
               <Input
                 value={formData.driveLink}
