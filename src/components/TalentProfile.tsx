@@ -7,17 +7,25 @@ import {
 // Card components removed - using custom profile-card styling
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { Talent, TalentDetails } from "@/types/talent";
+import type { Talent, TalentDetails, StatusValue } from "@/types/talent";
+import { MANAGERS } from "@/types/talent";
 import { fetchTalentMaster, fetchTalentDetails } from "@/services/api";
 import { fetchContracts } from "@/services/contractsApi";
 import { getLocalContracts } from "@/services/localContracts";
-import { Loader2, User, FileText, AlertTriangle, X, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
+import { Loader2, User, FileText, AlertTriangle, X, ChevronLeft, ChevronRight, ExternalLink, ChevronDown } from "lucide-react";
 import type { Contract } from "@/types/contract";
+import { toast } from "sonner";
+import { StatusDropdown } from "./StatusDropdown";
 
 interface TalentProfileProps {
   name: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  // Optional update handlers - if provided, dropdowns become interactive
+  onStatusUpdate?: (row: number, status: string) => void;
+  onManagerAssign?: (row: number, manager: string) => void;
+  rowIndex?: number;
+  isStatusLoading?: boolean;
 }
 
 // Error Boundary to prevent white screen crashes
@@ -144,15 +152,49 @@ function safeField(value: unknown): string | undefined {
   return String(value);
 }
 
+// Helper to format height properly - converts inches to feet'inches" format
+function formatHeight(height: string | undefined | null): string {
+  if (!height) return "-";
+  const trimmed = String(height).trim();
+  if (!trimmed) return "-";
+  
+  // If it already contains a foot mark, it's probably already formatted correctly
+  if (trimmed.includes("'") || trimmed.includes("ft")) {
+    // Clean up and standardize format: 5'6" or 5'6
+    return trimmed.replace(/"/g, "").replace(/ ft /g, "'").replace(/ in$/g, "\"").replace(/ inches$/g, "\"");
+  }
+  
+  // If it's just a number, assume it's inches and convert to feet'inches"
+  const inches = parseInt(trimmed, 10);
+  if (!isNaN(inches)) {
+    if (inches >= 12) {
+      const feet = Math.floor(inches / 12);
+      const remainingInches = inches % 12;
+      return remainingInches > 0 ? `${feet}'${remainingInches}"` : `${feet}'`;
+    } else {
+      return `${inches}"`;
+    }
+  }
+  
+  // Return as-is if we can't parse it
+  return trimmed;
+}
+
 export function TalentProfileDialog({
   name,
   open,
   onOpenChange,
+  onStatusUpdate,
+  onManagerAssign,
+  rowIndex,
+  isStatusLoading,
 }: TalentProfileProps) {
   const [profile, setProfile] = useState<(Talent & Partial<TalentDetails>) | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [contracts, setContracts] = useState<Contract[]>([]);
+  const [isManagerDropdownOpen, setIsManagerDropdownOpen] = useState(false);
+  const managerDropdownRef = useRef<HTMLDivElement>(null);
 
   // Modal state for image preview
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -168,8 +210,37 @@ export function TalentProfileDialog({
       setIsModalOpen(false);
       setCurrentImageIndex(0);
       imageCountRef.current = 0;
+      setIsManagerDropdownOpen(false);
     }
   }, [open]);
+
+  // Close manager dropdown on click outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (managerDropdownRef.current && !managerDropdownRef.current.contains(event.target as Node)) {
+        setIsManagerDropdownOpen(false);
+      }
+    }
+
+    if (isManagerDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [isManagerDropdownOpen]);
+
+  // Close manager dropdown on Escape
+  useEffect(() => {
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsManagerDropdownOpen(false);
+      }
+    }
+
+    if (isManagerDropdownOpen) {
+      document.addEventListener("keydown", handleEscape);
+      return () => document.removeEventListener("keydown", handleEscape);
+    }
+  }, [isManagerDropdownOpen]);
 
   // Modal navigation handlers
   const openModal = (index: number) => {
@@ -428,7 +499,7 @@ export function TalentProfileDialog({
         { label: "Age", value: gf("Age")?.toString() },
         { label: "Date of Birth", value: formatDateField(gf("Date of Birth ")) },
         { label: "Nationality", value: gf("Nationality") },
-        { label: "Height (in feet & inches)", value: gf("Height (in feet & inches)") || gf("Height") },
+        { label: "Height (in feet & inches)", value: formatHeight(gf("Height (in feet & inches)") || gf("Height")) },
       ],
     };
   };
@@ -436,7 +507,7 @@ export function TalentProfileDialog({
   const getPhysicalAttributes = (): ProfileSection => ({
     title: "Physical Attributes",
     fields: [
-      { label: "Height (in feet & inches)", value: gf("Height (in feet & inches)") },
+      { label: "Height (in feet & inches)", value: formatHeight(gf("Height (in feet & inches)")) },
       { label: "Chest/Bust (in inches)", value: gf("Chest/Bust (in inches)") },
       { label: "Waist (in inches)", value: gf("Waist (in inches)") },
       { label: "Hips (in inches)", value: gf("Hips (in inches)") },
@@ -589,19 +660,88 @@ export function TalentProfileDialog({
           <ProfileErrorBoundary>
             <div className="talent-profile space-y-5">
               {/* Header: Name as large heading + Status/Manager */}
-              <div className="profile-header space-y-2">
+              <div className="profile-header space-y-3">
                 <h2 className="text-2xl font-bold text-foreground break-words">
                   {profileName}
                 </h2>
-                <div className="flex flex-wrap gap-2">
-                  <Badge variant={getStatusVariant(profileStatus)} className="text-xs sm:text-sm">
-                    {profileStatus}
-                  </Badge>
-                  {profileManager && (
-                    <Badge variant="outline" className="text-xs sm:text-sm break-words">
-                      Manager: {profileManager}
+                <div className="flex flex-wrap items-center gap-3">
+                  {/* Status Dropdown */}
+                  {typeof rowIndex === 'number' && onStatusUpdate ? (
+                    <StatusDropdown
+                      currentStatus={(profileStatus as StatusValue) || "New"}
+                      rowIndex={rowIndex}
+                      onStatusChange={onStatusUpdate}
+                      disabled={false}
+                      isLoading={isStatusLoading}
+                      hasManager={!!profileManager}
+                    />
+                  ) : (
+                    <Badge variant={getStatusVariant(profileStatus)} className="text-xs sm:text-sm">
+                      {profileStatus}
                     </Badge>
                   )}
+                  
+                  {/* Manager Dropdown or Badge */}
+                  <div className="relative" ref={managerDropdownRef}>
+                    {profileManager ? (
+                      typeof rowIndex === 'number' && onManagerAssign ? (
+                        <button
+                          onClick={() => setIsManagerDropdownOpen(!isManagerDropdownOpen)}
+                          className="inline-flex items-center gap-1.5 px-3 py-2 sm:py-1.5 bg-gray-700/60 text-gray-100 rounded-full text-sm font-medium hover:bg-gray-600/60 transition-all min-h-[44px] sm:min-h-[auto]"
+                        >
+                          <span>Manager: {profileManager}</span>
+                          <ChevronDown className="h-4 w-4" />
+                        </button>
+                      ) : (
+                        <Badge variant="outline" className="text-xs sm:text-sm break-words">
+                          Manager: {profileManager}
+                        </Badge>
+                      )
+                    ) : typeof rowIndex === 'number' && onManagerAssign ? (
+                      <button
+                        onClick={() => setIsManagerDropdownOpen(!isManagerDropdownOpen)}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 sm:py-1.5 bg-gray-800 border border-gray-600 text-gray-300 rounded-full text-sm font-medium hover:bg-gray-700 transition-all min-h-[44px] sm:min-h-[auto]"
+                      >
+                        <span>Assign Manager</span>
+                        <ChevronDown className="h-4 w-4" />
+                      </button>
+                    ) : (
+                      <Badge variant="outline" className="text-xs sm:text-sm text-muted-foreground">
+                        No Manager Assigned
+                      </Badge>
+                    )}
+                    
+                    {/* Manager Dropdown Panel */}
+                    {isManagerDropdownOpen && (
+                      <div className="absolute left-0 top-full mt-1 z-50 w-48 bg-gray-800 border border-gray-600 rounded-lg shadow-lg overflow-hidden">
+                        <div className="py-1">
+                          {MANAGERS.map((manager) => {
+                            const isSelected = manager === profileManager;
+                            return (
+                              <button
+                                key={manager}
+                                onClick={() => {
+                                  if (onManagerAssign && typeof rowIndex === 'number') {
+                                    onManagerAssign(rowIndex, manager);
+                                    toast.success(`Manager updated to ${manager}`);
+                                  }
+                                  setIsManagerDropdownOpen(false);
+                                }}
+                                className={`w-full flex items-center px-3 py-3 sm:py-2 text-sm text-white hover:bg-gray-700 transition-colors min-h-[44px] ${
+                                  isSelected ? "bg-gray-700/50" : ""
+                                }`}
+                              >
+                                <span className="flex-1 text-left">{manager}</span>
+                                {isSelected && (
+                                  <span className="text-xs text-gray-400">Current</span>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 

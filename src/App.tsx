@@ -3,7 +3,7 @@ import { TalentTable } from "./components/TalentTable";
 import { TalentProfileDialog } from "./components/TalentProfile";
 import { ContractsTab } from "./components/ContractsTab";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import { Card, CardContent, CardHeader, CardTitle } from "./components/ui/card";
+import { Card, CardContent } from "./components/ui/card";
 import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
 import { Badge } from "./components/ui/badge";
@@ -498,22 +498,23 @@ function App() {
       {/* Header */}
       <header className="glass sticky top-0 z-10 border-b border-border/50" style={{ paddingTop: 'env(safe-area-inset-top, 0)' }}>
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col items-center gap-2 md:flex-row md:justify-between">
+            {/* Mobile: logo centered on top, title below */}
+            <div className="flex flex-col items-center md:flex-row md:gap-3">
               {/* Logo - white on dark mode, black on light mode */}
               <img 
                 src="/logo_white.png" 
                 alt="TOABH" 
-                className="hidden dark:block h-10 w-auto" 
+                className="hidden dark:block h-8 w-auto" 
               />
               <img 
                 src="/logo_black.png" 
                 alt="TOABH" 
-                className="block dark:hidden h-10 w-auto" 
+                className="block dark:hidden h-8 w-auto" 
               />
               {/* Title */}
-              <h1 className="text-lg sm:text-xl font-bold text-foreground tracking-tight">
-                TOABH ONBOARDING DASHBOARD
+              <h1 className="text-lg font-bold text-foreground tracking-tight">
+                Scouting Dashboard
               </h1>
             </div>
             <Button
@@ -606,84 +607,62 @@ function App() {
               <span>✕</span>
             </button>
           )}
-          <div className="stats-scroll mb-6 md:grid md:grid-cols-4 md:gap-4">
+          <div className="stats-scroll mb-6 grid grid-cols-2 md:grid-cols-4 gap-4">
             <Card 
-              className={`hover-glow transition-all duration-300 cursor-pointer stats-card ${
+              className={`hover-glow transition-all duration-300 cursor-pointer stats-card flex flex-col justify-between h-full p-3 ${
                 activeTile === null ? 'ring-2 ring-indigo-500/50 bg-zinc-800/80' : ''
               }`}
               onClick={() => handleTileClick('Total')}
             >
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
-                  Total Talents
-                  {activeTile === null && (
-                    <span className="h-2 w-2 rounded-full bg-indigo-500" />
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-foreground">{totalTalents}</div>
-              </CardContent>
+              <h3 className="text-gray-400 text-xs uppercase flex items-center justify-between">
+                Total Talents
+                {activeTile === null && (
+                  <span className="h-2 w-2 rounded-full bg-indigo-500" />
+                )}
+              </h3>
+              <p className="text-2xl font-bold text-white mt-auto">{totalTalents}</p>
             </Card>
             <Card 
-              className={`hover-glow transition-all duration-300 cursor-pointer stats-card ${
-                activeTile === 'Onboarded' ? 'ring-2 ring-indigo-500/50 bg-zinc-800/80' : ''
-              }`}
-              onClick={() => handleTileClick('Onboarded')}
-            >
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
-                  Onboarded
-                  {activeTile === 'Onboarded' && (
-                    <span className="h-2 w-2 rounded-full bg-indigo-500" />
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-success glow-success rounded-lg p-2">
-                  {onboardedCount}
-                </div>
-              </CardContent>
-            </Card>
-            <Card 
-              className={`hover-glow transition-all duration-300 cursor-pointer stats-card ${
+              className={`hover-glow transition-all duration-300 cursor-pointer stats-card flex flex-col justify-between h-full p-3 ${
                 activeTile === 'Meeting Required' ? 'ring-2 ring-indigo-500/50 bg-zinc-800/80' : ''
               }`}
               onClick={() => handleTileClick('Meeting Required')}
             >
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
-                  Meeting Required
-                  {activeTile === 'Meeting Required' && (
-                    <span className="h-2 w-2 rounded-full bg-indigo-500" />
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-warning glow-warning rounded-lg p-2">
-                  {meetingRequiredCount}
-                </div>
-              </CardContent>
+              <h3 className="text-gray-400 text-xs uppercase flex items-center justify-between">
+                Meeting Scheduled
+                {activeTile === 'Meeting Required' && (
+                  <span className="h-2 w-2 rounded-full bg-indigo-500" />
+                )}
+              </h3>
+              <p className="text-2xl font-bold text-warning glow-warning mt-auto">{meetingRequiredCount}</p>
             </Card>
             <Card 
-              className={`hover-glow transition-all duration-300 cursor-pointer stats-card ${
+              className={`hover-glow transition-all duration-300 cursor-pointer stats-card flex flex-col justify-between h-full p-3 ${
                 activeTile === 'KYC Required' ? 'ring-2 ring-indigo-500/50 bg-zinc-800/80' : ''
               }`}
               onClick={() => handleTileClick('KYC Required')}
             >
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
-                  KYC Required
-                  {activeTile === 'KYC Required' && (
-                    <span className="h-2 w-2 rounded-full bg-indigo-500" />
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-info glow-info rounded-lg p-2">
-                  {kycRequiredCount}
-                </div>
-              </CardContent>
+              <h3 className="text-gray-400 text-xs uppercase flex items-center justify-between">
+                Contract Signing
+                {activeTile === 'KYC Required' && (
+                  <span className="h-2 w-2 rounded-full bg-indigo-500" />
+                )}
+              </h3>
+              <p className="text-2xl font-bold text-info glow-info mt-auto">{kycRequiredCount}</p>
+            </Card>
+            <Card 
+              className={`hover-glow transition-all duration-300 cursor-pointer stats-card flex flex-col justify-between h-full p-3 ${
+                activeTile === 'Onboarded' ? 'ring-2 ring-indigo-500/50 bg-zinc-800/80' : ''
+              }`}
+              onClick={() => handleTileClick('Onboarded')}
+            >
+              <h3 className="text-gray-400 text-xs uppercase flex items-center justify-between">
+                Onboarded
+                {activeTile === 'Onboarded' && (
+                  <span className="h-2 w-2 rounded-full bg-indigo-500" />
+                )}
+              </h3>
+              <p className="text-2xl font-bold text-success glow-success mt-auto">{onboardedCount}</p>
             </Card>
           </div>
         </div>
@@ -1228,7 +1207,7 @@ function TalentGridView({
           return (
           <Card
             key={talent.rowIndex}
-            className="p-4 hover:bg-accent/30 transition-colors cursor-pointer glass-card talent-card"
+            className="p-4 hover:bg-accent/30 transition-colors cursor-pointer glass-card talent-card overflow-visible"
             onClick={() => onTalentClick(talent["Full Name"])}
           >
             <div className="flex flex-col gap-3">
