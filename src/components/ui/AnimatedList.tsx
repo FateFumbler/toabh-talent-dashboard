@@ -157,12 +157,12 @@ const AnimatedList: React.FC<AnimatedListProps> = ({
             onMouseEnter={handleItemMouseEnter}
             onClick={handleItemClick}
           >
-            <div className={`p-3 rounded-lg transition-all duration-200 ${
+            <div className={`p-2 sm:p-3 rounded-lg transition-all duration-200 ${
               selectedIndex === index 
                 ? 'bg-purple-600/30 ring-1 ring-purple-500/50' 
                 : 'bg-gray-700/50 hover:bg-gray-600/50'
             } ${itemClassName}`}>
-              <p className="text-white text-sm m-0">{item.label}</p>
+              <p className="text-white text-xs sm:text-sm m-0 truncate">{item.label}</p>
             </div>
           </AnimatedItem>
         ))}

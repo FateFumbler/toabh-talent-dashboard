@@ -714,7 +714,7 @@ export function TalentProfileDialog({
                     
                     {/* Manager Dropdown Panel */}
                     {isManagerDropdownOpen && (
-                      <div className="absolute left-0 top-full mt-1 z-[9999] w-56 bg-gray-800 border border-gray-600 rounded-lg shadow-xl p-2">
+                      <div className="absolute right-0 top-full mt-1 z-[9999] w-full sm:w-56 max-w-full bg-gray-800 border border-gray-600 rounded-lg shadow-xl p-2">
                         <AnimatedList
                           items={MANAGERS.map(manager => ({ label: manager, value: manager }))}
                           onItemSelect={(item) => {
