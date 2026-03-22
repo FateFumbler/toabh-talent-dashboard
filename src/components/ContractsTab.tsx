@@ -5,6 +5,7 @@ import { Button } from './ui/button';
 import { Search, FileText, ExternalLink, RefreshCw, Plus, Trash2 } from 'lucide-react';
 import type { Contract } from '../types/contract';
 import { fetchContracts } from '../services/contractsApi';
+import { fetchTalentMaster } from '../services/api';
 import { getLocalContracts, addLocalContract, deleteLocalContract } from '../services/localContracts';
 
 export function ContractsTab() {
@@ -12,6 +13,54 @@ export function ContractsTab() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [lastSync, setLastSync] = useState<Date | null>(null);
+  const [view, setView] = useState<'list' | 'grid'>('list');
+
+  // ContractCard component for grid view
+  const ContractCard = ({ contract }: { contract: Contract }) => (
+    <div className="bg-gray-800 rounded-xl p-4 hover:bg-gray-750 hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer border border-gray-700">
+      {/* Doc icon at top - clickable */}
+      <a
+        href={contract.contractLink}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block mb-3"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <FileText className="w-10 h-10 text-purple-400 mx-auto hover:text-purple-300 transition-colors" />
+      </a>
+
+      {/* Talent Name */}
+      <h3 className="font-semibold text-white text-center mb-1">{contract.name || 'N/A'}</h3>
+
+      {/* Phone */}
+      <p className="text-gray-400 text-sm text-center">{contract.phone}</p>
+
+      {/* Email */}
+      <p className="text-gray-500 text-xs text-center mb-2">{contract.email || 'N/A'}</p>
+
+      {/* Source tag */}
+      <span className={`inline-block px-2 py-0.5 rounded text-xs mx-auto ${
+        contract.source === 'sheet'
+          ? 'bg-blue-600/20 text-blue-400'
+          : 'bg-green-600/20 text-green-400'
+      }`}>
+        {contract.source === 'sheet' ? 'Sheet' : 'Local'}
+      </span>
+
+      {/* Delete button for local contracts */}
+      {contract.source === 'local' && contract.id && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleDeleteLocal(contract.id!);
+          }}
+          className="mt-2 w-full text-center text-xs text-destructive hover:text-red-400 transition-colors"
+        >
+          Delete
+        </button>
+      )}
+    </div>
+  );
 
   // Form state for adding new contract
   const [showAddForm, setShowAddForm] = useState(false);
@@ -22,6 +71,8 @@ export function ContractsTab() {
     contractLink: '',
   });
   const [formError, setFormError] = useState('');
+  const [talents, setTalents] = useState<any[]>([]);
+  const [selectedTalentIndex, setSelectedTalentIndex] = useState<number>(-1);
 
   const loadData = async () => {
     setLoading(true);
@@ -42,6 +93,14 @@ export function ContractsTab() {
 
   useEffect(() => {
     loadData();
+    // Fetch talent master for dropdown
+    fetchTalentMaster()
+      .then((data) => {
+        if (data) {
+          setTalents(data.filter((t: any) => t["Full Name"]));
+        }
+      })
+      .catch(console.error);
   }, []);
 
   const handleViewContract = (link: string) => {
@@ -72,6 +131,7 @@ export function ContractsTab() {
 
     // Reset form and refresh
     setFormData({ name: '', email: '', phone: '', contractLink: '' });
+    setSelectedTalentIndex(-1);
     setShowAddForm(false);
     loadData();
   };
@@ -114,11 +174,40 @@ export function ContractsTab() {
           </p>
         </div>
         <div className="flex gap-2">
+          <div className="flex items-center gap-1 bg-gray-800/50 rounded-lg p-1">
+            <button
+              onClick={() => setView('list')}
+              className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
+                view === 'list'
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-transparent text-gray-400 hover:text-white hover:bg-gray-700'
+              }`}
+            >
+              List
+            </button>
+            <button
+              onClick={() => setView('grid')}
+              className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
+                view === 'grid'
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-transparent text-gray-400 hover:text-white hover:bg-gray-700'
+              }`}
+            >
+              Grid
+            </button>
+          </div>
           <Button variant="outline" size="sm" onClick={loadData}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Sync
           </Button>
-          <Button variant="default" size="sm" onClick={() => setShowAddForm(!showAddForm)}>
+          <Button variant="default" size="sm" onClick={() => {
+            setShowAddForm(!showAddForm);
+            if (!showAddForm) {
+              // Reset form when opening
+              setFormData({ name: '', email: '', phone: '', contractLink: '' });
+              setSelectedTalentIndex(-1);
+            }
+          }}>
             <Plus className="h-4 w-4 mr-2" />
             Add Contract
           </Button>
@@ -130,6 +219,38 @@ export function ContractsTab() {
         <Card className="p-4 border-primary/50">
           <h3 className="font-semibold mb-3">Add Local Contract</h3>
           <form onSubmit={handleAddContract} className="space-y-3">
+            <div className="mb-3">
+              <label className="block text-xs font-medium text-gray-400 mb-1">
+                Select Talent (for linking)
+              </label>
+              <select
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm"
+                value={selectedTalentIndex}
+                onChange={(e) => {
+                  const idx = parseInt(e.target.value);
+                  setSelectedTalentIndex(idx);
+                  if (idx === -1) {
+                    // Clear fields
+                    setFormData({ name: '', phone: '', email: '', contractLink: '' });
+                  } else {
+                    const t = talents[idx];
+                    setFormData({
+                      name: t["Full Name"] || '',
+                      phone: t["Phone"]?.toString() || '',
+                      email: t["Email "] || t["Email"] || '',
+                      contractLink: formData.contractLink,
+                    });
+                  }
+                }}
+              >
+                <option value={-1}>-- Select Existing Talent --</option>
+                {talents.map((t, i) => (
+                  <option key={i} value={i}>
+                    {t["Full Name"]} - {t["Phone"] || 'No phone'}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-sm text-muted-foreground">Name *</label>
@@ -171,7 +292,11 @@ export function ContractsTab() {
             {formError && <p className="text-sm text-destructive">{formError}</p>}
             <div className="flex gap-2">
               <Button type="submit" size="sm">Save Contract</Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => setShowAddForm(false)}>
+              <Button type="button" variant="outline" size="sm" onClick={() => {
+                setShowAddForm(false);
+                setSelectedTalentIndex(-1);
+                setFormData({ name: '', email: '', phone: '', contractLink: '' });
+              }}>
                 Cancel
               </Button>
             </div>
@@ -199,103 +324,111 @@ export function ContractsTab() {
         </div>
       )}
 
-      {/* Contracts Table */}
+      {/* Contracts List/Grid View */}
       {!loading && filteredContracts.length > 0 && (
-        <Card className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-muted/50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                    Talent Name
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                    Phone
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                    Email
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                    Contract Doc Link
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                    Source
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(contractsByPhone).map(([phone, phoneContracts]) => (
-                  <tr key={phone} className="border-t">
-                    <td className="px-4 py-3 text-sm text-foreground font-medium">
-                      {phoneContracts[0].name || 'N/A'}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">
-                      {phone}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">
-                      {phoneContracts[0].email || 'N/A'}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-2">
-                        {phoneContracts.map((contract, idx) => (
-                          <Button
-                            key={idx}
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              handleViewContract(contract.contractLink)
-                            }
-                            className="text-xs"
-                          >
-                            <FileText className="h-3 w-3 mr-1" />
-                            {idx + 1}
-                            <ExternalLink className="h-3 w-3 ml-1" />
-                          </Button>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-1">
-                        {phoneContracts.map((contract, idx) => (
-                          <span
-                            key={idx}
-                            className={`inline-flex items-center px-2 py-0.5 rounded text-xs ${
-                              contract.source === 'local'
-                                ? 'bg-primary/20 text-primary'
-                                : 'bg-muted text-muted-foreground'
-                            }`}
-                          >
-                            {contract.source === 'local' ? 'Local' : 'Sheet'}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-1">
-                        {phoneContracts.map((contract, idx) =>
-                          contract.source === 'local' && contract.id ? (
+        view === 'list' ? (
+          <Card className="overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-muted/50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                      Talent Name
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                      Phone
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                      Email
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                      Contract Doc Link
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                      Source
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(contractsByPhone).map(([phone, phoneContracts]) => (
+                    <tr key={phone} className="border-t">
+                      <td className="px-4 py-3 text-sm text-foreground font-medium">
+                        {phoneContracts[0].name || 'N/A'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-muted-foreground">
+                        {phone}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-muted-foreground">
+                        {phoneContracts[0].email || 'N/A'}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap gap-2">
+                          {phoneContracts.map((contract, idx) => (
                             <Button
                               key={idx}
-                              variant="ghost"
+                              variant="outline"
                               size="sm"
-                              onClick={() => handleDeleteLocal(contract.id!)}
-                              className="h-7 px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() =>
+                                handleViewContract(contract.contractLink)
+                              }
+                              className="text-xs"
                             >
-                              <Trash2 className="h-3 w-3" />
+                              <FileText className="h-3 w-3 mr-1" />
+                              {idx + 1}
+                              <ExternalLink className="h-3 w-3 ml-1" />
                             </Button>
-                          ) : null
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap gap-1">
+                          {phoneContracts.map((contract, idx) => (
+                            <span
+                              key={idx}
+                              className={`inline-flex items-center px-2 py-0.5 rounded text-xs ${
+                                contract.source === 'local'
+                                  ? 'bg-primary/20 text-primary'
+                                  : 'bg-muted text-muted-foreground'
+                              }`}
+                            >
+                              {contract.source === 'local' ? 'Local' : 'Sheet'}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap gap-1">
+                          {phoneContracts.map((contract, idx) =>
+                            contract.source === 'local' && contract.id ? (
+                              <Button
+                                key={idx}
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteLocal(contract.id!)}
+                                className="h-7 px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            ) : null
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {filteredContracts.map((contract) => (
+              <ContractCard key={contract.id || contract.phone} contract={contract} />
+            ))}
           </div>
-        </Card>
+        )
       )}
 
       {/* Empty State */}
