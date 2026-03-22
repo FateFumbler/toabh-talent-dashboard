@@ -2,46 +2,99 @@ import { useState, useEffect } from 'react';
 import { Card } from './ui/card';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { Search, FileText, ExternalLink, RefreshCw } from 'lucide-react';
-
-interface Contract {
-  'Full Name': string;
-  'Email': string;
-  'Phone Number': string;
-  'Contract Drive Link': string;
-  rowIndex?: number;
-}
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Search, FileText, ExternalLink, RefreshCw, Plus, X } from 'lucide-react';
+import type { Contract } from '../types/contract';
+import { fetchContracts, addContract } from '../services/contractsApi';
+import { fetchTalentMaster } from '../services/api';
+import type { Talent } from '../types/talent';
 
 export function ContractsTab() {
   const [contracts, setContracts] = useState<Contract[]>([]);
+  const [talents, setTalents] = useState<Talent[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [lastSync, setLastSync] = useState<Date | null>(null);
 
-  const fetchContracts = async () => {
+  // Form state
+  const [showForm, setShowForm] = useState(false);
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    driveLink: '',
+    talentName: '',
+  });
+  const [saving, setSaving] = useState(false);
+
+  const loadData = async () => {
     setLoading(true);
     try {
-      // Use the same API pattern as talent-master
-      const response = await fetch(
-        'https://script.google.com/macros/s/AKfycbyrHsfBPmcSb9YeAUKH9cQ0taILerK7VQ8kNjpI_OZvwSYgD2zw6Sh-xSgVKV40_bWIPQ/exec?action=contracts'
-      );
-      const data = await response.json();
-      if (data.contracts) {
-        setContracts(data.contracts);
-        setLastSync(new Date());
-      }
+      const [contractsData, talentData] = await Promise.all([
+        fetchContracts(),
+        fetchTalentMaster(),
+      ]);
+
+      setContracts(contractsData);
+      setTalents(talentData);
+      setLastSync(new Date());
     } catch (error) {
-      console.error('Failed to fetch contracts:', error);
+      console.error('Failed to load data:', error);
     }
     setLoading(false);
   };
 
   useEffect(() => {
-    fetchContracts();
+    loadData();
   }, []);
 
+  const handleAddContract = async () => {
+    if (!formData.fullName || !formData.phone || !formData.driveLink) {
+      alert('Please fill in Full Name, Phone Number, and Contract Link');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const result = await addContract(formData);
+      if (result.success) {
+        setFormData({ fullName: '', email: '', phone: '', driveLink: '', talentName: '' });
+        setShowForm(false);
+        await loadData(); // Refresh table
+      } else {
+        alert(result.error || 'Failed to add contract. Please try again.');
+      }
+    } catch (error) {
+      console.error('Failed to add contract:', error);
+      alert('Failed to add contract. Please try again.');
+    }
+    setSaving(false);
+  };
+
+  const handleTalentSelect = (talentName: string) => {
+    const talent = talents.find((t) => t['Full Name'] === talentName);
+    if (talent) {
+      const talentAny = talent as any;
+      setFormData((prev) => ({
+        ...prev,
+        talentName,
+        fullName: talentAny['Full Name'] || talentName,
+        email: talentAny['Email '] || talentAny['Email'] || '',
+        phone: talentAny['Phone'] || talentAny['Phone Number'] || '',
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, talentName }));
+    }
+  };
+
+  const handleViewContract = (link: string) => {
+    if (link && link !== '') {
+      window.open(link, '_blank', 'noopener,noreferrer');
+    }
+  };
+
   // Filter contracts by search
-  const filteredContracts = contracts.filter(contract => {
+  const filteredContracts = contracts.filter((contract) => {
     const searchLower = search.toLowerCase();
     return (
       contract['Full Name']?.toLowerCase().includes(searchLower) ||
@@ -50,21 +103,16 @@ export function ContractsTab() {
     );
   });
 
-  // Group contracts by Phone Number (for talents with multiple contracts)
-  const contractsByPhone = filteredContracts.reduce((acc, contract) => {
-    const phone = contract['Phone Number'] || 'Unknown';
-    if (!acc[phone]) {
-      acc[phone] = [];
-    }
-    acc[phone].push(contract);
-    return acc;
-  }, {} as Record<string, Contract[]>);
-
-  const handleViewContract = (link: string) => {
-    if (link && link !== '') {
-      window.open(link, '_blank', 'noopener,noreferrer');
-    }
-  };
+  // Group by phone for display
+  const contractsByPhone = filteredContracts.reduce(
+    (acc, contract) => {
+      const phone = contract['Phone Number'] || 'Unknown';
+      if (!acc[phone]) acc[phone] = [];
+      acc[phone].push(contract);
+      return acc;
+    },
+    {} as Record<string, Contract[]>
+  );
 
   return (
     <div className="space-y-6">
@@ -77,11 +125,120 @@ export function ContractsTab() {
             {lastSync && ` • Last synced: ${lastSync.toLocaleTimeString()}`}
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchContracts}>
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Sync
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={loadData}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Sync
+          </Button>
+          <Button size="sm" onClick={() => setShowForm(!showForm)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Contract
+          </Button>
+        </div>
       </div>
+
+      {/* Add Contract Form */}
+      {showForm && (
+        <Card className="p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">Add New Contract</h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowForm(false)}
+              className="h-8 w-8 p-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Select Talent Dropdown */}
+          <div>
+            <label className="text-sm font-medium mb-2 block">Select Talent *</label>
+            <Select
+              onValueChange={handleTalentSelect}
+              value={formData.talentName}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select a talent from Talent Master..." />
+              </SelectTrigger>
+              <SelectContent>
+                {talents.map((talent) => {
+                  const talentAny = talent as any;
+                  return (
+                    <SelectItem
+                      key={talent.rowIndex}
+                      value={talentAny['Full Name'] || ''}
+                    >
+                      {talentAny['Full Name']} -{' '}
+                      {talentAny['Phone'] || talentAny['Phone Number'] || 'No phone'}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">
+                Full Name *
+              </label>
+              <Input
+                value={formData.fullName}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, fullName: e.target.value }))
+                }
+                placeholder="Enter full name"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">Email</label>
+              <Input
+                type="email"
+                value={formData.email}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, email: e.target.value }))
+                }
+                placeholder="Enter email"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">
+                Phone Number *
+              </label>
+              <Input
+                value={formData.phone}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, phone: e.target.value }))
+                }
+                placeholder="Enter phone number"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">
+                Contract Drive Link *
+              </label>
+              <Input
+                value={formData.driveLink}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, driveLink: e.target.value }))
+                }
+                placeholder="Paste Google Drive link..."
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setShowForm(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddContract} disabled={saving}>
+              {saving ? 'Adding...' : 'Add Contract'}
+            </Button>
+          </div>
+        </Card>
+      )}
 
       {/* Search */}
       <Card className="p-4">
@@ -110,23 +267,34 @@ export function ContractsTab() {
             <table className="w-full">
               <thead className="bg-muted/50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Full Name</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Email</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Phone Number</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Contracts</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                    Talent Name
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                    Phone
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                    Email
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                    Contract Link
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                    Created Date
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {Object.entries(contractsByPhone).map(([phone, phoneContracts]) => (
                   <tr key={phone} className="border-t">
-                    <td className="px-4 py-3 text-sm text-foreground">
+                    <td className="px-4 py-3 text-sm text-foreground font-medium">
                       {phoneContracts[0]['Full Name'] || 'N/A'}
                     </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">
-                      {phoneContracts[0]['Email'] || 'N/A'}
+                      {phone}
                     </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">
-                      {phone}
+                      {phoneContracts[0]['Email'] || 'N/A'}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-2">
@@ -135,15 +303,20 @@ export function ContractsTab() {
                             key={idx}
                             variant="outline"
                             size="sm"
-                            onClick={() => handleViewContract(contract['Contract Drive Link'])}
+                            onClick={() =>
+                              handleViewContract(contract['Contract Drive Link'])
+                            }
                             className="text-xs"
                           >
                             <FileText className="h-3 w-3 mr-1" />
-                            Contract {idx + 1}
+                            {idx + 1}
                             <ExternalLink className="h-3 w-3 ml-1" />
                           </Button>
                         ))}
                       </div>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">
+                      {phoneContracts[0]['Created Date'] || 'N/A'}
                     </td>
                   </tr>
                 ))}
@@ -156,7 +329,8 @@ export function ContractsTab() {
       {/* Empty State */}
       {!loading && filteredContracts.length === 0 && (
         <div className="text-center py-12 text-muted-foreground">
-          No contracts found
+          No contracts found. Click &quot;Add Contract&quot; to add your first
+          contract.
         </div>
       )}
     </div>

@@ -6,9 +6,12 @@ import {
 } from "@/components/ui/dialog";
 // Card components removed - using custom profile-card styling
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import type { Talent, TalentDetails } from "@/types/talent";
 import { fetchTalentMaster, fetchTalentDetails } from "@/services/api";
-import { Loader2, User, FileText, AlertTriangle, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { fetchContracts } from "@/services/contractsApi";
+import { Loader2, User, FileText, AlertTriangle, X, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
+import type { Contract } from "@/types/contract";
 
 interface TalentProfileProps {
   name: string | null;
@@ -148,6 +151,7 @@ export function TalentProfileDialog({
   const [profile, setProfile] = useState<(Talent & Partial<TalentDetails>) | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [contracts, setContracts] = useState<Contract[]>([]);
 
   // Modal state for image preview
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -309,6 +313,21 @@ export function TalentProfileDialog({
       // Always set profile - even if no details matched, we still have basic talent info
       setProfile(merged);
       console.log("[Profile] Profile set, total fields:", Object.keys(merged).length);
+      
+      // Fetch contracts for this talent (match by phone)
+      try {
+        const allContracts = await fetchContracts();
+        // Filter contracts by normalized phone number
+        const talentContracts = allContracts.filter((contract: Contract) => {
+          const contractPhone = normalizePhone(contract['Phone Number'] || '');
+          return contractPhone === talentPhone;
+        });
+        setContracts(talentContracts);
+        console.log("[Profile] Found", talentContracts.length, "contracts for phone:", talentPhone);
+      } catch (err) {
+        console.error("[Profile] Failed to fetch contracts:", err);
+        setContracts([]);
+      }
     } catch (err) {
       setError("Failed to load profile");
       console.error(err);
@@ -484,6 +503,55 @@ export function TalentProfileDialog({
     ],
   });
 
+  // Get contracts section - returns JSX for contracts or null if none
+  const getContractsSection = (): React.ReactNode => {
+    if (contracts.length === 0) {
+      return (
+        <div className="profile-card">
+          <h3 className="profile-section-title">Contracts</h3>
+          <p className="text-sm text-muted-foreground">No contracts found for this talent.</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="profile-card">
+        <h3 className="profile-section-title">Contracts ({contracts.length})</h3>
+        <div className="space-y-2">
+          {contracts.map((contract, idx) => (
+            <div key={idx} className="flex items-center justify-between p-2 bg-muted/30 rounded-lg">
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium text-foreground truncate">
+                  {contract['Full Name'] || 'Unnamed'}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {contract['Email'] || 'No email'} • {contract['Phone Number'] || 'No phone'}
+                </div>
+                {contract['Created Date'] && (
+                  <div className="text-xs text-muted-foreground">
+                    Added: {contract['Created Date']}
+                  </div>
+                )}
+              </div>
+              {contract['Contract Drive Link'] && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.open(contract['Contract Drive Link'], '_blank', 'noopener,noreferrer')}
+                  className="ml-2 shrink-0"
+                >
+                  <FileText className="h-3 w-3 mr-1" />
+                  View
+                  <ExternalLink className="h-3 w-3 ml-1" />
+                </Button>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   // Parse polaroids for gallery display
   const profileAny = profile as unknown as Record<string, unknown>;
   const polaroidLinks = profile ? parsePolaroidLinks(profileAny?.["Upload Polaroids (Required)"]) : [];
@@ -656,6 +724,9 @@ export function TalentProfileDialog({
 
               {/* Management Info */}
               {renderSection(getManagementInfo())}
+
+              {/* Contracts */}
+              {getContractsSection()}
             </div>
           </ProfileErrorBoundary>
         )}
