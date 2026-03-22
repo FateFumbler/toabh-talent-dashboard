@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Card } from './ui/card';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Search, FileText, ExternalLink, RefreshCw, Plus, X } from 'lucide-react';
 import type { Contract } from '../types/contract';
 import { fetchContracts, addContract } from '../services/contractsApi';
@@ -155,28 +154,25 @@ export function ContractsTab() {
           {/* Select Talent Dropdown */}
           <div>
             <label className="text-sm font-medium mb-2 block">Select Talent *</label>
-            <Select
-              onValueChange={handleTalentSelect}
+            <select
               value={formData.talentName}
+              onChange={(e) => handleTalentSelect(e.target.value)}
+              className="w-full h-10 px-3 bg-background border border-input rounded-md text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a talent from Talent Master..." />
-              </SelectTrigger>
-              <SelectContent>
-                {talents.map((talent) => {
-                  const talentAny = talent as any;
-                  return (
-                    <SelectItem
-                      key={talent.rowIndex}
-                      value={talentAny['Full Name'] || ''}
-                    >
-                      {talentAny['Full Name']} -{' '}
-                      {talentAny['Phone'] || talentAny['Phone Number'] || 'No phone'}
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
+              <option value="">Select a talent from Talent Master...</option>
+              {talents.map((talent) => {
+                const talentAny = talent as any;
+                return (
+                  <option
+                    key={talent.rowIndex}
+                    value={talentAny['Full Name'] || ''}
+                  >
+                    {talentAny['Full Name']} -{' '}
+                    {talentAny['Phone'] || talentAny['Phone Number'] || 'No phone'}
+                  </option>
+                );
+              })}
+            </select>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
