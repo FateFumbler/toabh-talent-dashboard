@@ -103,7 +103,7 @@ export function StatusDropdown({
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-1 z-[9999] w-56 bg-gray-800 border border-gray-600 rounded-lg shadow-xl overflow-hidden">
+        <div className="absolute right-0 top-full mt-1 z-[9999] w-56 bg-gray-800 border border-gray-600 rounded-lg shadow-xl">
           <div className="py-1">
             {STATUS_VALUES.map((status) => {
               const statusColor = statusColors[status];

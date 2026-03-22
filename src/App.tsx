@@ -592,15 +592,6 @@ function App() {
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
         {/* Stats Cards - horizontally scrollable on mobile */}
         <div className="relative">
-          {activeTile !== null && (
-            <button
-              onClick={() => handleTileClick('Total')}
-              className="absolute -top-2 right-0 z-10 flex items-center gap-1 px-2 py-1 text-xs bg-indigo-500/20 text-indigo-400 rounded-full hover:bg-indigo-500/30 transition-colors border border-indigo-500/50"
-            >
-              <span>Clear filter</span>
-              <span>✕</span>
-            </button>
-          )}
           <div className="stats-scroll mb-6 grid grid-cols-2 md:grid-cols-4 gap-4">
             <Card
               className={`hover-glow transition-all duration-300 cursor-pointer stats-card flex flex-col justify-between h-full p-3 border-l-8 border-purple-500 ${
