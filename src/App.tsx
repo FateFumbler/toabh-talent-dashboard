@@ -235,6 +235,7 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [selectedTalent, setSelectedTalent] = useState<string | null>(null);
+  const [selectedTalentRowIndex, setSelectedTalentRowIndex] = useState<number | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
   // Track pending updates per rowIndex to show loading state on action buttons
   const [pendingUpdates, setPendingUpdates] = useState<Record<number, "status" | "manager">>({});
@@ -367,8 +368,9 @@ function App() {
     }
   };
 
-  const handleTalentClick = (name: string) => {
+  const handleTalentClick = (name: string, rowIndex: number) => {
     setSelectedTalent(name);
+    setSelectedTalentRowIndex(rowIndex);
     setProfileOpen(true);
   };
 
@@ -986,6 +988,9 @@ function App() {
         name={selectedTalent}
         open={profileOpen}
         onOpenChange={setProfileOpen}
+        rowIndex={selectedTalentRowIndex ?? undefined}
+        onStatusUpdate={handleStatusUpdate}
+        onManagerAssign={handleManagerAssign}
       />
 
       {/* Toast notifications */}
@@ -1016,7 +1021,7 @@ interface TalentGridViewProps {
   talents: Talent[];
   talentDetailsMap: Map<string, TalentDetails>;
   isLoading: boolean;
-  onTalentClick: (name: string) => void;
+  onTalentClick: (name: string, rowIndex: number) => void;
   pendingUpdates: Record<number, "status" | "manager">;
   onStatusUpdate: (row: number, status: string) => void;
   onManagerAssign: (row: number, manager: string) => void;
@@ -1210,7 +1215,7 @@ function TalentGridView({
           <Card
             key={talent.rowIndex}
             className="p-4 hover:bg-accent/30 transition-colors cursor-pointer glass-card talent-card overflow-visible"
-            onClick={() => onTalentClick(talent["Full Name"])}
+            onClick={() => onTalentClick(talent["Full Name"], talent.rowIndex!)}
           >
             <div className="flex flex-col gap-3">
               {/* Header: Photo + Name + Status */}

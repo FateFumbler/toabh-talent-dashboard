@@ -56,7 +56,7 @@ interface TalentTableProps {
   talents: Talent[];
   onStatusUpdate: (row: number, status: string) => void;
   onManagerAssign: (row: number, manager: string) => void;
-  onTalentClick: (name: string) => void;
+  onTalentClick: (name: string, rowIndex: number) => void;
   isLoading: boolean;
   onRefresh: () => void;
   lastUpdated: Date | null;
@@ -408,7 +408,7 @@ export function TalentTable({
                 >
                   <TableCell className="text-left py-4 px-4 align-middle">
                     <button
-                      onClick={() => onTalentClick(talent["Full Name"])}
+                      onClick={() => onTalentClick(talent["Full Name"], talent.rowIndex!)}
                       className="text-primary hover:underline font-medium text-left block"
                     >
                       {talent["Full Name"]}

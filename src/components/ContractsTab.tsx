@@ -295,18 +295,19 @@ export function ContractsTab() {
 
   return (
     <div className="space-y-4">
-      {/* Header - mobile-friendly with wrapping */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      {/* Header - title and buttons on same row */}
+      <div className="flex items-center justify-between px-4 py-3">
+        {/* Left side: Title and metadata */}
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Contracts</h1>
-          <p className="text-xs sm:text-sm text-muted-foreground">
+          <h2 className="text-lg font-bold text-white">Contracts</h2>
+          <p className="text-xs text-gray-400">
             {contracts.length} contract{contracts.length !== 1 ? 's' : ''} found
             {lastSync && ` • Last synced: ${lastSync.toLocaleTimeString()}`}
           </p>
         </div>
-        {/* Action buttons - wraps on mobile */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* View toggle - icon only, matching Talent Master style */}
+        {/* Right side: Buttons */}
+        <div className="flex items-center gap-2">
+          {/* View toggle - icon only */}
           <div className="flex items-center gap-1 bg-gray-800/50 rounded-lg p-1">
             <button
               onClick={() => setView('list')}
