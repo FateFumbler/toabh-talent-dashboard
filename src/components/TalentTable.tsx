@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Table,
   TableBody,
@@ -21,8 +21,20 @@ import { Card } from "@/components/ui/card";
 import type { Talent, StatusValue } from "@/types/talent";
 import { MANAGERS } from "@/types/talent";
 import { Search, RefreshCw, Loader2 } from "lucide-react";
-import { ColumnVisibility, type ColumnName, getInitialColumns, saveColumnPreferences } from "./ColumnVisibility";
 import { StatusDropdown } from "./StatusDropdown";
+
+const ALL_COLUMNS = [
+  "Full Name",
+  "Instagram",
+  "City",
+  "Gender",
+  "Age",
+  "Height",
+  "Status",
+  "Talent Manager",
+] as const;
+
+type ColumnName = typeof ALL_COLUMNS[number];
 
 interface TalentTableProps {
   talents: Talent[];
@@ -120,8 +132,6 @@ export function TalentTable({
   onRefresh,
   lastUpdated,
   pendingUpdates = {},
-  visibleColumns: externalVisibleColumns,
-  onColumnsChange: externalOnColumnsChange,
   statusFilter: externalStatusFilter,
   onStatusFilterChange: externalOnStatusFilterChange,
 }: TalentTableProps) {
@@ -141,20 +151,8 @@ export function TalentTable({
     }
   };
   
-  // Column visibility state - use external if provided, otherwise internal
-  const [internalVisibleColumns, setInternalVisibleColumns] = useState<ColumnName[]>(getInitialColumns);
-  const visibleColumns = externalVisibleColumns || internalVisibleColumns;
-  const onColumnsChange = externalOnColumnsChange || ((cols: ColumnName[]) => {
-    setInternalVisibleColumns(cols);
-    saveColumnPreferences(cols);
-  });
-
-  // Initialize from localStorage on mount
-  useEffect(() => {
-    if (!externalVisibleColumns) {
-      setInternalVisibleColumns(getInitialColumns());
-    }
-  }, [externalVisibleColumns]);
+  // Column visibility - always show all columns (removed gear icon feature)
+  const visibleColumns: ColumnName[] = [...ALL_COLUMNS];
 
   const uniqueStatuses = getUniqueValues(talents, "Status");
   const uniqueManagers = getUniqueValues(talents, "Talent Manager");
@@ -256,10 +254,6 @@ export function TalentTable({
               )}
             </div>
             <div className="flex items-center gap-2">
-              <ColumnVisibility 
-                visibleColumns={visibleColumns} 
-                onColumnsChange={onColumnsChange} 
-              />
               <Button
                 variant="outline"
                 size="sm"
