@@ -555,14 +555,14 @@ function App() {
           */}
           <button
             onClick={() => setActiveTab("contracts")}
-            className={`flex items-center gap-2 px-3 sm:px-4 py-2.5 text-sm font-medium transition-colors relative ${
+            className={`flex items-center gap-2 px-2 sm:px-4 py-2.5 text-sm font-medium transition-colors relative ${
               activeTab === "contracts"
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <FileText className="h-4 w-4" />
-            <span className="hidden xs:inline">Contracts</span>
+            <span className="text-sm">Contracts</span>
             {activeTab === "contracts" && (
               <span className="absolute bottom-0 left-0 right-0 h-px bg-primary" />
             )}
@@ -1357,5 +1357,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { StatusDropdown } from "@/components/StatusDropdown";
+
+export default App;
+tusDropdown } from "@/components/StatusDropdown";
 
 export default App;
