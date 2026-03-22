@@ -668,6 +668,7 @@ function App() {
 
         {/* Talent Master Tab */}
         {activeTab === "talent-master" && (
+          <ErrorBoundary>
           <>
             {/* Sync & View Toggle Row */}
             <div className="flex items-center justify-between mb-4 px-2 py-2 bg-gray-800/50 rounded-lg">
@@ -749,6 +750,7 @@ function App() {
               />
             ) : null}
           </>
+          </ErrorBoundary>
         )}
 
         {/* Talent Profile Tab */}
