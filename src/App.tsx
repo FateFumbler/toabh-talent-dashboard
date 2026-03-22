@@ -523,52 +523,54 @@ function App() {
 
       {/* Tab Navigation */}
       <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
-        <div className="flex items-center justify-center gap-4 sm:gap-8 border-b border-border/50 pb-px">
-          <button
-            onClick={() => setActiveTab("talent-master")}
-            className={`flex items-center gap-2 px-3 sm:px-4 py-2.5 text-sm font-medium transition-colors relative ${
-              activeTab === "talent-master"
-                ? "text-primary"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <List className="h-4 w-4" />
-            <span className="hidden xs:inline">Talent Master</span>
-            <span className="xs:hidden">Talent</span>
-            {activeTab === "talent-master" && (
-              <span className="absolute bottom-0 left-0 right-0 h-px bg-primary" />
-            )}
-          </button>
-          {/* [HIDDEN] Talent Profile nav button - kept for future use
-          <button
-            onClick={() => setActiveTab("talent-profile")}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors relative ${
-              activeTab === "talent-profile"
-                ? "text-primary"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <User className="h-4 w-4" />
-            Talent Profile
-            {activeTab === "talent-profile" && (
-              <span className="absolute bottom-0 left-0 right-0 h-px bg-primary" />
-            )}
-          </button>
-          */}
-          <button
-            onClick={() => setActiveTab("contracts")}
-            className={`flex items-center gap-2 px-2 sm:px-4 py-2.5 text-sm font-medium transition-colors relative ${
-              activeTab === "contracts"
-                ? "text-primary"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <FileText className="h-4 w-4" />
-            <span className="text-sm">Contracts</span>
-            {activeTab === "contracts" && (
-              <span className="absolute bottom-0 left-0 right-0 h-px bg-primary" />
-            )}
-          </button>
+        <div className="flex items-center justify-between border-b border-border/50 pb-px">
+          <div className="flex items-center gap-4 sm:gap-8">
+            <button
+              onClick={() => setActiveTab("talent-master")}
+              className={`flex items-center gap-2 px-3 sm:px-4 py-2.5 text-sm font-medium transition-colors relative ${
+                activeTab === "talent-master"
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <List className="h-4 w-4" />
+              <span className="hidden xs:inline">Talent Master</span>
+              <span className="xs:hidden">Talent</span>
+              {activeTab === "talent-master" && (
+                <span className="absolute bottom-0 left-0 right-0 h-px bg-primary" />
+              )}
+            </button>
+            {/* [HIDDEN] Talent Profile nav button - kept for future use
+            <button
+              onClick={() => setActiveTab("talent-profile")}
+              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors relative ${
+                activeTab === "talent-profile"
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <User className="h-4 w-4" />
+              Talent Profile
+              {activeTab === "talent-profile" && (
+                <span className="absolute bottom-0 left-0 right-0 h-px bg-primary" />
+              )}
+            </button>
+            */}
+            <button
+              onClick={() => setActiveTab("contracts")}
+              className={`flex items-center gap-2 px-2 sm:px-4 py-2.5 text-sm font-medium transition-colors relative ${
+                activeTab === "contracts"
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <FileText className="h-4 w-4" />
+              <span className="text-sm">Contracts</span>
+              {activeTab === "contracts" && (
+                <span className="absolute bottom-0 left-0 right-0 h-px bg-primary" />
+              )}
+            </button>
+          </div>
           <button
             onClick={() => setActiveTab("settings")}
             className={`flex items-center gap-2 px-3 sm:px-4 py-2.5 text-sm font-medium transition-colors relative ${
