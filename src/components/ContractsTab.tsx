@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import { Card } from './ui/card';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { Search, FileText, ExternalLink, RefreshCw, Plus, Trash2, ChevronDown } from 'lucide-react';
+import { Search, FileText, ExternalLink, RefreshCw, Plus, Trash2, ChevronDown, Pencil } from 'lucide-react';
 import type { Contract } from '../types/contract';
 import { fetchContracts } from '../services/contractsApi';
 import { fetchTalentMaster } from '../services/api';
-import { getLocalContracts, addLocalContract, deleteLocalContract } from '../services/localContracts';
+import { getLocalContracts, addLocalContract, deleteLocalContract, editContract } from '../services/localContracts';
 
 export function ContractsTab() {
   const [contracts, setContracts] = useState<Contract[]>([]);
@@ -15,28 +15,73 @@ export function ContractsTab() {
   const [lastSync, setLastSync] = useState<Date | null>(null);
   const [view, setView] = useState<'list' | 'grid'>('list');
 
+  // Settings state (from existing Settings component)
+  const [showDeleteButtons, setShowDeleteButtons] = useState(false);
+
+  // Edit state
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    contractLink: '',
+  });
+
   // ContractCard component for grid view
   const ContractCard = ({ contract }: { contract: Contract }) => (
     <div className="bg-gray-800 rounded-xl p-4 hover:bg-gray-750 hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer border border-gray-700">
       {/* Doc icon at top - clickable */}
-      <a
-        href={contract.contractLink}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="block mb-3"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <FileText className="w-10 h-10 text-purple-400 mx-auto hover:text-purple-300 transition-colors" />
-      </a>
+      {editingId === contract.id ? (
+        <input
+          value={editForm.contractLink}
+          onChange={(e) => setEditForm({ ...editForm, contractLink: e.target.value })}
+          className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm mb-2"
+          placeholder="Contract link"
+        />
+      ) : (
+        <a
+          href={contract.contractLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block mb-3"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <FileText className="w-10 h-10 text-purple-400 mx-auto hover:text-purple-300 transition-colors" />
+        </a>
+      )}
 
       {/* Talent Name */}
-      <h3 className="font-semibold text-white text-center mb-1">{contract.name || 'N/A'}</h3>
+      {editingId === contract.id ? (
+        <input
+          value={editForm.name}
+          onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+          className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm text-center mb-1"
+        />
+      ) : (
+        <h3 className="font-semibold text-white text-center mb-1">{contract.name || 'N/A'}</h3>
+      )}
 
       {/* Phone */}
-      <p className="text-gray-400 text-sm text-center">{contract.phone}</p>
+      {editingId === contract.id ? (
+        <input
+          value={editForm.phone}
+          onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+          className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm text-center mb-1"
+        />
+      ) : (
+        <p className="text-gray-400 text-sm text-center">{contract.phone}</p>
+      )}
 
       {/* Email */}
-      <p className="text-gray-500 text-xs text-center mb-2">{contract.email || 'N/A'}</p>
+      {editingId === contract.id ? (
+        <input
+          value={editForm.email}
+          onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+          className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm text-center mb-2"
+        />
+      ) : (
+        <p className="text-gray-500 text-xs text-center mb-2">{contract.email || 'N/A'}</p>
+      )}
 
       {/* Source tag */}
       <span className={`inline-block px-2 py-0.5 rounded text-xs mx-auto ${
@@ -47,17 +92,55 @@ export function ContractsTab() {
         {contract.source === 'sheet' ? 'Sheet' : 'Local'}
       </span>
 
-      {/* Delete button for local contracts */}
+      {/* Action buttons for local contracts */}
       {contract.source === 'local' && contract.id && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            handleDeleteLocal(contract.id!);
-          }}
-          className="mt-2 w-full text-center text-xs text-destructive hover:text-red-400 transition-colors"
-        >
-          Delete
-        </button>
+        <div className="mt-2 flex justify-center gap-2">
+          {editingId === contract.id ? (
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  saveEdit();
+                }}
+                className="text-xs text-green-400 hover:text-green-300 transition-colors"
+              >
+                Save
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setEditingId(null);
+                }}
+                className="text-xs text-gray-400 hover:text-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  startEdit(contract);
+                }}
+                className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+              >
+                Edit
+              </button>
+              {showDeleteButtons && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteLocal(contract.id!);
+                  }}
+                  className="text-xs text-red-400 hover:text-red-300 transition-colors"
+                >
+                  Delete
+                </button>
+              )}
+            </>
+          )}
+        </div>
       )}
     </div>
   );
@@ -72,7 +155,6 @@ export function ContractsTab() {
   });
   const [formError, setFormError] = useState('');
   const [talents, setTalents] = useState<any[]>([]);
-  const [selectedTalentIndex, setSelectedTalentIndex] = useState<number>(-1);
   const [talentSearch, setTalentSearch] = useState('');
 
   const loadData = async () => {
@@ -91,6 +173,14 @@ export function ContractsTab() {
     }
     setLoading(false);
   };
+
+  // Load settings from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('toabh_contracts_show_delete');
+    if (saved === 'true') {
+      setShowDeleteButtons(true);
+    }
+  }, []);
 
   useEffect(() => {
     loadData();
@@ -141,13 +231,34 @@ export function ContractsTab() {
 
     // Reset form and refresh
     setFormData({ name: '', email: '', phone: '', contractLink: '' });
-    setSelectedTalentIndex(-1);
     setShowAddForm(false);
     loadData();
   };
 
   const handleDeleteLocal = (id: string) => {
     deleteLocalContract(id);
+    loadData();
+  };
+
+  const startEdit = (contract: Contract) => {
+    setEditingId(contract.id || null);
+    setEditForm({
+      name: contract.name || '',
+      email: contract.email || '',
+      phone: contract.phone || '',
+      contractLink: contract.contractLink || '',
+    });
+  };
+
+  const saveEdit = () => {
+    if (!editingId) return;
+    editContract(editingId, {
+      name: editForm.name,
+      email: editForm.email,
+      phone: editForm.phone,
+      contractLink: editForm.contractLink,
+    });
+    setEditingId(null);
     loadData();
   };
 
@@ -225,7 +336,6 @@ export function ContractsTab() {
             if (!showAddForm) {
               // Reset form when opening
               setFormData({ name: '', email: '', phone: '', contractLink: '' });
-              setSelectedTalentIndex(-1);
               setTalentSearch('');
             }
           }}>
@@ -266,7 +376,6 @@ export function ContractsTab() {
                         type="button"
                         onClick={() => {
                           const talent = t;
-                          setSelectedTalentIndex(talents.indexOf(talent));
                           setFormData({
                             name: talent["Full Name"] || '',
                             phone: talent["Phone"]?.toString() || '',
@@ -328,7 +437,6 @@ export function ContractsTab() {
               <Button type="submit" size="sm">Save Contract</Button>
               <Button type="button" variant="outline" size="sm" onClick={() => {
                 setShowAddForm(false);
-                setSelectedTalentIndex(-1);
                 setFormData({ name: '', email: '', phone: '', contractLink: '' });
                 setTalentSearch('');
               }}>
@@ -391,32 +499,57 @@ export function ContractsTab() {
                   {Object.entries(contractsByPhone).map(([phone, phoneContracts]) => (
                     <tr key={phone} className="border-t">
                       <td className="px-4 py-3 text-sm text-foreground font-medium">
-                        {phoneContracts[0].name || 'N/A'}
+                        {editingId === phoneContracts[0].id ? (
+                          <input
+                            value={editForm.name}
+                            onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                            className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm"
+                          />
+                        ) : (
+                          phoneContracts[0].name || 'N/A'
+                        )}
                       </td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">
                         {phone}
                       </td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">
-                        {phoneContracts[0].email || 'N/A'}
+                        {editingId === phoneContracts[0].id ? (
+                          <input
+                            value={editForm.email}
+                            onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                            className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm"
+                          />
+                        ) : (
+                          phoneContracts[0].email || 'N/A'
+                        )}
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex flex-wrap gap-2">
-                          {phoneContracts.map((contract, idx) => (
-                            <Button
-                              key={idx}
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                handleViewContract(contract.contractLink)
-                              }
-                              className="text-xs"
-                            >
-                              <FileText className="h-3 w-3 mr-1" />
-                              {idx + 1}
-                              <ExternalLink className="h-3 w-3 ml-1" />
-                            </Button>
-                          ))}
-                        </div>
+                        {editingId === phoneContracts[0].id ? (
+                          <input
+                            value={editForm.contractLink}
+                            onChange={(e) => setEditForm({ ...editForm, contractLink: e.target.value })}
+                            className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm"
+                            placeholder="Contract link"
+                          />
+                        ) : (
+                          <div className="flex flex-wrap gap-2">
+                            {phoneContracts.map((contract, idx) => (
+                              <Button
+                                key={idx}
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  handleViewContract(contract.contractLink)
+                                }
+                                className="text-xs"
+                              >
+                                <FileText className="h-3 w-3 mr-1" />
+                                {idx + 1}
+                                <ExternalLink className="h-3 w-3 ml-1" />
+                              </Button>
+                            ))}
+                          </div>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-1">
@@ -438,15 +571,41 @@ export function ContractsTab() {
                         <div className="flex flex-wrap gap-1">
                           {phoneContracts.map((contract, idx) =>
                             contract.source === 'local' && contract.id ? (
-                              <Button
-                                key={idx}
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteLocal(contract.id!)}
-                                className="h-7 px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
+                              editingId === contract.id ? (
+                                <div key={idx} className="flex gap-1 items-center">
+                                  <button
+                                    onClick={saveEdit}
+                                    className="text-xs text-green-400 hover:text-green-300 px-1"
+                                  >
+                                    Save
+                                  </button>
+                                  <button
+                                    onClick={() => setEditingId(null)}
+                                    className="text-xs text-gray-400 hover:text-gray-300 px-1"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              ) : (
+                                <div key={idx} className="flex flex-wrap gap-1">
+                                  <button
+                                    onClick={() => startEdit(contract)}
+                                    className="h-7 px-2 text-blue-400 hover:text-blue-300 transition-colors"
+                                    title="Edit"
+                                  >
+                                    <Pencil className="h-3 w-3" />
+                                  </button>
+                                  {showDeleteButtons && (
+                                    <button
+                                      onClick={() => handleDeleteLocal(contract.id!)}
+                                      className="h-7 px-2 text-red-400 hover:text-red-300 transition-colors"
+                                      title="Delete"
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                    </button>
+                                  )}
+                                </div>
+                              )
                             ) : null
                           )}
                         </div>

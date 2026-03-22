@@ -27,6 +27,13 @@ export function deleteLocalContract(id: string): void {
   localStorage.setItem(LOCAL_CONTRACTS_KEY, JSON.stringify(filtered));
 }
 
+export function editContract(id: string, updates: Partial<Contract>): Contract[] {
+  const contracts = getLocalContracts();
+  const updated = contracts.map(c => c.id === id ? { ...c, ...updates } : c);
+  localStorage.setItem(LOCAL_CONTRACTS_KEY, JSON.stringify(updated));
+  return updated;
+}
+
 export function clearLocalContracts(): void {
   localStorage.removeItem(LOCAL_CONTRACTS_KEY);
 }
