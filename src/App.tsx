@@ -4,6 +4,7 @@ import { TalentProfileDialog } from "./components/TalentProfile";
 import { ContractsTab } from "./components/ContractsTab";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Card, CardContent } from "./components/ui/card";
+import { BorderGlow } from "./components/ui/BorderGlow";
 import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
 import { Badge } from "./components/ui/badge";
@@ -601,62 +602,70 @@ function App() {
             </button>
           )}
           <div className="stats-scroll mb-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Card 
-              className={`hover-glow transition-all duration-300 cursor-pointer stats-card flex flex-col justify-between h-full p-3 border-l-8 border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.4)] ${
-                activeTile === null ? 'ring-2 ring-indigo-500/50 bg-zinc-800/80' : ''
-              }`}
-              onClick={() => handleTileClick('Total')}
-            >
-              <h3 className="text-gray-400 text-xs uppercase flex items-center justify-between">
-                Total Talents
-                {activeTile === null && (
-                  <span className="h-2 w-2 rounded-full bg-indigo-500" />
-                )}
-              </h3>
-              <p className="text-xl font-bold text-white bg-gray-700/50 rounded-xl px-3 py-2 mt-2 text-center">{totalTalents}</p>
-            </Card>
-            <Card 
-              className={`hover-glow transition-all duration-300 cursor-pointer stats-card flex flex-col justify-between h-full p-3 border-l-8 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.4)] ${
-                activeTile === 'Meeting Required' ? 'ring-2 ring-indigo-500/50 bg-zinc-800/80' : ''
-              }`}
-              onClick={() => handleTileClick('Meeting Required')}
-            >
-              <h3 className="text-gray-400 text-xs uppercase flex items-center justify-between">
-                Meeting Scheduled
-                {activeTile === 'Meeting Required' && (
-                  <span className="h-2 w-2 rounded-full bg-indigo-500" />
-                )}
-              </h3>
-              <p className="text-xl font-bold text-white bg-gray-700/50 rounded-xl px-3 py-2 mt-2 text-center">{meetingRequiredCount}</p>
-            </Card>
-            <Card 
-              className={`hover-glow transition-all duration-300 cursor-pointer stats-card flex flex-col justify-between h-full p-3 border-l-8 border-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.4)] ${
-                activeTile === 'KYC Required' ? 'ring-2 ring-indigo-500/50 bg-zinc-800/80' : ''
-              }`}
-              onClick={() => handleTileClick('KYC Required')}
-            >
-              <h3 className="text-gray-400 text-xs uppercase flex items-center justify-between">
-                Contract Signing
-                {activeTile === 'KYC Required' && (
-                  <span className="h-2 w-2 rounded-full bg-indigo-500" />
-                )}
-              </h3>
-              <p className="text-xl font-bold text-white bg-gray-700/50 rounded-xl px-3 py-2 mt-2 text-center">{kycRequiredCount}</p>
-            </Card>
-            <Card 
-              className={`hover-glow transition-all duration-300 cursor-pointer stats-card flex flex-col justify-between h-full p-3 border-l-8 border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.4)] ${
-                activeTile === 'Onboarded' ? 'ring-2 ring-indigo-500/50 bg-zinc-800/80' : ''
-              }`}
-              onClick={() => handleTileClick('Onboarded')}
-            >
-              <h3 className="text-gray-400 text-xs uppercase flex items-center justify-between">
-                Onboarded
-                {activeTile === 'Onboarded' && (
-                  <span className="h-2 w-2 rounded-full bg-indigo-500" />
-                )}
-              </h3>
-              <p className="text-xl font-bold text-white bg-gray-700/50 rounded-xl px-3 py-2 mt-2 text-center">{onboardedCount}</p>
-            </Card>
+            <BorderGlow color="#a855f7" intensity={2.4} className="h-full">
+              <Card 
+                className={`hover-glow transition-all duration-300 cursor-pointer stats-card flex flex-col justify-between h-full p-3 border-l-8 border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.4)] ${
+                  activeTile === null ? 'ring-2 ring-indigo-500/50 bg-zinc-800/80' : ''
+                }`}
+                onClick={() => handleTileClick('Total')}
+              >
+                <h3 className="text-gray-400 text-xs uppercase flex items-center justify-between">
+                  Total Talents
+                  {activeTile === null && (
+                    <span className="h-2 w-2 rounded-full bg-indigo-500" />
+                  )}
+                </h3>
+                <p className="text-xl font-bold text-white bg-gray-700/50 rounded-xl px-3 py-2 mt-2 text-center">{totalTalents}</p>
+              </Card>
+            </BorderGlow>
+            <BorderGlow color="#3b82f6" intensity={2.4} className="h-full">
+              <Card 
+                className={`hover-glow transition-all duration-300 cursor-pointer stats-card flex flex-col justify-between h-full p-3 border-l-8 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.4)] ${
+                  activeTile === 'Meeting Required' ? 'ring-2 ring-indigo-500/50 bg-zinc-800/80' : ''
+                }`}
+                onClick={() => handleTileClick('Meeting Required')}
+              >
+                <h3 className="text-gray-400 text-xs uppercase flex items-center justify-between">
+                  Meeting Scheduled
+                  {activeTile === 'Meeting Required' && (
+                    <span className="h-2 w-2 rounded-full bg-indigo-500" />
+                  )}
+                </h3>
+                <p className="text-xl font-bold text-white bg-gray-700/50 rounded-xl px-3 py-2 mt-2 text-center">{meetingRequiredCount}</p>
+              </Card>
+            </BorderGlow>
+            <BorderGlow color="#f97316" intensity={2.4} className="h-full">
+              <Card 
+                className={`hover-glow transition-all duration-300 cursor-pointer stats-card flex flex-col justify-between h-full p-3 border-l-8 border-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.4)] ${
+                  activeTile === 'KYC Required' ? 'ring-2 ring-indigo-500/50 bg-zinc-800/80' : ''
+                }`}
+                onClick={() => handleTileClick('KYC Required')}
+              >
+                <h3 className="text-gray-400 text-xs uppercase flex items-center justify-between">
+                  Contract Signing
+                  {activeTile === 'KYC Required' && (
+                    <span className="h-2 w-2 rounded-full bg-indigo-500" />
+                  )}
+                </h3>
+                <p className="text-xl font-bold text-white bg-gray-700/50 rounded-xl px-3 py-2 mt-2 text-center">{kycRequiredCount}</p>
+              </Card>
+            </BorderGlow>
+            <BorderGlow color="#22c55e" intensity={2.4} className="h-full">
+              <Card 
+                className={`hover-glow transition-all duration-300 cursor-pointer stats-card flex flex-col justify-between h-full p-3 border-l-8 border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.4)] ${
+                  activeTile === 'Onboarded' ? 'ring-2 ring-indigo-500/50 bg-zinc-800/80' : ''
+                }`}
+                onClick={() => handleTileClick('Onboarded')}
+              >
+                <h3 className="text-gray-400 text-xs uppercase flex items-center justify-between">
+                  Onboarded
+                  {activeTile === 'Onboarded' && (
+                    <span className="h-2 w-2 rounded-full bg-indigo-500" />
+                  )}
+                </h3>
+                <p className="text-xl font-bold text-white bg-gray-700/50 rounded-xl px-3 py-2 mt-2 text-center">{onboardedCount}</p>
+              </Card>
+            </BorderGlow>
           </div>
         </div>
 
@@ -698,7 +707,7 @@ function App() {
                 </button>
                 <button
                   onClick={() => handleViewModeChange("list")}
-                  className={`px-3 py-1.5 rounded-md transition-colors ${
+                  className={`px-3 py-2 rounded-md transition-colors ${
                     viewMode === "list"
                       ? "bg-purple-600 text-white"
                       : "text-gray-400 hover:text-white"
@@ -709,7 +718,7 @@ function App() {
                 </button>
                 <button
                   onClick={() => handleViewModeChange("grid")}
-                  className={`px-3 py-1.5 rounded-md transition-colors ${
+                  className={`px-3 py-2 rounded-md transition-colors ${
                     viewMode === "grid"
                       ? "bg-purple-600 text-white"
                       : "text-gray-400 hover:text-white"
