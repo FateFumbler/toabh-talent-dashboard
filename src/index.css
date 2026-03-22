@@ -456,23 +456,172 @@ html, body {
   display: block;
 }
 
-/* Photos grid */
-.talent-profile .photos-grid {
+/* Photos thumbnail grid - clean gallery view */
+.talent-profile .photos-thumbnail-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+  padding: 4px;
 }
 
-.talent-profile .photo-item {
-  aspect-ratio: 1;
+.talent-profile .thumbnail-item {
+  position: relative;
+  height: 140px;
+  width: 100%;
   border-radius: 8px;
   overflow: hidden;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  padding: 0;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-.talent-profile .photo-item img {
+.talent-profile .thumbnail-item:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.talent-profile .thumbnail-item img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-radius: 8px;
+}
+
+/* Image Modal / Lightbox */
+.talent-profile .image-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.15s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.talent-profile .image-modal-content {
+  position: relative;
+  max-width: 90vw;
+  max-height: 85vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.talent-profile .image-modal-image {
+  max-width: 100%;
+  max-height: 85vh;
+  object-fit: contain;
+  border-radius: 4px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.talent-profile .image-modal-close {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: white;
+  transition: background 0.15s ease;
+  z-index: 10000;
+}
+
+.talent-profile .image-modal-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.talent-profile .image-modal-counter {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 10000;
+}
+
+.talent-profile .image-modal-nav {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 50%;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: white;
+  transition: background 0.15s ease;
+  z-index: 10000;
+}
+
+.talent-profile .image-modal-nav:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.talent-profile .image-modal-nav-prev {
+  left: 16px;
+}
+
+.talent-profile .image-modal-nav-next {
+  right: 16px;
+}
+
+/* Responsive adjustments for thumbnail grid */
+@media (max-width: 640px) {
+  .talent-profile .photos-thumbnail-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+  
+  .talent-profile .thumbnail-item {
+    height: 120px;
+  }
+  
+  .talent-profile .image-modal-nav {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+@media (min-width: 768px) {
+  .talent-profile .photos-thumbnail-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .talent-profile .photos-thumbnail-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .talent-profile .photos-thumbnail-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
 }
 
 /* Profile header */

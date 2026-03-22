@@ -1,4 +1,4 @@
-import { useEffect, useState, Component } from "react";
+import { useEffect, useState, useCallback, useRef, Component } from "react";
 import type { ReactNode } from "react";
 import {
   Dialog,
@@ -8,7 +8,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import type { Talent, TalentDetails } from "@/types/talent";
 import { fetchTalentMaster, fetchTalentDetails } from "@/services/api";
-import { Loader2, User, FileText, AlertTriangle } from "lucide-react";
+import { Loader2, User, FileText, AlertTriangle, X, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface TalentProfileProps {
   name: string | null;
@@ -88,9 +88,9 @@ function getDriveThumbnailUrl(url: string): string | null {
 }
 
 // Get full-size Drive image URL
-function getDriveImageUrl(url: string): string | null {
+function getDriveImageUrl(url: string): string | undefined {
   const fileId = extractDriveFileId(url);
-  if (!fileId) return null;
+  if (!fileId) return undefined;
   return `https://drive.google.com/uc?export=view&id=${fileId}`;
 }
 
@@ -148,14 +148,62 @@ export function TalentProfileDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Modal state for image preview
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const imageCountRef = useRef(0);
+
   // Reset profile when dialog closes
   useEffect(() => {
     if (!open) {
       setProfile(null);
       setError(null);
       setIsLoading(false);
+      setIsModalOpen(false);
+      setCurrentImageIndex(0);
+      imageCountRef.current = 0;
     }
   }, [open]);
+
+  // Modal navigation handlers
+  const openModal = (index: number) => {
+    setCurrentImageIndex(index);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = useCallback(() => {
+    setIsModalOpen(false);
+  }, []);
+
+  const goToPrevious = useCallback(() => {
+    setCurrentImageIndex((prev) => (prev === 0 ? imageCountRef.current - 1 : prev - 1));
+  }, []);
+
+  const goToNext = useCallback(() => {
+    setCurrentImageIndex((prev) => (prev === imageCountRef.current - 1 ? 0 : prev + 1));
+  }, []);
+
+  // Keyboard navigation for modal
+  useEffect(() => {
+    if (!isModalOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      switch (e.key) {
+        case 'Escape':
+          closeModal();
+          break;
+        case 'ArrowLeft':
+          goToPrevious();
+          break;
+        case 'ArrowRight':
+          goToNext();
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isModalOpen, closeModal, goToPrevious, goToNext]);
 
   // Load profile when name or open state changes
   useEffect(() => {
@@ -433,6 +481,11 @@ export function TalentProfileDialog({
   const profileAny = profile as unknown as Record<string, unknown>;
   const polaroidLinks = profile ? parsePolaroidLinks(profileAny?.["Upload Polaroids (Required)"]) : [];
 
+  // Keep image count ref in sync
+  useEffect(() => {
+    imageCountRef.current = polaroidLinks.length;
+  }, [polaroidLinks.length]);
+
   // Safe accessors for header section
   const profileName = gf("Full Name") || "Unknown Talent";
   const profileStatus = gf("Status") || "New";
@@ -474,32 +527,27 @@ export function TalentProfileDialog({
                 </div>
               </div>
 
-              {/* Image Gallery - prominently displayed */}
+              {/* Image Gallery - Thumbnail Grid */}
               <div className="space-y-2">
                 <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                   Photos
                 </h3>
                 {polaroidLinks.length > 0 ? (
-                  <div className="photos-grid">
-                    {polaroidLinks.map((link, idx) => {
-                      const thumbnailUrl = getDriveThumbnailUrl(link);
-                      const fullUrl = getDriveImageUrl(link);
-                      return (
-                        <div
-                          key={idx}
-                          className="photo-item"
-                        >
-                          {thumbnailUrl ? (
-                            <a
-                              href={fullUrl || link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="block w-full h-full"
-                            >
+                  <>
+                    <div className="photos-thumbnail-grid">
+                      {polaroidLinks.map((link, idx) => {
+                        const thumbnailUrl = getDriveThumbnailUrl(link);
+                        return (
+                          <button
+                            key={idx}
+                            onClick={() => openModal(idx)}
+                            className="thumbnail-item"
+                            aria-label={`View photo ${idx + 1}`}
+                          >
+                            {thumbnailUrl ? (
                               <img
                                 src={thumbnailUrl}
                                 alt={`Photo ${idx + 1}`}
-                                className="w-full h-full object-cover hover:opacity-90 transition-opacity"
                                 loading="lazy"
                                 onError={(e) => {
                                   const img = e.currentTarget;
@@ -508,25 +556,69 @@ export function TalentProfileDialog({
                                   if (fallback) fallback.classList.remove('hidden');
                                 }}
                               />
-                              <div className="hidden fallback-div absolute inset-0 flex items-center justify-center bg-muted">
-                                <FileText className="h-6 w-6 text-muted-foreground" />
-                              </div>
-                            </a>
-                          ) : (
-                            <a
-                              href={link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="w-full h-full flex flex-col items-center justify-center bg-muted hover:bg-muted/80 transition-colors"
-                            >
-                              <FileText className="h-6 w-6 text-muted-foreground mb-1" />
-                              <span className="text-xs text-muted-foreground">View {idx + 1}</span>
-                            </a>
+                            ) : null}
+                            <div className="hidden fallback-div absolute inset-0 flex items-center justify-center bg-muted rounded-md">
+                              <FileText className="h-5 w-5 text-muted-foreground" />
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Image Modal / Lightbox */}
+                    {isModalOpen && (
+                      <div 
+                        className="image-modal-overlay"
+                        onClick={closeModal}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="Image preview"
+                      >
+                        <div className="image-modal-content" onClick={(e) => e.stopPropagation()}>
+                          {/* Close button */}
+                          <button
+                            onClick={closeModal}
+                            className="image-modal-close"
+                            aria-label="Close preview"
+                          >
+                            <X className="h-6 w-6" />
+                          </button>
+
+                          {/* Image counter */}
+                          <div className="image-modal-counter">
+                            {currentImageIndex + 1} of {polaroidLinks.length}
+                          </div>
+
+                          {/* Main image */}
+                          <img
+                            src={getDriveImageUrl(polaroidLinks[currentImageIndex])}
+                            alt={`Photo ${currentImageIndex + 1}`}
+                            className="image-modal-image"
+                          />
+
+                          {/* Navigation arrows */}
+                          {polaroidLinks.length > 1 && (
+                            <>
+                              <button
+                                onClick={goToPrevious}
+                                className="image-modal-nav image-modal-nav-prev"
+                                aria-label="Previous image"
+                              >
+                                <ChevronLeft className="h-8 w-8" />
+                              </button>
+                              <button
+                                onClick={goToNext}
+                                className="image-modal-nav image-modal-nav-next"
+                                aria-label="Next image"
+                              >
+                                <ChevronRight className="h-8 w-8" />
+                              </button>
+                            </>
                           )}
                         </div>
-                      );
-                    })}
-                  </div>
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-8 sm:py-12 bg-muted/30 rounded-lg border border-border/50">
                     <div className="bg-muted p-3 sm:p-4 rounded-full mb-2 sm:mb-3">
