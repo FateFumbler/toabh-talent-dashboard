@@ -395,7 +395,7 @@ export function TalentProfileDialog({
         { label: "City", value: gf("City & State (Current location)") || gf("City & State") || gf("City") },
         { label: "Gender", value: gf("Gender") },
         { label: "Age", value: gf("Age")?.toString() },
-        { label: "Date of Birth", value: gf("Date of Birth ") },
+        { label: "Date of Birth", value: gf("Date of Birth") },
         { label: "Nationality", value: gf("Nationality") },
         { label: "Height (in feet & inches)", value: gf("Height (in feet & inches)") || gf("Height") },
       ],
@@ -420,50 +420,50 @@ export function TalentProfileDialog({
     title: "Social & Media",
     fields: [
       { label: "Instagram", value: renderInstagramLink(gf("Instagram Link") || gf("Instagram")) },
-      { label: "YouTube", value: gf("YouTube Channel (if any)") || gf("YouTube Channel") },
-      { label: "IMDb", value: gf("IMDb / Wikipedia Page (if any) ") || gf("IMDb") },
+      { label: "YouTube", value: gf("YouTube Channel") },
+      { label: "IMDb", value: gf("IMDb") },
     ],
   });
 
   const getExperience = (): ProfileSection => ({
     title: "Experience",
     fields: [
-      { label: "Prior modelling/acting experience", value: gf("Do you have any prior modeling or acting experience?") },
-      { label: "Experience details", value: gf("If Yes, briefly describe your experience or list any brands/projects") },
-      { label: "Previous Agency", value: gf("Any Previous Agency?") },
-      { label: "Acting Workshop Attended", value: gf("Any Acting Workshop Attended?  ") },
-      { label: "CINTAA/Union Card", value: gf("Do you have a CINTAA / Union Card?") },
+      { label: "Prior modelling/acting experience", value: gf("Prior modelling/acting experience") },
+      { label: "Experience details", value: gf("Experience Details") },
+      { label: "Previous Agency", value: gf("Previous Agency") },
+      { label: "Acting Workshop Attended", value: gf("Acting Workshop Attended") },
+      { label: "CINTAA/Union Card", value: gf("CINTAA/Union Card") },
       { label: "Languages Known", value: gf("Languages Known") },
-      { label: "Dance Forms", value: gf("Dance Forms Known (if any)") },
-      { label: "Extra-Curricular", value: gf("Extra-Curricular Activities (if any)") },
+      { label: "Dance Forms", value: gf("Dance Forms") },
+      { label: "Extra-Curricular", value: gf("Extra-Curricular") },
     ],
   });
 
   const getWorkPreferences = (): ProfileSection => ({
     title: "Work Preferences",
     fields: [
-      { label: "Scope of Work Interested In", value: gf("Scope of Work Interested In (e.g., TV, Web, Fashion, Commercials)") },
-      { label: "Open for placement abroad", value: gf("Are you open for placement abroad?") },
-      { label: "Valid Passport", value: gf("Valid Passport?") },
-      { label: "Can drive 2-wheeler", value: gf("Can you drive a 2-wheeler? (Geared / Non-Geared)") },
-      { label: "Can drive 4-wheeler", value: gf("Can you drive a 4-wheeler? ") },
-      { label: "Can Swim", value: gf("Can you swim?  ") },
-      { label: "Gamer", value: gf("Are you a Gamer?") },
+      { label: "Scope of Work Interested In", value: gf("Scope of Work Interested In") },
+      { label: "Open for placement abroad", value: gf("Open for placement abroad") },
+      { label: "Valid Passport", value: gf("Valid Passport") },
+      { label: "Can drive 2-wheeler", value: gf("Can drive 2-wheeler") },
+      { label: "Can drive 4-wheeler", value: gf("Can drive 4-wheeler") },
+      { label: "Can Swim", value: gf("Can Swim") },
+      { label: "Gamer", value: gf("Gamer") },
     ],
   });
 
   const getComfortConsent = (): ProfileSection => ({
     title: "Comfort & Consent",
     fields: [
-      { label: "Lingerie/bikini shoots", value: gf("Comfortable with lingerie / bikini / briefs shoots?") },
-      { label: "Bold content for web/films", value: gf("Comfortable with bold content for web series or films?") },
-      { label: "Condom brand promotions", value: gf("Comfortable with condom brand promotions or awareness campaigns?") },
-      { label: "Alcohol brand shoots", value: gf("Comfortable with alcohol brand shoots or commercials?") },
-      { label: "Reality TV shows", value: gf("Comfortable participating in reality TV shows?") },
-      { label: "Daily soaps", value: gf("Comfortable working in daily soaps or TV roles?") },
-      { label: "Mother/father roles", value: gf("Comfortable playing mother or father roles? (for applicants aged 23+)") },
-      { label: "Haircut", value: gf("Comfortable with haircut?") },
-      { label: "Hair color changes", value: gf("Comfortable with hair color changes?") },
+      { label: "Lingerie/bikini shoots", value: gf("Lingerie/bikini shoots") },
+      { label: "Bold content for web/films", value: gf("Bold content for web/films") },
+      { label: "Condom brand promotions", value: gf("Condom brand promotions") },
+      { label: "Alcohol brand shoots", value: gf("Alcohol brand shoots") },
+      { label: "Reality TV shows", value: gf("Reality TV shows") },
+      { label: "Daily soaps", value: gf("Daily soaps") },
+      { label: "Mother/father roles", value: gf("Mother/father roles") },
+      { label: "Haircut", value: gf("Haircut") },
+      { label: "Hair color changes", value: gf("Hair color changes") },
     ],
   });
 
