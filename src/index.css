@@ -733,8 +733,8 @@ html, body {
 }
 
 .nav-tab-active {
-  color: var(--primary);
-  background: var(--accent);
+  color: var(--primary-foreground);
+  background: var(--primary);
 }
 
 .nav-tab-active::after {

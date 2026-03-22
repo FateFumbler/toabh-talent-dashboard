@@ -316,7 +316,7 @@ function StatCard({
       <div className="flex items-center justify-between mb-3">
         <span className="stat-label">{label}</span>
         {isActive && (
-          <span className="h-2 w-2 rounded-full bg-primary animate-soft-pulse" />
+          <span className="h-2 w-2 rounded-full bg-primary animate-soft-pulse shrink-0" />
         )}
         <span className="text-muted-foreground/60">{icon}</span>
       </div>

@@ -141,12 +141,21 @@ export function StatusDropdown({
     e.stopPropagation();
     if (disabled || isLoading) return;
     
-    if (!isOpen && triggerRef.current) {
-      updatePosition();
+    if (!isOpen) {
+      // Calculate position first, then open immediately
+      if (triggerRef.current) {
+        const rect = triggerRef.current.getBoundingClientRect();
+        setDropdownPosition({
+          top: rect.bottom + 4,
+          left: rect.left,
+          width: rect.width,
+        });
+      }
+      setIsOpen(true);
     } else {
+      setIsOpen(false);
       setDropdownPosition(null);
     }
-    setIsOpen(!isOpen);
   };
 
   const styles = statusStyles[currentStatus] || statusStyles["New"];
