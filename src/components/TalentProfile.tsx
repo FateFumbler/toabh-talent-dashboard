@@ -1,11 +1,7 @@
 import { useEffect, useState, useCallback, useRef, Component } from "react";
 import { createPortal } from "react-dom";
 import type { ReactNode } from "react";
-import {
-  Dialog,
-  DialogContent,
-} from "@/components/ui/dialog";
-// Card components removed - using custom profile-card styling
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Talent, TalentDetails, StatusValue } from "@/types/talent";
@@ -13,7 +9,17 @@ import { MANAGERS } from "@/types/talent";
 import { fetchTalentMaster, fetchTalentDetails } from "@/services/api";
 import { fetchContracts } from "@/services/contractsApi";
 import { getLocalContracts } from "@/services/localContracts";
-import { Loader2, User, FileText, AlertTriangle, X, ChevronLeft, ChevronRight, ExternalLink, ChevronDown } from "lucide-react";
+import {
+  Loader2,
+  User,
+  FileText,
+  AlertTriangle,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
+  ChevronDown,
+} from "lucide-react";
 import type { Contract } from "@/types/contract";
 import { toast } from "sonner";
 import { StatusDropdown } from "./StatusDropdown";
@@ -23,20 +29,21 @@ interface TalentProfileProps {
   name: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  // Optional update handlers - if provided, dropdowns become interactive
   onStatusUpdate?: (row: number, status: string) => void;
   onManagerAssign?: (row: number, manager: string) => void;
   rowIndex?: number;
   isStatusLoading?: boolean;
 }
 
-// Error Boundary to prevent white screen crashes
 interface ErrorBoundaryState {
   hasError: boolean;
   error?: Error;
 }
 
-class ProfileErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundaryState> {
+class ProfileErrorBoundary extends Component<
+  { children: ReactNode },
+  ErrorBoundaryState
+> {
   constructor(props: { children: ReactNode }) {
     super(props);
     this.state = { hasError: false };
@@ -47,7 +54,11 @@ class ProfileErrorBoundary extends Component<{ children: ReactNode }, ErrorBound
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error("[ProfileErrorBoundary] Caught error:", error, errorInfo);
+    console.error(
+      "[ProfileErrorBoundary] Caught error:",
+      error,
+      errorInfo
+    );
   }
 
   render() {
@@ -55,9 +66,12 @@ class ProfileErrorBoundary extends Component<{ children: ReactNode }, ErrorBound
       return (
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <AlertTriangle className="h-12 w-12 text-warning mb-4" />
-          <h3 className="text-lg font-semibold text-foreground mb-2">Something went wrong</h3>
+          <h3 className="text-lg font-semibold text-foreground mb-2">
+            Something went wrong
+          </h3>
           <p className="text-muted-foreground text-sm max-w-md">
-            {this.state.error?.message || "Failed to render profile. Please try again."}
+            {this.state.error?.message ||
+              "Failed to render profile. Please try again."}
           </p>
           <button
             onClick={() => this.setState({ hasError: false })}
@@ -77,7 +91,6 @@ interface ProfileSection {
   fields: { label: string; value: string | undefined | ReactNode }[];
 }
 
-// Extract Google Drive file ID from various URL formats
 function extractDriveFileId(url: string): string | null {
   if (!url) return null;
   const patterns = [
@@ -94,91 +107,97 @@ function extractDriveFileId(url: string): string | null {
   return null;
 }
 
-// Convert Drive link to thumbnail URL
 function getDriveThumbnailUrl(url: string): string | null {
   const fileId = extractDriveFileId(url);
   if (!fileId) return null;
   return `https://drive.google.com/thumbnail?id=${fileId}&sz=w300`;
 }
 
-// Get modal image URL - always use thumbnail URL for reliability
 function getModalImageUrl(url: string): string | undefined {
   const fileId = extractDriveFileId(url);
   if (!fileId) return undefined;
-  // Use thumbnail URL directly - it's reliable and doesn't have CORS issues
   return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
 }
 
-// Parse polaroid links (may be comma or newline separated)
 function parsePolaroidLinks(polaroidField: unknown): string[] {
   if (!polaroidField) return [];
-  // Handle non-string values (numbers, arrays, objects)
   const str = String(polaroidField);
   if (!str.trim()) return [];
-  return str.split(/[,\n]/).map(s => s.trim()).filter(Boolean);
+  return str.split(/[,\n]/).map((s) => s.trim()).filter(Boolean);
 }
 
-// Parse Instagram value to full URL
 function parseInstagram(value: string): string {
-  if (!value) return '';
+  if (!value) return "";
   const trimmed = value.trim();
-  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+  if (
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://")
+  ) {
     return trimmed;
   }
-  let username = trimmed.replace(/^@/, '');
-  username = username.replace(/^(https?:\/\/)?(www\.)?instagram\.com\//, '');
-  username = username.split('?')[0].split('#')[0];
-  username = username.replace(/\/+$/, '');
+  let username = trimmed.replace(/^@/, "");
+  username = username.replace(
+    /^(https?:\/\/)?(www\.)?instagram\.com\//,
+    ""
+  );
+  username = username.split("?")[0].split("#")[0];
+  username = username.replace(/\/+$/, "");
   return `https://instagram.com/${username}`;
 }
 
-// Helper to render Instagram as clickable link
-const renderInstagramLink = (instagram: string | undefined): React.ReactNode => {
+const renderInstagramLink = (
+  instagram: string | undefined
+): React.ReactNode => {
   if (!instagram || instagram.trim() === "") return "-";
   const url = parseInstagram(instagram);
-  const display = instagram.trim().replace(/^https?:\/\/(www\.)?instagram\.com\//, "@").replace(/\/+$/, "");
+  const display = instagram
+    .trim()
+    .replace(/^https?:\/\/(www\.)?instagram\.com\//, "@")
+    .replace(/\/+$/, "");
   return (
-    <a href={url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-primary hover:underline"
+    >
       {display}
     </a>
   );
 };
 
-// Safe field accessor - handles any value type
 function safeField(value: unknown): string | undefined {
   if (value === null || value === undefined) return undefined;
-  if (typeof value === 'string') return value.trim() || undefined;
-  if (typeof value === 'number') return String(value);
-  if (Array.isArray(value)) return value.join(', ') || undefined;
-  if (typeof value === 'object') return JSON.stringify(value);
+  if (typeof value === "string") return value.trim() || undefined;
+  if (typeof value === "number") return String(value);
+  if (Array.isArray(value)) return value.join(", ") || undefined;
+  if (typeof value === "object") return JSON.stringify(value);
   return String(value);
 }
 
-// Helper to format height properly - converts inches to feet'inches" format
 function formatHeight(height: string | undefined | null): string {
   if (!height) return "-";
   const trimmed = String(height).trim();
   if (!trimmed) return "-";
-  
-  // If it already contains a foot mark, it's probably already formatted correctly
   if (trimmed.includes("'") || trimmed.includes("ft")) {
-    // Clean up and standardize format: 5'6" or 5'6
-    return trimmed.replace(/"/g, "").replace(/ ft /g, "'").replace(/ in$/g, "\"").replace(/ inches$/g, "\"");
+    return trimmed
+      .replace(/"/g, "")
+      .replace(/ ft /g, "'")
+      .replace(/ in$/g, "\"")
+      .replace(/ inches$/g, "\"");
   }
-  
-  // If it's just a number, assume it's inches and convert to feet'inches"
   const inches = parseInt(trimmed, 10);
   if (!isNaN(inches)) {
     if (inches >= 12) {
       const feet = Math.floor(inches / 12);
       const remainingInches = inches % 12;
-      return remainingInches > 0 ? `${feet}'${remainingInches}"` : `${feet}'`;
+      return remainingInches > 0
+        ? `${feet}'${remainingInches}"`
+        : `${feet}'`;
     } else {
       return `${inches}"`;
     }
   }
-  
-  // Return as-is if we can't parse it
   return trimmed;
 }
 
@@ -191,19 +210,19 @@ export function TalentProfileDialog({
   rowIndex,
   isStatusLoading,
 }: TalentProfileProps) {
-  const [profile, setProfile] = useState<(Talent & Partial<TalentDetails>) | null>(null);
+  const [profile, setProfile] = useState<
+    (Talent & Partial<TalentDetails>) | null
+  >(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [isManagerDropdownOpen, setIsManagerDropdownOpen] = useState(false);
   const managerDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Modal state for image preview
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const imageCountRef = useRef(0);
 
-  // Reset profile when dialog closes
   useEffect(() => {
     if (!open) {
       setProfile(null);
@@ -216,10 +235,12 @@ export function TalentProfileDialog({
     }
   }, [open]);
 
-  // Close manager dropdown on click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (managerDropdownRef.current && !managerDropdownRef.current.contains(event.target as Node)) {
+      if (
+        managerDropdownRef.current &&
+        !managerDropdownRef.current.contains(event.target as Node)
+      ) {
         setIsManagerDropdownOpen(false);
       }
     }
@@ -230,7 +251,6 @@ export function TalentProfileDialog({
     }
   }, [isManagerDropdownOpen]);
 
-  // Close manager dropdown on Escape
   useEffect(() => {
     function handleEscape(event: KeyboardEvent) {
       if (event.key === "Escape") {
@@ -244,7 +264,6 @@ export function TalentProfileDialog({
     }
   }, [isManagerDropdownOpen]);
 
-  // Modal navigation handlers
   const openModal = (index: number) => {
     setCurrentImageIndex(index);
     setIsModalOpen(true);
@@ -255,36 +274,38 @@ export function TalentProfileDialog({
   }, []);
 
   const goToPrevious = useCallback(() => {
-    setCurrentImageIndex((prev) => (prev === 0 ? imageCountRef.current - 1 : prev - 1));
+    setCurrentImageIndex((prev) =>
+      prev === 0 ? imageCountRef.current - 1 : prev - 1
+    );
   }, []);
 
   const goToNext = useCallback(() => {
-    setCurrentImageIndex((prev) => (prev === imageCountRef.current - 1 ? 0 : prev + 1));
+    setCurrentImageIndex((prev) =>
+      prev === imageCountRef.current - 1 ? 0 : prev + 1
+    );
   }, []);
 
-  // Keyboard navigation for modal
   useEffect(() => {
     if (!isModalOpen) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       switch (e.key) {
-        case 'Escape':
+        case "Escape":
           closeModal();
           break;
-        case 'ArrowLeft':
+        case "ArrowLeft":
           goToPrevious();
           break;
-        case 'ArrowRight':
+        case "ArrowRight":
           goToNext();
           break;
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isModalOpen, closeModal, goToPrevious, goToNext]);
 
-  // Load profile when name or open state changes
   useEffect(() => {
     const trimmedName = name?.trim();
     if (trimmedName && open) {
@@ -293,16 +314,12 @@ export function TalentProfileDialog({
     }
   }, [name, open]);
 
-  // Normalize phone number for matching - remove spaces, dashes, +91 prefix
   const normalizePhone = (phone: string): string => {
     if (!phone) return "";
-    // Remove all non-digit characters except +
     let normalized = phone.replace(/[^\d+]/g, "");
-    // Remove +91 prefix if present
     if (normalized.startsWith("+91")) {
       normalized = normalized.substring(3);
     }
-    // Remove leading zeros
     normalized = normalized.replace(/^0+/, "");
     return normalized;
   };
@@ -312,17 +329,14 @@ export function TalentProfileDialog({
     setIsLoading(true);
     setError(null);
     try {
-      // Fetch both talent-master and talent-details
       const [talentData, detailsData] = await Promise.all([
         fetchTalentMaster(),
-        fetchTalentDetails()
+        fetchTalentDetails(),
       ]);
-      
-      // Build details map with normalized phone keys
+
       const detailsMapByPhone = new Map<string, TalentDetails>();
-      // Also build a map by email for fallback
       const detailsMapByEmail = new Map<string, TalentDetails>();
-      
+
       for (const d of detailsData) {
         if (d["Phone Number"]) {
           const normalized = normalizePhone(String(d["Phone Number"]));
@@ -331,77 +345,63 @@ export function TalentProfileDialog({
           }
         }
         if (d["Email Address"]) {
-          detailsMapByEmail.set(d["Email Address"].trim().toLowerCase(), d);
+          detailsMapByEmail.set(
+            d["Email Address"].trim().toLowerCase(),
+            d
+          );
         }
       }
-      
-      // Find the talent by name in talent-master (case-insensitive, trim whitespace)
+
       const normalizedName = name.toLowerCase().trim();
-      const talent = talentData.find(t => t["Full Name"]?.toLowerCase().trim() === normalizedName);
+      const talent = talentData.find(
+        (t) => t["Full Name"]?.toLowerCase().trim() === normalizedName
+      );
       if (!talent) {
-        console.error("[Profile] Talent not found in master sheet. Looking for:", name, "Normalized:", normalizedName);
-        console.error("[Profile] Available names:", talentData.map(t => t["Full Name"]));
+        console.error(
+          "[Profile] Talent not found in master sheet. Looking for:",
+          name,
+          "Normalized:",
+          normalizedName
+        );
         setError("Talent not found in master sheet");
         setIsLoading(false);
         return;
       }
-      console.log("[Profile] Found talent:", talent["Full Name"]);
-      
-      // Try to find matching details
+
       const talentPhone = normalizePhone(String(talent["Phone"] || ""));
       const talentEmail = (talent["Email "] || "").trim().toLowerCase();
-      
+
       let matchedDetails: TalentDetails | undefined;
-      
-      // Primary: match by normalized phone
+
       if (talentPhone && detailsMapByPhone.has(talentPhone)) {
         matchedDetails = detailsMapByPhone.get(talentPhone);
-        console.log("[Profile] Matched by phone:", talentPhone);
       }
-      
-      // Fallback: match by email
+
       if (!matchedDetails && talentEmail && detailsMapByEmail.has(talentEmail)) {
         matchedDetails = detailsMapByEmail.get(talentEmail);
-        console.log("[Profile] Matched by email:", talentEmail);
       }
-      
-      if (!matchedDetails) {
-        console.log("[Profile] No match found. Phone:", talentPhone, "Email:", talentEmail);
-        console.log("[Profile] Available phones:", Array.from(detailsMapByPhone.keys()));
-        console.log("[Profile] Available emails:", Array.from(detailsMapByEmail.keys()));
-      }
-      
-      // Merge talent with details
+
       const merged: Talent & Partial<TalentDetails> = {
         ...talent,
       };
-      
+
       if (matchedDetails) {
-        // Copy all fields from details
         Object.assign(merged, matchedDetails);
-        console.log("[Profile] Merged profile with details for:", talent["Full Name"]);
-      } else {
-        console.log("[Profile] No details found for:", talent["Full Name"], "Phone:", talentPhone, "Email:", talentEmail);
       }
-      
-      // Always set profile - even if no details matched, we still have basic talent info
+
       setProfile(merged);
-      console.log("[Profile] Profile set, total fields:", Object.keys(merged).length);
-      
-      // Fetch contracts for this talent (match by phone) - from both sources
+
       try {
         const [sheetContracts, localContracts] = await Promise.all([
           fetchContracts(),
           Promise.resolve(getLocalContracts()),
         ]);
         const allContracts = [...sheetContracts, ...localContracts];
-        // Filter contracts by normalized phone number
         const talentContracts = allContracts.filter((contract: Contract) => {
-          const contractPhone = normalizePhone(contract.phone || '');
+          const contractPhone = normalizePhone(contract.phone || "");
           return contractPhone === talentPhone;
         });
         setContracts(talentContracts);
-        console.log("[Profile] Found", talentContracts.length, "contracts for phone:", talentPhone);
       } catch (err) {
         console.error("[Profile] Failed to fetch contracts:", err);
         setContracts([]);
@@ -414,7 +414,9 @@ export function TalentProfileDialog({
     }
   };
 
-  const getStatusVariant = (status: string): "default" | "success" | "warning" | "destructive" | "info" => {
+  const getStatusVariant = (
+    status: string
+  ): "default" | "success" | "warning" | "destructive" | "info" => {
     switch (status) {
       case "Onboarded":
         return "success";
@@ -431,17 +433,15 @@ export function TalentProfileDialog({
     }
   };
 
-  // Helper to format field values - capitalize yes/no, keep others as-is
   const formatFieldValue = (value: string | undefined): string | undefined => {
     if (!value) return undefined;
-    // Ensure value is a string
     const strValue = String(value);
     if (strValue.trim() === "") return undefined;
     const trimmed = strValue.trim();
-    // Check if it's a yes/no value (case insensitive)
     if (/^(yes|no|y|n|true|false|1|0)$/i.test(trimmed)) {
-      // Capitalize first letter: "no" -> "No", "yes" -> "Yes"
-      return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
+      return (
+        trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase()
+      );
     }
     return strValue;
   };
@@ -450,9 +450,10 @@ export function TalentProfileDialog({
     const hasValues = section.fields.some((f) => f.value);
     if (!hasValues) return null;
 
-    // Check if field contains a URL (Instagram, YouTube, IMDb, etc.)
-    const isUrlField = (label: string) => 
-      /instagram|youtube|imdb|wiki|link|website|facebook|twitter|tiktok/i.test(label);
+    const isUrlField = (label: string) =>
+      /instagram|youtube|imdb|wiki|link|website|facebook|twitter|tiktok/i.test(
+        label
+      );
 
     return (
       <div key={section.title} className="profile-card">
@@ -462,8 +463,12 @@ export function TalentProfileDialog({
             field.value ? (
               <div key={field.label} className="profile-field">
                 <dt className="profile-field-label">{field.label}</dt>
-                <dd className={`profile-field-value ${isUrlField(field.label) ? 'url-text' : ''}`}>
-                  {typeof field.value === 'string' ? formatFieldValue(field.value) : field.value}
+                <dd
+                  className={`profile-field-value ${isUrlField(field.label) ? "url-text" : ""}`}
+                >
+                  {typeof field.value === "string"
+                    ? formatFieldValue(field.value)
+                    : field.value}
                 </dd>
               </div>
             ) : null
@@ -473,14 +478,11 @@ export function TalentProfileDialog({
     );
   };
 
-  // Helper to format date strings (YYYY-MM-DD only, no timestamp)
   const formatDateField = (value: string | undefined): string | undefined => {
     if (!value) return undefined;
-    return value.split('T')[0];
+    return value.split("T")[0];
   };
 
-  // Helper to access profile fields with proper typing for Google Sheet dynamic fields
-  // Uses safeField to handle any value type safely
   const gf = (key: string): string | undefined => {
     if (!profile) return undefined;
     const profileAny = profile as unknown as Record<string, unknown>;
@@ -489,19 +491,50 @@ export function TalentProfileDialog({
 
   const getBasicInfo = (): ProfileSection => {
     const email = gf("Email Address") || gf("Email ");
-    const phone = (gf("Phone Number") || gf("Phone"))?.toString();
+    const phone = (
+      gf("Phone Number") || gf("Phone")
+    )?.toString();
     return {
       title: "Basic Information",
       fields: [
         { label: "Full Name", value: gf("Full Name") },
-        { label: "Email", value: email ? <a href={`mailto:${email}`} className="text-primary hover:underline" style={{ wordBreak: 'break-all' }}>{email}</a> : undefined },
-        { label: "Phone", value: phone ? <a href={`tel:${phone}`} className="text-primary hover:underline">{phone}</a> : undefined },
-        { label: "City", value: gf("City & State (Current location)") || gf("City & State") || gf("City") },
+        {
+          label: "Email",
+          value: email ? (
+            <a
+              href={`mailto:${email}`}
+              className="text-primary hover:underline"
+              style={{ wordBreak: "break-all" }}
+            >
+              {email}
+            </a>
+          ) : undefined,
+        },
+        {
+          label: "Phone",
+          value: phone ? (
+            <a href={`tel:${phone}`} className="text-primary hover:underline">
+              {phone}
+            </a>
+          ) : undefined,
+        },
+        {
+          label: "City",
+          value:
+            gf("City & State (Current location)") ||
+            gf("City & State") ||
+            gf("City"),
+        },
         { label: "Gender", value: gf("Gender") },
         { label: "Age", value: gf("Age")?.toString() },
         { label: "Date of Birth", value: formatDateField(gf("Date of Birth ")) },
         { label: "Nationality", value: gf("Nationality") },
-        { label: "Height (in feet & inches)", value: formatHeight(gf("Height (in feet & inches)") || gf("Height")) },
+        {
+          label: "Height (in feet & inches)",
+          value:
+            formatHeight(gf("Height (in feet & inches)")) ||
+            formatHeight(gf("Height")),
+        },
       ],
     };
   };
@@ -509,7 +542,10 @@ export function TalentProfileDialog({
   const getPhysicalAttributes = (): ProfileSection => ({
     title: "Physical Attributes",
     fields: [
-      { label: "Height (in feet & inches)", value: formatHeight(gf("Height (in feet & inches)")) },
+      {
+        label: "Height (in feet & inches)",
+        value: formatHeight(gf("Height (in feet & inches)")),
+      },
       { label: "Chest/Bust (in inches)", value: gf("Chest/Bust (in inches)") },
       { label: "Waist (in inches)", value: gf("Waist (in inches)") },
       { label: "Hips (in inches)", value: gf("Hips (in inches)") },
@@ -523,34 +559,79 @@ export function TalentProfileDialog({
   const getSocialMedia = (): ProfileSection => ({
     title: "Social & Media",
     fields: [
-      { label: "Instagram", value: renderInstagramLink(gf("Instagram Link") || gf("Instagram")) },
-      { label: "YouTube", value: gf("YouTube Channel (if any)") || gf("YouTube Channel") },
-      { label: "IMDb", value: gf("IMDb / Wikipedia Page (if any) ") || gf("IMDb") },
+      {
+        label: "Instagram",
+        value: renderInstagramLink(gf("Instagram Link") || gf("Instagram")),
+      },
+      {
+        label: "YouTube",
+        value: gf("YouTube Channel (if any)") || gf("YouTube Channel"),
+      },
+      {
+        label: "IMDb",
+        value: gf("IMDb / Wikipedia Page (if any) ") || gf("IMDb"),
+      },
     ],
   });
 
   const getExperience = (): ProfileSection => ({
     title: "Experience",
     fields: [
-      { label: "Prior modelling/acting experience", value: gf("Do you have any prior modeling or acting experience?") },
-      { label: "Experience details", value: gf("If Yes, briefly describe your experience or list any brands/projects") },
-      { label: "Previous Agency", value: gf("Any Previous Agency?") },
-      { label: "Acting Workshop Attended", value: gf("Any Acting Workshop Attended?  ") },
-      { label: "CINTAA/Union Card", value: gf("Do you have a CINTAA / Union Card?") },
+      {
+        label: "Prior modelling/acting experience",
+        value: gf(
+          "Do you have any prior modeling or acting experience?"
+        ),
+      },
+      {
+        label: "Experience details",
+        value: gf(
+          "If Yes, briefly describe your experience or list any brands/projects"
+        ),
+      },
+      {
+        label: "Previous Agency",
+        value: gf("Any Previous Agency?"),
+      },
+      {
+        label: "Acting Workshop Attended",
+        value: gf("Any Acting Workshop Attended?  "),
+      },
+      {
+        label: "CINTAA/Union Card",
+        value: gf("Do you have a CINTAA / Union Card?"),
+      },
       { label: "Languages Known", value: gf("Languages Known") },
       { label: "Dance Forms", value: gf("Dance Forms Known (if any)") },
-      { label: "Extra-Curricular", value: gf("Extra-Curricular Activities (if any)") },
+      {
+        label: "Extra-Curricular",
+        value: gf("Extra-Curricular Activities (if any)"),
+      },
     ],
   });
 
   const getWorkPreferences = (): ProfileSection => ({
     title: "Work Preferences",
     fields: [
-      { label: "Scope of Work Interested In", value: gf("Scope of Work Interested In (e.g., TV, Web, Fashion, Commercials)") },
-      { label: "Open for placement abroad", value: gf("Are you open for placement abroad?") },
+      {
+        label: "Scope of Work Interested In",
+        value: gf(
+          "Scope of Work Interested In (e.g., TV, Web, Fashion, Commercials)"
+        ),
+      },
+      {
+        label: "Open for placement abroad",
+        value: gf("Are you open for placement abroad?"),
+      },
       { label: "Valid Passport", value: gf("Valid Passport?") },
-      { label: "Can drive 2-wheeler", value: gf("Can you drive a 2-wheeler? (Geared / Non-Geared)") },
-      { label: "Can drive 4-wheeler", value: gf("Can you drive a 4-wheeler? ") },
+      {
+        label: "Can drive 2-wheeler",
+        value: gf("Can you drive a 2-wheeler? (Geared / Non-Geared)"),
+      },
+      {
+        label: "Can drive 4-wheeler",
+        value: gf("Can you drive a 4-wheeler? "),
+      },
       { label: "Can Swim", value: gf("Can you swim?  ") },
       { label: "Gamer", value: gf("Are you a Gamer?") },
     ],
@@ -559,15 +640,43 @@ export function TalentProfileDialog({
   const getComfortConsent = (): ProfileSection => ({
     title: "Comfort & Consent",
     fields: [
-      { label: "Lingerie/bikini shoots", value: gf("Comfortable with lingerie / bikini / briefs shoots?") },
-      { label: "Bold content for web/films", value: gf("Comfortable with bold content for web series or films?") },
-      { label: "Condom brand promotions", value: gf("Comfortable with condom brand promotions or awareness campaigns?") },
-      { label: "Alcohol brand shoots", value: gf("Comfortable with alcohol brand shoots or commercials?") },
-      { label: "Reality TV shows", value: gf("Comfortable participating in reality TV shows?") },
-      { label: "Daily soaps", value: gf("Comfortable working in daily soaps or TV roles?") },
-      { label: "Mother/father roles", value: gf("Comfortable playing mother or father roles? (for applicants aged 23+)") },
+      {
+        label: "Lingerie/bikini shoots",
+        value: gf("Comfortable with lingerie / bikini / briefs shoots?"),
+      },
+      {
+        label: "Bold content for web/films",
+        value: gf("Comfortable with bold content for web series or films?"),
+      },
+      {
+        label: "Condom brand promotions",
+        value: gf(
+          "Comfortable with condom brand promotions or awareness campaigns?"
+        ),
+      },
+      {
+        label: "Alcohol brand shoots",
+        value: gf("Comfortable with alcohol brand shoots or commercials?"),
+      },
+      {
+        label: "Reality TV shows",
+        value: gf("Comfortable participating in reality TV shows?"),
+      },
+      {
+        label: "Daily soaps",
+        value: gf("Comfortable working in daily soaps or TV roles?"),
+      },
+      {
+        label: "Mother/father roles",
+        value: gf(
+          "Comfortable playing mother or father roles? (for applicants aged 23+)"
+        ),
+      },
       { label: "Haircut", value: gf("Comfortable with haircut?") },
-      { label: "Hair color changes", value: gf("Comfortable with hair color changes?") },
+      {
+        label: "Hair color changes",
+        value: gf("Comfortable with hair color changes?"),
+      },
     ],
   });
 
@@ -581,15 +690,16 @@ export function TalentProfileDialog({
     ],
   });
 
-  // Get contracts section - returns JSX for contracts or null if none
   const getContractsSection = (): React.ReactNode => {
     if (contracts.length === 0) {
       return (
         <div className="profile-card">
           <h3 className="profile-section-title">Contracts</h3>
           <div className="text-center py-6">
-            <FileText className="w-8 h-8 mx-auto mb-2 text-muted-foreground/50" />
-            <p className="text-sm text-muted-foreground">No contracts linked yet</p>
+            <FileText className="w-8 h-8 mx-auto mb-2 text-muted-foreground/40" />
+            <p className="text-sm text-muted-foreground">
+              No contracts linked yet
+            </p>
           </div>
         </div>
       );
@@ -597,23 +707,34 @@ export function TalentProfileDialog({
 
     return (
       <div className="profile-card">
-        <h3 className="profile-section-title">Contracts ({contracts.length})</h3>
+        <h3 className="profile-section-title">
+          Contracts ({contracts.length})
+        </h3>
         <div className="space-y-2">
           {contracts.map((contract, idx) => (
-            <div key={idx} className="flex items-center justify-between p-2 bg-muted/30 rounded-lg">
+            <div
+              key={idx}
+              className="flex items-center justify-between p-2 bg-muted/30 rounded-lg"
+            >
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium text-foreground truncate">
-                  {contract.name || 'Unnamed'}
+                  {contract.name || "Unnamed"}
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  {contract.email || 'No email'} • {contract.phone || 'No phone'}
+                  {contract.email || "No email"} • {contract.phone || "No phone"}
                 </div>
               </div>
               {contract.contractLink && (
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => window.open(contract.contractLink, '_blank', 'noopener,noreferrer')}
+                  onClick={() =>
+                    window.open(
+                      contract.contractLink,
+                      "_blank",
+                      "noopener,noreferrer"
+                    )
+                  }
                   className="ml-2 shrink-0"
                 >
                   <FileText className="h-3 w-3 mr-1" />
@@ -628,47 +749,45 @@ export function TalentProfileDialog({
     );
   };
 
-  // Parse polaroids for gallery display
   const profileAny = profile as unknown as Record<string, unknown>;
-  const polaroidLinks = profile ? parsePolaroidLinks(profileAny?.["Upload Polaroids (Required)"]) : [];
+  const polaroidLinks = profile
+    ? parsePolaroidLinks(profileAny?.["Upload Polaroids (Required)"])
+    : [];
 
-  // Keep image count ref in sync
   useEffect(() => {
     imageCountRef.current = polaroidLinks.length;
   }, [polaroidLinks.length]);
 
-  // Safe accessors for header section
   const profileName = gf("Full Name") || "Unknown Talent";
   const profileStatus = gf("Status") || "New";
   const profileManager = gf("Talent Manager");
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="glass-dialog max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0 bg-background border-border animate-scale-in">
         {isLoading && (
-          <div className="flex flex-col items-center justify-center py-12">
+          <div className="flex flex-col items-center justify-center py-16">
             <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
             <p className="text-muted-foreground">Loading profile...</p>
           </div>
         )}
 
         {error && (
-          <div className="text-center py-12 text-destructive">
+          <div className="text-center py-16 text-destructive px-6">
             <p>{error}</p>
           </div>
         )}
 
         {profile && !isLoading && (
           <ProfileErrorBoundary>
-            <div className="talent-profile space-y-5">
-              {/* Header: Name as large heading + Status/Manager */}
-              <div className="profile-header space-y-3">
+            <div className="talent-profile space-y-5 p-6">
+              {/* Header */}
+              <div className="profile-header">
                 <h2 className="text-2xl font-bold text-foreground break-words">
                   {profileName}
                 </h2>
-                <div className="flex flex-wrap items-center gap-3">
-                  {/* Status Dropdown */}
-                  {typeof rowIndex === 'number' && onStatusUpdate ? (
+                <div className="flex flex-wrap items-center gap-3 mt-3">
+                  {typeof rowIndex === "number" && onStatusUpdate ? (
                     <StatusDropdown
                       currentStatus={(profileStatus as StatusValue) || "New"}
                       rowIndex={rowIndex}
@@ -678,18 +797,23 @@ export function TalentProfileDialog({
                       hasManager={!!profileManager}
                     />
                   ) : (
-                    <Badge variant={getStatusVariant(profileStatus)} className="text-xs sm:text-sm">
+                    <Badge
+                      variant={getStatusVariant(profileStatus)}
+                      className="text-xs sm:text-sm"
+                    >
                       {profileStatus}
                     </Badge>
                   )}
-                  
-                  {/* Manager Dropdown or Badge */}
+
+                  {/* Manager */}
                   <div className="relative" ref={managerDropdownRef}>
                     {profileManager ? (
-                      typeof rowIndex === 'number' && onManagerAssign ? (
+                      typeof rowIndex === "number" && onManagerAssign ? (
                         <button
-                          onClick={() => setIsManagerDropdownOpen(!isManagerDropdownOpen)}
-                          className="inline-flex items-center gap-1.5 px-3 py-2 sm:py-1.5 bg-muted text-foreground rounded-full text-sm font-medium hover:bg-muted/80 transition-all min-h-[44px] sm:min-h-[auto] border border-border"
+                          onClick={() =>
+                            setIsManagerDropdownOpen(!isManagerDropdownOpen)
+                          }
+                          className="inline-flex items-center gap-1.5 px-3 py-2 bg-secondary text-secondary-foreground rounded-full text-sm font-medium hover:bg-secondary/80 transition-all min-h-[44px] sm:min-h-[auto] border border-border"
                         >
                           <span>Manager: {profileManager}</span>
                           <ChevronDown className="h-4 w-4" />
@@ -699,57 +823,78 @@ export function TalentProfileDialog({
                           Manager: {profileManager}
                         </Badge>
                       )
-                    ) : typeof rowIndex === 'number' && onManagerAssign ? (
+                    ) : typeof rowIndex === "number" && onManagerAssign ? (
                       <button
-                        onClick={() => setIsManagerDropdownOpen(!isManagerDropdownOpen)}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 sm:py-1.5 bg-secondary border border-border text-secondary-foreground rounded-full text-sm font-medium hover:bg-secondary/80 transition-all min-h-[44px] sm:min-h-[auto]"
+                        onClick={() =>
+                          setIsManagerDropdownOpen(!isManagerDropdownOpen)
+                        }
+                        className="inline-flex items-center gap-1.5 px-3 py-2 bg-secondary text-secondary-foreground rounded-full text-sm font-medium hover:bg-secondary/80 transition-all min-h-[44px] sm:min-h-[auto] border border-border"
                       >
                         <span>Assign Manager</span>
                         <ChevronDown className="h-4 w-4" />
                       </button>
                     ) : (
-                      <Badge variant="outline" className="text-xs sm:text-sm text-muted-foreground">
+                      <Badge
+                        variant="outline"
+                        className="text-xs sm:text-sm text-muted-foreground"
+                      >
                         No Manager Assigned
                       </Badge>
                     )}
-                    
-                    {/* Manager Dropdown Panel - Portal to avoid Dialog overflow clipping */}
-                    {isManagerDropdownOpen && typeof document !== 'undefined' && createPortal(
-                      <div className="fixed inset-0 z-[9998]" onClick={() => setIsManagerDropdownOpen(false)}>
-                        <div 
-                          className="absolute right-0 top-full mt-1 w-full sm:w-56 max-w-full bg-popover border border-border rounded-xl shadow-xl p-2"
-                          style={{ 
-                            position: 'fixed',
-                            top: managerDropdownRef.current?.getBoundingClientRect().bottom ?? 0,
-                            right: managerDropdownRef.current ? window.innerWidth - managerDropdownRef.current.getBoundingClientRect().right : 0,
-                          }}
-                          onClick={(e) => e.stopPropagation()}
+
+                    {isManagerDropdownOpen &&
+                      typeof document !== "undefined" &&
+                      createPortal(
+                        <div
+                          className="fixed inset-0 z-[9998]"
+                          onClick={() => setIsManagerDropdownOpen(false)}
                         >
-                          <AnimatedList
-                            items={MANAGERS.map(manager => ({ label: manager, value: manager }))}
-                            onItemSelect={(item) => {
-                              if (onManagerAssign && typeof rowIndex === 'number') {
-                                onManagerAssign(rowIndex, item.value);
-                                toast.success(`Manager updated to ${item.value}`);
-                              }
-                              setIsManagerDropdownOpen(false);
+                          <div
+                            className="absolute bg-popover border border-border rounded-xl shadow-xl p-2 animate-scale-in"
+                            style={{
+                              top:
+                                (managerDropdownRef.current?.getBoundingClientRect()
+                                  .bottom ?? 0) + 4,
+                              right:
+                                window.innerWidth -
+                                (managerDropdownRef.current?.getBoundingClientRect()
+                                  .right ?? 0),
                             }}
-                            showGradients={true}
-                            displayScrollbar={false}
-                            enableArrowNavigation={true}
-                            selectedValue={profileManager || undefined}
-                            className="w-full"
-                            itemClassName=""
-                          />
-                        </div>
-                      </div>,
-                      document.body
-                    )}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <AnimatedList
+                              items={MANAGERS.map((manager) => ({
+                                label: manager,
+                                value: manager,
+                              }))}
+                              onItemSelect={(item) => {
+                                if (
+                                  onManagerAssign &&
+                                  typeof rowIndex === "number"
+                                ) {
+                                  onManagerAssign(rowIndex, item.value);
+                                  toast.success(
+                                    `Manager updated to ${item.value}`
+                                  );
+                                }
+                                setIsManagerDropdownOpen(false);
+                              }}
+                              showGradients={true}
+                              displayScrollbar={false}
+                              enableArrowNavigation={true}
+                              selectedValue={profileManager || undefined}
+                              className="w-full sm:w-56"
+                              itemClassName=""
+                            />
+                          </div>
+                        </div>,
+                        document.body
+                      )}
                   </div>
                 </div>
               </div>
 
-              {/* Image Gallery - Thumbnail Grid */}
+              {/* Photo Gallery */}
               <div className="space-y-2">
                 <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                   Photos
@@ -773,9 +918,11 @@ export function TalentProfileDialog({
                                 loading="lazy"
                                 onError={(e) => {
                                   const img = e.currentTarget;
-                                  img.style.display = 'none';
-                                  const fallback = img.parentElement?.querySelector('.fallback-div') as HTMLElement | null;
-                                  if (fallback) fallback.classList.remove('hidden');
+                                  img.style.display = "none";
+                                  const fallback = img.parentElement?.querySelector(
+                                    ".fallback-div"
+                                  ) as HTMLElement | null;
+                                  if (fallback) fallback.classList.remove("hidden");
                                 }}
                               />
                             ) : null}
@@ -787,17 +934,18 @@ export function TalentProfileDialog({
                       })}
                     </div>
 
-                    {/* Image Modal / Lightbox */}
                     {isModalOpen && (
-                      <div 
+                      <div
                         className="image-modal-overlay"
                         onClick={closeModal}
                         role="dialog"
                         aria-modal="true"
                         aria-label="Image preview"
                       >
-                        <div className="image-modal-content" onClick={(e) => e.stopPropagation()}>
-                          {/* Close button */}
+                        <div
+                          className="image-modal-content"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <button
                             onClick={closeModal}
                             className="image-modal-close"
@@ -806,19 +954,18 @@ export function TalentProfileDialog({
                             <X className="h-6 w-6" />
                           </button>
 
-                          {/* Image counter */}
                           <div className="image-modal-counter">
                             {currentImageIndex + 1} of {polaroidLinks.length}
                           </div>
 
-                          {/* Main image */}
                           <img
-                            src={getModalImageUrl(polaroidLinks[currentImageIndex])}
+                            src={getModalImageUrl(
+                              polaroidLinks[currentImageIndex]
+                            )}
                             alt={`Photo ${currentImageIndex + 1}`}
                             className="image-modal-image"
                           />
 
-                          {/* Navigation arrows */}
                           {polaroidLinks.length > 1 && (
                             <>
                               <button
@@ -842,37 +989,25 @@ export function TalentProfileDialog({
                     )}
                   </>
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-8 sm:py-12 bg-muted/30 rounded-lg border border-border/50">
-                    <div className="bg-muted p-3 sm:p-4 rounded-full mb-2 sm:mb-3">
-                      <User className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground" />
+                  <div className="flex flex-col items-center justify-center py-10 sm:py-14 bg-secondary/50 rounded-xl border border-border">
+                    <div className="bg-muted p-4 rounded-full mb-3">
+                      <User className="h-7 w-7 text-muted-foreground" />
                     </div>
-                    <p className="text-muted-foreground text-xs sm:text-sm">No photos yet</p>
+                    <p className="text-muted-foreground text-xs sm:text-sm">
+                      No photos yet
+                    </p>
                   </div>
                 )}
               </div>
 
-              {/* Basic Information */}
+              {/* Profile Sections */}
               {renderSection(getBasicInfo())}
-
-              {/* Physical Attributes */}
               {renderSection(getPhysicalAttributes())}
-
-              {/* Social & Media */}
               {renderSection(getSocialMedia())}
-
-              {/* Experience */}
               {renderSection(getExperience())}
-
-              {/* Work Preferences */}
               {renderSection(getWorkPreferences())}
-
-              {/* Comfort & Consent */}
               {renderSection(getComfortConsent())}
-
-              {/* Management Info */}
               {renderSection(getManagementInfo())}
-
-              {/* Contracts */}
               {getContractsSection()}
             </div>
           </ProfileErrorBoundary>

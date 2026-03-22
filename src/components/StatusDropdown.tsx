@@ -5,13 +5,35 @@ import { toast } from "sonner";
 import type { StatusValue } from "@/types/talent";
 import { STATUS_VALUES } from "@/types/talent";
 
-// Theme-aware status colors using CSS vars / semantic tokens
-const statusColors: Record<StatusValue, { bg: string; text: string; dot: string }> = {
-  "New": { bg: "bg-muted text-muted-foreground", text: "", dot: "bg-muted-foreground" },
-  "Meeting Required": { bg: "bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-200", text: "", dot: "bg-orange-500" },
-  "KYC Required": { bg: "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200", text: "", dot: "bg-blue-500" },
-  "Onboarded": { bg: "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200", text: "", dot: "bg-green-500" },
-  "Rejected": { bg: "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200", text: "", dot: "bg-red-500" },
+// Status colors using standard Tailwind + semantic tokens
+const statusStyles: Record<
+  StatusValue,
+  { btnClass: string; dotClass: string }
+> = {
+  New: {
+    btnClass: "bg-muted text-muted-foreground border-muted",
+    dotClass: "bg-muted-foreground",
+  },
+  "Meeting Required": {
+    btnClass:
+      "bg-orange-100/15 text-orange-400 border-orange-500/40 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-500/30",
+    dotClass: "bg-orange-400 dark:bg-orange-300",
+  },
+  "KYC Required": {
+    btnClass:
+      "bg-blue-100/15 text-blue-400 border-blue-500/40 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-500/30",
+    dotClass: "bg-blue-400 dark:bg-blue-300",
+  },
+  Onboarded: {
+    btnClass:
+      "bg-green-100/15 text-green-400 border-green-500/40 dark:bg-green-900/20 dark:text-green-300 dark:border-green-500/30",
+    dotClass: "bg-green-400 dark:bg-green-300",
+  },
+  Rejected: {
+    btnClass:
+      "bg-red-100/15 text-red-400 border-red-500/40 dark:bg-red-900/20 dark:text-red-300 dark:border-red-500/30",
+    dotClass: "bg-red-400 dark:bg-red-300",
+  },
 };
 
 interface StatusDropdownProps {
@@ -23,21 +45,23 @@ interface StatusDropdownProps {
   hasManager?: boolean;
 }
 
-export function StatusDropdown({ 
-  currentStatus, 
-  rowIndex, 
-  onStatusChange, 
+export function StatusDropdown({
+  currentStatus,
+  rowIndex,
+  onStatusChange,
   disabled,
   isLoading,
-  hasManager = true
+  hasManager = true,
 }: StatusDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close on click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     }
@@ -48,7 +72,6 @@ export function StatusDropdown({
     }
   }, [isOpen]);
 
-  // Close on Escape key
   useEffect(() => {
     function handleEscape(event: KeyboardEvent) {
       if (event.key === "Escape") {
@@ -79,32 +102,31 @@ export function StatusDropdown({
     toast.success(`Status updated to ${status}`);
   };
 
-  const colors = statusColors[currentStatus] || statusColors["New"];
+  const styles = statusStyles[currentStatus] || statusStyles["New"];
 
   const dropdownContent = isOpen ? (
-    <div 
-      className="absolute right-0 top-full mt-1 dropdown-animate w-full sm:w-56 max-w-full bg-popover border border-border rounded-xl shadow-xl"
-      style={{ 
-        zIndex: 9999,
-      }}
-    >
+    <div className="dropdown-animate absolute right-0 top-full mt-1 w-full sm:w-56 max-w-full bg-popover border border-border rounded-xl shadow-xl z-[9999] overflow-hidden">
       <div className="py-1">
         {STATUS_VALUES.map((status) => {
-          const statusColor = statusColors[status];
+          const s = statusStyles[status];
           const isSelected = status === currentStatus;
-          
+
           return (
             <button
               key={status}
               onClick={() => handleSelect(status)}
-              className={`w-full flex items-center gap-2 px-3 py-3 sm:py-2.5 text-sm text-popover-foreground hover:bg-accent transition-colors min-h-[44px] ${
-                isSelected ? "bg-accent/60 font-medium" : ""
+              className={`w-full flex items-center gap-3 px-3 py-3 sm:py-2.5 text-sm transition-colors min-h-[44px] ${
+                isSelected
+                  ? "bg-accent/60 font-medium text-foreground"
+                  : "text-popover-foreground hover:bg-accent"
               }`}
             >
-              <span className={`w-2 h-2 rounded-full shrink-0 ${statusColor.dot}`} />
+              <span className={`w-2 h-2 rounded-full shrink-0 ${s.dotClass}`} />
               <span className="flex-1 text-left">{status}</span>
               {isSelected && (
-                <span className="text-xs text-muted-foreground">Current</span>
+                <span className="text-xs text-muted-foreground shrink-0">
+                  Current
+                </span>
               )}
             </button>
           );
@@ -121,19 +143,25 @@ export function StatusDropdown({
           if (!disabled) setIsOpen(!isOpen);
         }}
         disabled={disabled || isLoading}
-        className={`inline-flex items-center gap-2 px-3 py-2 sm:py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap min-h-[44px] sm:min-h-[auto] ${colors.bg} ${colors.text} hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed border border-transparent hover:border-transparent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2`}
-        style={{ minWidth: '140px', justifyContent: 'center' }}
+        className={`inline-flex items-center gap-2 px-3 py-2 sm:py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap min-h-[44px] sm:min-h-[auto] border ${styles.btnClass} hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`}
+        style={{ minWidth: "140px", justifyContent: "center" }}
       >
         {isLoading ? (
           <Loader2 className="h-4 w-4 sm:h-3 sm:w-3 animate-spin" />
         ) : (
-          <span className={`w-2 h-2 rounded-full shrink-0 ${colors.dot}`} />
+          <span className={`w-2 h-2 rounded-full shrink-0 ${styles.dotClass}`} />
         )}
         <span>{currentStatus || "New"}</span>
-        <ChevronDown className="h-4 w-4 sm:h-3 sm:w-3 transition-transform" />
+        <ChevronDown
+          className="h-4 w-4 sm:h-3 sm:w-3 transition-transform"
+          style={{
+            transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
+          }}
+        />
       </button>
 
-      {typeof document !== 'undefined' && createPortal(dropdownContent, document.body)}
+      {typeof document !== "undefined" &&
+        createPortal(dropdownContent, document.body)}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useState } from "react";
-import { Sun, Moon, Smartphone, Lock } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Sun, Moon, Smartphone, Lock, Eye, EyeOff } from "lucide-react";
+import { Card } from "./ui/card";
+import { Button } from "./ui/button";
 
 export type Theme = "light" | "dark" | "system";
 
@@ -9,7 +10,9 @@ const SHOW_DELETE_STORAGE_KEY = "toabh_contracts_show_delete";
 
 function getSystemTheme(): "light" | "dark" {
   if (typeof window === "undefined") return "dark";
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
 }
 
 function applyTheme(theme: Theme): void {
@@ -36,19 +39,20 @@ export function useTheme() {
     applyTheme(theme);
   }, []);
 
-  const handleSystemThemeChange = useCallback((_e: MediaQueryListEvent) => {
-    const stored = getStoredTheme();
-    if (stored === "system") {
-      applyTheme("system");
-    }
-  }, []);
+  const handleSystemThemeChange = useCallback(
+    (_e: MediaQueryListEvent) => {
+      const stored = getStoredTheme();
+      if (stored === "system") {
+        applyTheme("system");
+      }
+    },
+    []
+  );
 
   useEffect(() => {
-    // Apply initial theme
     const initial = getStoredTheme();
     applyTheme(initial);
 
-    // Listen for system theme changes
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     mediaQuery.addEventListener("change", handleSystemThemeChange);
 
@@ -69,11 +73,15 @@ function ThemeToggle({ currentTheme, onThemeChange }: ThemeToggleProps) {
   const options: { value: Theme; label: string; icon: React.ReactNode }[] = [
     { value: "light", label: "Light", icon: <Sun className="h-4 w-4" /> },
     { value: "dark", label: "Dark", icon: <Moon className="h-4 w-4" /> },
-    { value: "system", label: "System", icon: <Smartphone className="h-4 w-4" /> },
+    {
+      value: "system",
+      label: "System",
+      icon: <Smartphone className="h-4 w-4" />,
+    },
   ];
 
   return (
-    <div className="flex items-center gap-1 bg-secondary/50 rounded-lg p-1">
+    <div className="inline-flex items-center gap-1 bg-secondary/50 rounded-lg p-1">
       {options.map((option) => (
         <button
           key={option.value}
@@ -102,6 +110,7 @@ export function Settings({ theme, onThemeChange }: SettingsProps) {
   const [password, setPassword] = useState("");
   const [passwordError, setPasswordError] = useState(false);
   const [showDeleteButtons, setShowDeleteButtons] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem(SHOW_DELETE_STORAGE_KEY);
@@ -125,85 +134,123 @@ export function Settings({ theme, onThemeChange }: SettingsProps) {
 
   if (!isAuthenticated) {
     return (
-      <Card className="glass-card">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base font-semibold text-foreground flex items-center gap-2">
-            <Lock className="h-4 w-4" />
-            Settings (Password Protected)
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <p className="text-sm text-muted-foreground mb-2">Enter password to access settings</p>
-            <div className="flex gap-2">
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  setPasswordError(false);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handlePasswordSubmit();
-                }}
-                placeholder="Password..."
-                className="flex-1 bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
-              />
-              <button
-                onClick={handlePasswordSubmit}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:opacity-90 transition-opacity"
-              >
-                Unlock
-              </button>
-            </div>
-            {passwordError && (
-              <p className="text-sm text-destructive mt-2">Incorrect password</p>
-            )}
+      <div className="animate-fade-in">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="bg-primary/20 p-2.5 rounded-xl">
+            <Lock className="h-5 w-5 text-primary" />
           </div>
-        </CardContent>
-      </Card>
+          <div>
+            <h2 className="text-xl font-bold text-foreground">Settings</h2>
+            <p className="text-sm text-muted-foreground">
+              Password protected area
+            </p>
+          </div>
+        </div>
+
+        <Card className="p-6">
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm text-muted-foreground block mb-2">
+                Enter password to access settings
+              </label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      setPasswordError(false);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handlePasswordSubmit();
+                    }}
+                    placeholder="Enter password..."
+                    className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+                <Button onClick={handlePasswordSubmit} className="shrink-0">
+                  Unlock
+                </Button>
+              </div>
+              {passwordError && (
+                <p className="text-sm text-destructive mt-2 animate-fade-in">
+                  Incorrect password. Please try again.
+                </p>
+              )}
+            </div>
+          </div>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <Card className="glass-card">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base font-semibold text-foreground">
-          Settings
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div>
-          <p className="text-sm text-muted-foreground mb-3">Theme</p>
-          <ThemeToggle currentTheme={theme} onThemeChange={onThemeChange} />
+    <div className="animate-fade-in">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="bg-primary/20 p-2.5 rounded-xl">
+          <Lock className="h-5 w-5 text-primary" />
         </div>
-        <p className="text-xs text-muted-foreground">
-          {theme === "system"
-            ? `Currently using ${getSystemTheme()} mode (detected from your device)`
-            : `Currently using ${theme} mode`}
-        </p>
+        <div>
+          <h2 className="text-xl font-bold text-foreground">Settings</h2>
+          <p className="text-sm text-muted-foreground">Customize your dashboard</p>
+        </div>
+      </div>
 
-        <div className="border-t border-border pt-4">
+      <Card className="p-6">
+        {/* Theme Section */}
+        <div className="mb-6">
+          <h3 className="text-sm font-semibold text-foreground mb-3">Appearance</h3>
+          <ThemeToggle currentTheme={theme} onThemeChange={onThemeChange} />
+          <p className="text-xs text-muted-foreground mt-2">
+            {theme === "system"
+              ? `Using ${getSystemTheme()} mode (detected from your device)`
+              : `Using ${theme} mode`}
+          </p>
+        </div>
+
+        <hr className="border-border my-6" />
+
+        {/* Contract Settings */}
+        <div>
+          <h3 className="text-sm font-semibold text-foreground mb-4">
+            Contract Management
+          </h3>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-foreground">Enable Contract Deletion</p>
-              <p className="text-xs text-muted-foreground">Show delete button in Contracts table</p>
+              <p className="text-sm font-medium text-foreground">
+                Enable Contract Deletion
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Show delete button in Contracts table
+              </p>
             </div>
             <button
               onClick={handleToggleDeleteButtons}
-              className={`w-12 h-6 rounded-full transition-colors relative ${
-                showDeleteButtons ? "bg-primary" : "bg-secondary"
+              className={`relative w-12 h-7 rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                showDeleteButtons ? "bg-primary" : "bg-secondary border border-border"
               }`}
             >
               <div
-                className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${
+                className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-200 ${
                   showDeleteButtons ? "translate-x-6" : "translate-x-0.5"
                 }`}
               />
             </button>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </Card>
+    </div>
   );
 }

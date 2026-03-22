@@ -20,23 +20,19 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import type { Talent, StatusValue } from "@/types/talent";
 import { MANAGERS } from "@/types/talent";
-import { Search, RefreshCw, Loader2 } from "lucide-react";
-import { type ColumnName, getInitialColumns } from "./ColumnVisibility";
+import { Search, RefreshCw, Loader2, X, SlidersHorizontal } from "lucide-react";
 import { StatusDropdown } from "./StatusDropdown";
+import type { ColumnName } from "./ColumnVisibility";
+import { getInitialColumns } from "./ColumnVisibility";
 
-// Helper to format height properly - converts inches to feet'inches" format
+// Helper to format height properly
 function formatHeight(height: string | undefined | null): string {
   if (!height) return "-";
   const trimmed = height.trim();
   if (!trimmed) return "-";
-  
-  // If it already contains a foot mark, it's probably already formatted correctly
   if (trimmed.includes("'") || trimmed.includes("ft")) {
-    // Clean up and standardize format: 5'6" or 5'6
     return trimmed.replace(/"/g, "").replace(/ ft /g, "'").replace(/ in$/g, "\"").replace(/ inches$/g, "\"");
   }
-  
-  // If it's just a number, assume it's inches and convert to feet'inches"
   const inches = parseInt(trimmed, 10);
   if (!isNaN(inches)) {
     if (inches >= 12) {
@@ -47,8 +43,6 @@ function formatHeight(height: string | undefined | null): string {
       return `${inches}"`;
     }
   }
-  
-  // Return as-is if we can't parse it
   return trimmed;
 }
 
@@ -62,38 +56,39 @@ interface TalentTableProps {
   lastUpdated: Date | null;
   pendingUpdates?: Record<number, "status" | "manager">;
   visibleColumns?: ColumnName[];
-  // Controlled status filter for bi-directional sync with quick filters
   statusFilter?: string;
   onStatusFilterChange?: (status: string) => void;
 }
 
-// Parse Instagram value to full URL
 function parseInstagram(value: string): string {
-  if (!value) return '';
+  if (!value) return "";
   const trimmed = value.trim();
-  // If already a full URL (starts with http/https), use as-is
-  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
     return trimmed;
   }
-  // Otherwise treat as username/handle
-  // Remove @ if present
-  let username = trimmed.replace(/^@/, '');
-  // Remove any existing instagram.com prefix
-  username = username.replace(/^(https?:\/\/)?(www\.)?instagram\.com\//, '');
-  // Remove any query params or fragments
-  username = username.split('?')[0].split('#')[0];
-  // Remove trailing slashes
-  username = username.replace(/\/+$/, '');
+  let username = trimmed.replace(/^@/, "");
+  username = username.replace(/^(https?:\/\/)?(www\.)?instagram\.com\//, "");
+  username = username.split("?")[0].split("#")[0];
+  username = username.replace(/\/+$/, "");
   return `https://instagram.com/${username}`;
 }
 
-// Helper to render Instagram as clickable link
-const renderInstagramLink = (instagram: string | undefined): React.ReactNode => {
+const renderInstagramLink = (
+  instagram: string | undefined
+): React.ReactNode => {
   if (!instagram || instagram.trim() === "") return "-";
   const url = parseInstagram(instagram);
-  const display = instagram.trim().replace(/^https?:\/\/(www\.)?instagram\.com\//, "@").replace(/\/+$/, "");
+  const display = instagram
+    .trim()
+    .replace(/^https?:\/\/(www\.)?instagram\.com\//, "@")
+    .replace(/\/+$/, "");
   return (
-    <a href={url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-primary hover:underline"
+    >
       {display}
     </a>
   );
@@ -102,21 +97,22 @@ const renderInstagramLink = (instagram: string | undefined): React.ReactNode => 
 const getStatusDot = (status: string): string => {
   switch (status) {
     case "Onboarded":
-      return "status-dot status-dot-onboarded";
+      return "bg-green-500";
     case "Meeting Required":
-      return "status-dot status-dot-meeting";
+      return "bg-orange-400";
     case "KYC Required":
-      return "status-dot status-dot-kyc";
+      return "bg-blue-500";
     case "Rejected":
-      return "status-dot status-dot-rejected";
+      return "bg-red-500";
     case "New":
-      return "status-dot status-dot-new";
     default:
-      return "status-dot status-dot-new";
+      return "bg-muted-foreground";
   }
 };
 
-const getStatusVariant = (status: string): "default" | "success" | "warning" | "destructive" | "info" => {
+const getStatusVariant = (
+  status: string
+): "default" | "success" | "warning" | "destructive" | "info" => {
   switch (status) {
     case "Onboarded":
       return "success";
@@ -134,7 +130,9 @@ const getStatusVariant = (status: string): "default" | "success" | "warning" | "
 };
 
 const getUniqueValues = (talents: Talent[], key: keyof Talent): string[] => {
-  const values = talents.map((t) => t[key]).filter((v) => v && v.toString().trim() !== "");
+  const values = talents
+    .map((t) => t[key])
+    .filter((v) => v && v.toString().trim() !== "");
   return [...new Set(values)].sort() as string[];
 };
 
@@ -156,12 +154,13 @@ export function TalentTable({
   const [managerFilter, setManagerFilter] = useState<string>("all");
   const [cityFilter, setCityFilter] = useState<string>("all");
   const [selectedManagers, setSelectedManagers] = useState<Record<number, string>>({});
-  
-  // Sort filter
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "az" | "za">("newest");
-  
-  // Use external status filter if provided (controlled), otherwise use internal
-  const statusFilter = externalStatusFilter !== undefined ? externalStatusFilter : internalStatusFilter;
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  const statusFilter =
+    externalStatusFilter !== undefined
+      ? externalStatusFilter
+      : internalStatusFilter;
   const setStatusFilter = (value: string) => {
     if (externalOnStatusFilterChange) {
       externalOnStatusFilterChange(value);
@@ -169,16 +168,13 @@ export function TalentTable({
       setInternalStatusFilter(value);
     }
   };
-  
-  // Column visibility - use external if provided, otherwise use initial columns
-  // Note: ColumnVisibility UI component (gear icon) has been removed
+
   const visibleColumns = externalVisibleColumns || getInitialColumns();
 
   const uniqueStatuses = getUniqueValues(talents, "Status");
   const uniqueManagers = getUniqueValues(talents, "Talent Manager");
   const uniqueCities = getUniqueValues(talents, "City");
 
-  // Sort talents by rowIndex descending (latest/highest rowIndex first = newest talents)
   const filteredTalents = useMemo(() => {
     let filtered = talents.filter((talent) => {
       const searchLower = search.toLowerCase();
@@ -192,12 +188,12 @@ export function TalentTable({
         statusFilter === "all" || talent["Status"] === statusFilter;
       const matchesManager =
         managerFilter === "all" || talent["Talent Manager"] === managerFilter;
-      const matchesCity = cityFilter === "all" || talent["City"] === cityFilter;
+      const matchesCity =
+        cityFilter === "all" || talent["City"] === cityFilter;
 
       return matchesSearch && matchesStatus && matchesManager && matchesCity;
     });
 
-    // Apply sorting
     switch (sortBy) {
       case "newest":
         filtered = filtered.sort((a, b) => b.rowIndex - a.rowIndex);
@@ -206,10 +202,14 @@ export function TalentTable({
         filtered = filtered.sort((a, b) => a.rowIndex - b.rowIndex);
         break;
       case "az":
-        filtered = filtered.sort((a, b) => a["Full Name"].localeCompare(b["Full Name"]));
+        filtered = filtered.sort((a, b) =>
+          a["Full Name"].localeCompare(b["Full Name"])
+        );
         break;
       case "za":
-        filtered = filtered.sort((a, b) => b["Full Name"].localeCompare(a["Full Name"]));
+        filtered = filtered.sort((a, b) =>
+          b["Full Name"].localeCompare(a["Full Name"])
+        );
         break;
     }
 
@@ -221,7 +221,6 @@ export function TalentTable({
     onManagerAssign(rowIndex, manager);
   };
 
-  // Check if any filter is currently active
   const hasActiveFilters = () => {
     return (
       statusFilter !== "all" ||
@@ -232,7 +231,6 @@ export function TalentTable({
     );
   };
 
-  // Clear all filters and reset to defaults
   const clearAllFilters = () => {
     setStatusFilter("all");
     setManagerFilter("all");
@@ -242,22 +240,78 @@ export function TalentTable({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-fade-in">
+      {/* Toolbar */}
       <Card className="p-4">
         <div className="flex flex-col gap-4">
-          <div className="flex flex-col sm:flex-row gap-4">
+          {/* Search Row */}
+          <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search by name, Instagram, or city..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-10 bg-input/50"
+                className="pl-10"
               />
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[160px] bg-input/50">
+
+            {/* Filter toggles */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setFiltersOpen(!filtersOpen)}
+                className={`btn-premium border ${filtersOpen ? "bg-primary text-primary-foreground border-primary" : "bg-secondary hover:bg-secondary/80 text-secondary-foreground border-border"}`}
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+                <span className="hidden sm:inline">Filters</span>
+                {hasActiveFilters() && (
+                  <span className="h-2 w-2 rounded-full bg-primary shrink-0" />
+                )}
+              </button>
+
+              <Select
+                value={sortBy}
+                onValueChange={(v: "newest" | "oldest" | "az" | "za") =>
+                  setSortBy(v)
+                }
+              >
+                <SelectTrigger className="w-[130px]">
+                  <SelectValue placeholder="Sort" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="newest">Newest</SelectItem>
+                  <SelectItem value="oldest">Oldest</SelectItem>
+                  <SelectItem value="az">A–Z</SelectItem>
+                  <SelectItem value="za">Z–A</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onRefresh}
+                disabled={isLoading}
+                className="hover:bg-secondary/80"
+              >
+                <RefreshCw
+                  className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
+                />
+              </Button>
+            </div>
+          </div>
+
+          {/* Expandable Filters */}
+          <div
+            className={`overflow-hidden transition-all duration-200 ${
+              filtersOpen ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
+            }`}
+          >
+            <div className="flex flex-wrap gap-2 pt-2 border-t border-border">
+              <Select
+                value={statusFilter}
+                onValueChange={setStatusFilter}
+              >
+                <SelectTrigger className="w-[160px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -270,8 +324,11 @@ export function TalentTable({
                 </SelectContent>
               </Select>
 
-              <Select value={managerFilter} onValueChange={setManagerFilter}>
-                <SelectTrigger className="w-[160px] bg-input/50">
+              <Select
+                value={managerFilter}
+                onValueChange={setManagerFilter}
+              >
+                <SelectTrigger className="w-[160px]">
                   <SelectValue placeholder="Manager" />
                 </SelectTrigger>
                 <SelectContent>
@@ -284,8 +341,11 @@ export function TalentTable({
                 </SelectContent>
               </Select>
 
-              <Select value={cityFilter} onValueChange={setCityFilter}>
-                <SelectTrigger className="w-[140px] bg-input/50">
+              <Select
+                value={cityFilter}
+                onValueChange={setCityFilter}
+              >
+                <SelectTrigger className="w-[140px]">
                   <SelectValue placeholder="City" />
                 </SelectTrigger>
                 <SelectContent>
@@ -297,162 +357,200 @@ export function TalentTable({
                   ))}
                 </SelectContent>
               </Select>
-
-              {/* Sort Dropdown */}
-              <Select value={sortBy} onValueChange={(v: "newest" | "oldest" | "az" | "za") => setSortBy(v)}>
-                <SelectTrigger className="w-[140px] bg-input/50">
-                  <SelectValue placeholder="Sort" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="newest">Newest</SelectItem>
-                  <SelectItem value="oldest">Oldest</SelectItem>
-                  <SelectItem value="az">A–Z</SelectItem>
-                  <SelectItem value="za">Z–A</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </div>
 
+          {/* Status Bar */}
           <div className="flex items-center justify-between">
             <div className="text-sm text-muted-foreground">
-              Showing {filteredTalents.length} of {talents.length} talents
+              Showing{" "}
+              <span className="font-medium text-foreground">
+                {filteredTalents.length}
+              </span>{" "}
+              of{" "}
+              <span className="font-medium text-foreground">{talents.length}</span>{" "}
+              talents
               {lastUpdated && (
-                <span className="ml-2">
-                  (Updated: {lastUpdated.toLocaleTimeString()})
+                <span className="ml-2 text-xs">
+                  · Updated {lastUpdated.toLocaleTimeString()}
                 </span>
               )}
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={clearAllFilters}
-                disabled={!hasActiveFilters()}
-                className={`hover:bg-accent/50 ${!hasActiveFilters() ? 'opacity-50 cursor-not-allowed' : 'bg-destructive/10 text-destructive border-destructive/30 hover:bg-destructive/20'}`}
-              >
-                Clear Filters
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onRefresh}
-                disabled={isLoading}
-                className="hover:bg-accent/50"
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
-                Refresh
-              </Button>
+              {hasActiveFilters() && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearAllFilters}
+                  className="text-xs text-muted-foreground hover:text-foreground h-7 px-2"
+                >
+                  <X className="h-3 w-3 mr-1" />
+                  Clear
+                </Button>
+              )}
             </div>
           </div>
         </div>
       </Card>
 
-      <div className="glass-card rounded-xl overflow-visible">
+      {/* Table */}
+      <div className="table-container">
         <Table>
           <TableHeader>
-            <TableRow className="hover:bg-transparent border-border/30">
+            <TableRow className="hover:bg-transparent border-b border-border">
               {visibleColumns.includes("Full Name") && (
-                <TableHead className="w-[200px] text-left text-muted-foreground">Name</TableHead>
+                <TableHead className="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[200px]">
+                  Name
+                </TableHead>
               )}
               {visibleColumns.includes("Instagram") && (
-                <TableHead className="text-left text-muted-foreground">Instagram</TableHead>
+                <TableHead className="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Instagram
+                </TableHead>
               )}
               {visibleColumns.includes("City") && (
-                <TableHead className="text-left text-muted-foreground">City</TableHead>
+                <TableHead className="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  City
+                </TableHead>
               )}
               {visibleColumns.includes("Gender") && (
-                <TableHead className="text-center text-muted-foreground">Gender</TableHead>
+                <TableHead className="text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Gender
+                </TableHead>
               )}
               {visibleColumns.includes("Age") && (
-                <TableHead className="text-center text-muted-foreground">Age</TableHead>
+                <TableHead className="text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Age
+                </TableHead>
               )}
               {visibleColumns.includes("Height") && (
-                <TableHead className="text-left text-muted-foreground">Height</TableHead>
+                <TableHead className="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Height
+                </TableHead>
               )}
               {visibleColumns.includes("Status") && (
-                <TableHead className="text-center text-muted-foreground">Status</TableHead>
+                <TableHead className="text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Status
+                </TableHead>
               )}
               {visibleColumns.includes("Talent Manager") && (
-                <TableHead className="text-left text-muted-foreground">Talent Manager</TableHead>
+                <TableHead className="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Talent Manager
+                </TableHead>
               )}
-              <TableHead className="text-right text-muted-foreground">Actions</TableHead>
+              <TableHead className="text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Actions
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading && filteredTalents.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={visibleColumns.length + 1} className="text-center py-8 text-muted-foreground">
-                  <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                <TableCell
+                  colSpan={visibleColumns.length + 1}
+                  className="text-center py-16"
+                >
+                  <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>Loading talents...</span>
+                  </div>
                 </TableCell>
               </TableRow>
             ) : filteredTalents.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={visibleColumns.length + 1} className="text-center py-8 text-muted-foreground">
-                  No talents found
+                <TableCell
+                  colSpan={visibleColumns.length + 1}
+                  className="text-center py-16"
+                >
+                  <div className="empty-state">
+                    <Search className="h-10 w-10 mb-3 mx-auto text-muted-foreground/40" />
+                    <p className="text-muted-foreground">No talents found</p>
+                    {hasActiveFilters() && (
+                      <button
+                        onClick={clearAllFilters}
+                        className="mt-2 text-sm text-primary hover:underline"
+                      >
+                        Clear filters
+                      </button>
+                    )}
+                  </div>
                 </TableCell>
               </TableRow>
             ) : (
               filteredTalents.map((talent, index) => (
-                <TableRow 
-                  key={talent.rowIndex} 
-                  className={`table-row-hover border-b border-border/30 ${
-                    index % 2 === 1 ? 'bg-muted/10' : ''
+                <TableRow
+                  key={talent.rowIndex}
+                  className={`group border-b border-border/50 transition-colors hover:bg-accent/30 ${
+                    index % 2 === 1 ? "bg-muted/10" : ""
                   }`}
                 >
-                  <TableCell className="text-left py-4 px-4 align-middle">
+                  <TableCell className="text-left py-3 px-4 align-middle">
                     <button
-                      onClick={() => onTalentClick(talent["Full Name"], talent.rowIndex!)}
-                      className="text-primary hover:underline font-medium text-left block"
+                      onClick={() =>
+                        onTalentClick(talent["Full Name"], talent.rowIndex!)
+                      }
+                      className="text-foreground font-medium hover:text-primary transition-colors text-left"
                     >
                       {talent["Full Name"]}
                     </button>
                   </TableCell>
                   {visibleColumns.includes("Instagram") && (
-                    <TableCell className="text-left text-muted-foreground py-4 px-4 align-middle">
+                    <TableCell className="text-left py-3 px-4 align-middle text-sm text-muted-foreground">
                       {renderInstagramLink(talent["Instagram"])}
                     </TableCell>
                   )}
                   {visibleColumns.includes("City") && (
-                    <TableCell className="text-left text-muted-foreground py-4 px-4 align-middle">
+                    <TableCell className="text-left py-3 px-4 align-middle text-sm text-muted-foreground">
                       {talent["City"] || "-"}
                     </TableCell>
                   )}
                   {visibleColumns.includes("Gender") && (
-                    <TableCell className="text-center text-muted-foreground py-4 px-4 align-middle">
+                    <TableCell className="text-center py-3 px-4 align-middle text-sm text-muted-foreground">
                       {talent["Gender"] || "-"}
                     </TableCell>
                   )}
                   {visibleColumns.includes("Age") && (
-                    <TableCell className="text-center text-muted-foreground py-4 px-4 align-middle">
+                    <TableCell className="text-center py-3 px-4 align-middle text-sm text-muted-foreground">
                       {talent["Age"] || "-"}
                     </TableCell>
                   )}
                   {visibleColumns.includes("Height") && (
-                    <TableCell className="text-left text-muted-foreground py-4 px-4 align-middle">
+                    <TableCell className="text-left py-3 px-4 align-middle text-sm text-muted-foreground">
                       {formatHeight(talent["Height"])}
                     </TableCell>
                   )}
                   {visibleColumns.includes("Status") && (
-                    <TableCell className="text-center py-4 px-4 align-middle">
+                    <TableCell className="text-center py-3 px-4 align-middle">
                       <div className="flex items-center justify-center gap-2">
-                        <span className={getStatusDot(talent["Status"])} />
-                        <Badge variant={getStatusVariant(talent["Status"])}>
+                        <span
+                          className={`w-2 h-2 rounded-full shrink-0 ${getStatusDot(
+                            talent["Status"]
+                          )}`}
+                        />
+                        <Badge
+                          variant={getStatusVariant(talent["Status"])}
+                          className="text-xs"
+                        >
                           {talent["Status"] || "New"}
                         </Badge>
                       </div>
                     </TableCell>
                   )}
                   {visibleColumns.includes("Talent Manager") && (
-                    <TableCell className="text-left py-4 px-4 align-middle">
+                    <TableCell className="text-left py-3 px-4 align-middle">
                       {talent["Talent Manager"] ? (
-                        <span className="text-sm text-foreground">{talent["Talent Manager"]}</span>
+                        <span className="text-sm text-foreground">
+                          {talent["Talent Manager"]}
+                        </span>
                       ) : (
                         <Select
                           value={selectedManagers[talent.rowIndex] || ""}
-                          onValueChange={(v) => handleManagerSelect(talent.rowIndex, v)}
+                          onValueChange={(v) =>
+                            handleManagerSelect(talent.rowIndex!, v)
+                          }
                           disabled={!!pendingUpdates[talent.rowIndex]}
                         >
-                          <SelectTrigger className="w-[150px] h-8 text-xs bg-input/50">
+                          <SelectTrigger className="w-[150px] h-8 text-xs">
                             {pendingUpdates[talent.rowIndex] === "manager" ? (
                               <Loader2 className="h-3 w-3 animate-spin" />
                             ) : (
@@ -470,9 +568,11 @@ export function TalentTable({
                       )}
                     </TableCell>
                   )}
-                  <TableCell className="text-right py-4 px-4 align-middle">
+                  <TableCell className="text-right py-3 px-4 align-middle">
                     <StatusDropdown
-                      currentStatus={(talent["Status"] as StatusValue) || "New"}
+                      currentStatus={
+                        (talent["Status"] as StatusValue) || "New"
+                      }
                       rowIndex={talent.rowIndex}
                       onStatusChange={onStatusUpdate}
                       disabled={!!pendingUpdates[talent.rowIndex]}

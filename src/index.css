@@ -1,25 +1,25 @@
 @import "tailwindcss";
 
 /* ========================
-   DESIGN SYSTEM - Smooth Transitions & Animations
+   PREMIUM DESIGN SYSTEM
+   Modern SaaS Dashboard
    ======================== */
 
-/* Base transitions for smooth interactions */
+/* Base transitions */
 * {
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Disable transitions for specific interactions */
 button, a, input, select {
   transition-property: color, background-color, border-color, box-shadow, transform, opacity;
   transition-duration: 150ms;
 }
 
-/* Entrance animation for page load */
+/* Entrance animations */
 @keyframes slideUpFade {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(16px);
   }
   to {
     opacity: 1;
@@ -27,131 +27,181 @@ button, a, input, select {
   }
 }
 
-.animate-slide-up {
-  animation: slideUpFade 0.35s ease-out both;
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-/* Staggered children animation */
-.stagger-children > * {
-  opacity: 0;
-  animation: slideUpFade 0.35s ease-out both;
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
-.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
-.stagger-children > *:nth-child(2) { animation-delay: 60ms; }
-.stagger-children > *:nth-child(3) { animation-delay: 120ms; }
-.stagger-children > *:nth-child(4) { animation-delay: 180ms; }
-.stagger-children > *:nth-child(5) { animation-delay: 240ms; }
-.stagger-children > *:nth-child(6) { animation-delay: 300ms; }
 
-/* Subtle pulse for live indicators */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 @keyframes softPulse {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  50% { opacity: 0.6; }
 }
+
+.animate-slide-up {
+  animation: slideUpFade 0.4s ease-out both;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out both;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.3s ease-out both;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.25s ease-out both;
+}
+
 .animate-soft-pulse {
   animation: softPulse 2.5s ease-in-out infinite;
 }
 
-/* Card counter number with animated count-up feel */
-@keyframes countFade {
-  from { opacity: 0; transform: scale(0.85); }
-  to { opacity: 1; transform: scale(1); }
+/* Stagger children */
+.stagger-children > * {
+  opacity: 0;
+  animation: slideUpFade 0.4s ease-out both;
 }
-.animate-count-in {
-  animation: countFade 0.3s ease-out both;
-}
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 80ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 160ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 240ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 320ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 400ms; }
 
-/* Better focus ring */
+/* Better focus */
 .focus-ring:focus-visible {
-  outline: 2px solid var(--primary);
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
-  border-radius: 4px;
+  border-radius: 6px;
 }
 
 /* ========================
-   THEME SYSTEM - CSS Variables
+   THEME SYSTEM
    ======================== */
 
 :root,
 [data-theme="dark"] {
-  /* Dark theme (default) */
-  --bg-primary: oklch(0.05 0.02 255);
-  --bg-secondary: oklch(0.12 0.02 255);
-  --bg-card: oklch(0.12 0.02 255 / 0.8);
-  --text-primary: oklch(0.95 0.01 255);
-  --text-secondary: oklch(0.65 0.02 255);
-  --border: oklch(0.30 0.02 255 / 0.5);
-  --accent: oklch(0.22 0.02 255);
-  --accent-foreground: oklch(0.95 0.01 255);
-  --muted: oklch(0.18 0.02 255);
-  --muted-foreground: oklch(0.65 0.02 255);
-  --input: oklch(0.20 0.02 255);
-  --ring: oklch(0.55 0.2 280);
-  --primary: oklch(0.55 0.2 280);
+  /* Premium dark palette */
+  --bg-primary: oklch(0.06 0.01 255);
+  --bg-secondary: oklch(0.10 0.015 255);
+  --bg-tertiary: oklch(0.14 0.015 255);
+  --bg-card: oklch(0.11 0.015 255);
+  --bg-elevated: oklch(0.14 0.02 255);
+  --text-primary: oklch(0.96 0.01 255);
+  --text-secondary: oklch(0.68 0.015 255);
+  --text-muted: oklch(0.50 0.015 255);
+  --border: oklch(0.25 0.015 255);
+  --border-subtle: oklch(0.18 0.01 255);
+  --accent: oklch(0.20 0.02 255);
+  --accent-hover: oklch(0.25 0.025 255);
+  --muted: oklch(0.16 0.015 255);
+  --muted-foreground: oklch(0.55 0.015 255);
+  --input: oklch(0.14 0.02 255);
+  --ring: oklch(0.60 0.18 280);
+  --primary: oklch(0.62 0.18 280);
+  --primary-hover: oklch(0.55 0.20 280);
   --primary-foreground: oklch(0.98 0.01 255);
-  --secondary: oklch(0.18 0.02 255);
-  --secondary-foreground: oklch(0.90 0.01 255);
-  --card: oklch(0.12 0.02 255 / 0.8);
-  --card-foreground: oklch(0.95 0.01 255);
-  --popover: oklch(0.12 0.02 255 / 0.9);
-  --popover-foreground: oklch(0.95 0.01 255);
-  --destructive: oklch(0.60 0.22 25);
+  --secondary: oklch(0.18 0.015 255);
+  --secondary-foreground: oklch(0.92 0.01 255);
+  --card: oklch(0.11 0.015 255);
+  --card-foreground: oklch(0.96 0.01 255);
+  --popover: oklch(0.12 0.02 255);
+  --popover-foreground: oklch(0.96 0.01 255);
+  --destructive: oklch(0.62 0.20 25);
   --destructive-foreground: oklch(0.98 0.01 255);
-  --success: oklch(0.65 0.2 145);
-  --warning: oklch(0.75 0.18 85);
-  --info: oklch(0.60 0.15 250);
+  --success: oklch(0.62 0.18 145);
+  --warning: oklch(0.78 0.16 85);
+  --info: oklch(0.62 0.15 250);
+  --scrollbar-track: oklch(0.10 0.015 255);
+  --scrollbar-thumb: oklch(0.25 0.015 255);
   
-  /* Glass effects */
-  --glass-bg: oklch(0.12 0.02 255 / 0.8);
-  --glass-border: oklch(0.30 0.02 255 / 0.5);
-  
-  /* Scrollbar */
-  --scrollbar-track: oklch(0.12 0.02 255);
-  --scrollbar-thumb: oklch(0.30 0.02 255 / 0.5);
+  /* Status colors */
+  --status-new: oklch(0.55 0.015 255);
+  --status-new-bg: oklch(0.55 0.015 255 / 0.15);
+  --status-meeting: oklch(0.70 0.16 65);
+  --status-meeting-bg: oklch(0.70 0.16 65 / 0.15);
+  --status-kyc: oklch(0.62 0.15 250);
+  --status-kyc-bg: oklch(0.62 0.15 250 / 0.15);
+  --status-onboarded: oklch(0.62 0.18 145);
+  --status-onboarded-bg: oklch(0.62 0.18 145 / 0.15);
+  --status-rejected: oklch(0.62 0.20 25);
+  --status-rejected-bg: oklch(0.62 0.20 25 / 0.15);
 }
 
 [data-theme="light"] {
-  /* Light theme */
-  --bg-primary: oklch(0.98 0.01 255);
-  --bg-secondary: oklch(0.96 0.01 255);
-  --bg-card: oklch(1 0 0 / 1);
-  --text-primary: oklch(0.15 0.02 255);
-  --text-secondary: oklch(0.50 0.02 255);
-  --border: oklch(0.90 0.01 255);
+  --bg-primary: oklch(0.98 0.005 255);
+  --bg-secondary: oklch(0.96 0.005 255);
+  --bg-tertiary: oklch(0.93 0.008 255);
+  --bg-card: oklch(1 0 0);
+  --bg-elevated: oklch(1 0 0);
+  --text-primary: oklch(0.14 0.02 255);
+  --text-secondary: oklch(0.45 0.02 255);
+  --text-muted: oklch(0.55 0.015 255);
+  --border: oklch(0.88 0.01 255);
+  --border-subtle: oklch(0.93 0.008 255);
   --accent: oklch(0.55 0.15 280);
-  --accent-foreground: oklch(1 0 0 / 1);
-  --muted: oklch(0.93 0.01 255);
+  --accent-hover: oklch(0.48 0.18 280);
+  --muted: oklch(0.94 0.005 255);
   --muted-foreground: oklch(0.50 0.02 255);
-  --input: oklch(0.93 0.01 255);
+  --input: oklch(0.95 0.005 255);
   --ring: oklch(0.55 0.15 280);
   --primary: oklch(0.55 0.15 280);
-  --primary-foreground: oklch(1 0 0 / 1);
-  --secondary: oklch(0.93 0.01 255);
-  --secondary-foreground: oklch(0.15 0.02 255);
-  --card: oklch(1 0 0 / 1);
-  --card-foreground: oklch(0.15 0.02 255);
-  --popover: oklch(1 0 0 / 1);
-  --popover-foreground: oklch(0.15 0.02 255);
+  --primary-hover: oklch(0.48 0.18 280);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.94 0.005 255);
+  --secondary-foreground: oklch(0.14 0.02 255);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.14 0.02 255);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.14 0.02 255);
   --destructive: oklch(0.55 0.20 25);
-  --destructive-foreground: oklch(1 0 0 / 1);
+  --destructive-foreground: oklch(1 0 0);
   --success: oklch(0.55 0.18 145);
   --warning: oklch(0.70 0.16 85);
   --info: oklch(0.55 0.13 250);
+  --scrollbar-track: oklch(0.94 0.005 255);
+  --scrollbar-thumb: oklch(0.82 0.01 255);
   
-  /* Glass effects - lighter in light mode */
-  --glass-bg: oklch(1 0 0 / 0.8);
-  --glass-border: oklch(0.90 0.01 255);
-  
-  /* Scrollbar */
-  --scrollbar-track: oklch(0.93 0.01 255);
-  --scrollbar-thumb: oklch(0.85 0.02 255 / 0.5);
+  /* Status colors - light mode */
+  --status-new: oklch(0.45 0.015 255);
+  --status-new-bg: oklch(0.45 0.015 255 / 0.10);
+  --status-meeting: oklch(0.68 0.15 65);
+  --status-meeting-bg: oklch(0.68 0.15 65 / 0.12);
+  --status-kyc: oklch(0.55 0.13 250);
+  --status-kyc-bg: oklch(0.55 0.13 250 / 0.12);
+  --status-onboarded: oklch(0.52 0.16 145);
+  --status-onboarded-bg: oklch(0.52 0.16 145 / 0.12);
+  --status-rejected: oklch(0.55 0.18 25);
+  --status-rejected-bg: oklch(0.55 0.18 25 / 0.12);
 }
 
 /* ========================
-   RESPONSIVE STYLES - Mobile First
+   RESPONSIVE BASE
    ======================== */
 
-/* GLOBAL: Prevent horizontal scroll */
 html, body {
   overflow-x: hidden;
   width: 100%;
@@ -162,15 +212,10 @@ html, body {
   box-sizing: border-box;
 }
 
-/* Mobile stats - 2x2 GRID, NO scroll */
-.stats-container {
-  overflow-x: hidden;
-  width: 100%;
-}
-
+/* Stats container - grid on mobile */
 .stats-scroll {
   display: grid !important;
-  grid-template-columns: 1fr 1fr !important;
+  grid-template-columns: repeat(2, 1fr) !important;
   gap: 0.75rem !important;
   width: 100% !important;
   overflow-x: hidden !important;
@@ -179,31 +224,29 @@ html, body {
   padding-bottom: 0 !important;
 }
 
-/* Hide scrollbar but keep functionality */
-.stats-scroll::-webkit-scrollbar {
-  display: none;
+@media (min-width: 768px) {
+  .stats-scroll {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
 }
 
-.stats-scroll {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
+.stats-scroll::-webkit-scrollbar { display: none; }
+.stats-scroll { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Mobile filters - collapsible */
+/* Mobile filters */
 .filters-collapsible {
   max-height: 0;
   overflow: hidden;
   transition: max-height 0.3s ease;
 }
-
 .filters-collapsible.open {
   max-height: 500px;
 }
 
-/* Card grid - responsive auto-fit grid with equal-width cards */
+/* Talent grid */
 .talent-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1rem;
   width: 100%;
   max-width: 100%;
@@ -211,82 +254,34 @@ html, body {
   overflow-x: hidden;
 }
 
-/* Mobile talent card optimizations */
 @media (max-width: 767px) {
-  .talent-card {
-    padding: 1rem !important;
-    width: 100% !important;
-  }
-  
-  .talent-card .card-actions {
-    display: flex;
-  }
-}
-
-/* Stats card mobile optimization */
-@media (max-width: 767px) {
-  .stats-card {
-    padding: 0.75rem !important;
-    width: 100% !important;
-  }
-  
-  .stats-card .text-3xl {
-    font-size: 1.5rem;
-  }
-  
-  .stats-scroll > * {
-    min-width: 0 !important;
-    flex-shrink: 0 !important;
-  }
-}
-
-/* Touch-friendly tap targets (44px minimum) */
-@media (max-width: 767px) {
-  button, 
-  [role="button"],
-  .touch-target {
+  button, [role="button"], .touch-target {
     min-height: 44px;
     min-width: 44px;
   }
-  
-  /* Ensure dropdown menus are easily tappable */
   [role="menuitem"] {
     min-height: 44px;
     padding: 0.75rem 1rem;
   }
 }
 
-/* Mobile search bar full width */
 @media (max-width: 767px) {
-  .mobile-search {
-    width: 100%;
-  }
-  
-  .mobile-search input {
-    font-size: 16px; /* Prevents zoom on iOS */
-  }
+  .mobile-search input { font-size: 16px; }
 }
 
-/* Hide desktop-only elements on mobile */
 @media (max-width: 767px) {
-  .desktop-only {
-    display: none !important;
-  }
+  .desktop-only { display: none !important; }
 }
 
-/* Hide mobile-only elements on desktop */
 @media (min-width: 768px) {
-  .mobile-only {
-    display: none !important;
-  }
+  .mobile-only { display: none !important; }
 }
 
 /* ========================
-   ORIGINAL THEME STYLES
+   TAILWIND THEME
    ======================== */
 
 @theme {
-  /* Theme-aware colors using CSS variables */
   --color-background: var(--bg-primary);
   --color-foreground: var(--text-primary);
   --color-card: var(--card);
@@ -300,167 +295,307 @@ html, body {
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-foreground: var(--primary-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-success: var(--success);
-  --color-warning: var(--warning);
+  
   --color-info: var(--info);
-  --radius: 0.75rem;
+  
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
 }
 
-/* Smooth scrollbar styling */
+/* ========================
+   SCROLLBAR STYLING
+   ======================== */
+
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
   background: var(--scrollbar-track);
-  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
   background: var(--scrollbar-thumb);
-  border-radius: 4px;
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--border);
 }
 
-/* Border glow animation */
-@keyframes border-glow {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
-}
+/* ========================
+   GLASS MORPHISM (subtle)
+   ======================== */
 
-.animate-border-glow {
-  animation: border-glow 3s ease-in-out infinite;
-}
-
-/* Glass morphism utilities */
 .glass {
-  background: var(--glass-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--glass-border);
+  background: var(--bg-primary);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .glass-card {
-  background: var(--glass-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--glass-border);
-  box-shadow: 0 4px 24px oklch(0 0 0 / 0.15);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-}
-
-.glass-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 32px oklch(0 0 0 / 0.25);
-  border-color: var(--primary);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
 }
 
 .glass-dialog {
-  background: var(--glass-bg);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid var(--glass-border);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
-/* Glow effects - using CSS variables where possible */
-.glow-primary {
-  box-shadow: 0 0 20px oklch(0.55 0.2 280 / 0.3);
-}
+/* ========================
+   STATUS DOT STYLES
+   ======================== */
 
-.glow-success {
-  box-shadow: 0 0 15px oklch(0.65 0.2 145 / 0.3);
-}
-
-.glow-warning {
-  box-shadow: 0 0 15px oklch(0.75 0.18 85 / 0.3);
-}
-
-.glow-info {
-  box-shadow: 0 0 15px oklch(0.60 0.15 250 / 0.3);
-}
-
-.glow-destructive {
-  box-shadow: 0 0 15px oklch(0.60 0.22 25 / 0.3);
-}
-
-/* Status dot indicators - using CSS variables */
 .status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
   display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  flex-shrink: 0;
 }
 
-.status-dot-onboarded {
-  background: var(--success);
-  box-shadow: 0 0 6px var(--success);
+.status-dot-new { background: var(--status-new); }
+.status-dot-meeting { background: var(--status-meeting); }
+.status-dot-kyc { background: var(--status-kyc); }
+.status-dot-onboarded { background: var(--status-onboarded); }
+.status-dot-rejected { background: var(--status-rejected); }
+
+/* ========================
+   TABLE STYLES
+   ======================== */
+
+.table-row-hover:hover {
+  background: var(--accent);
 }
 
-.status-dot-meeting {
-  background: var(--warning);
-  box-shadow: 0 0 6px var(--warning);
+/* Table container with rounded corners */
+.table-container {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
 }
 
-.status-dot-kyc {
-  background: var(--info);
-  box-shadow: 0 0 6px var(--info);
+/* ========================
+   DIALOG/OVERLAY
+   ======================== */
+
+.dialog-overlay {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
-.status-dot-rejected {
-  background: var(--destructive);
-  box-shadow: 0 0 6px var(--destructive);
+/* ========================
+   PROFILE CARD STYLES
+   ======================== */
+
+.profile-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 1rem;
 }
 
-.status-dot-new {
+.profile-section-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.profile-field {
+  padding: 0.25rem 0;
+}
+
+.profile-field-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-bottom: 0.125rem;
+}
+
+.profile-field-value {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.url-text {
+  word-break: break-all;
+}
+
+/* ========================
+   PHOTO GALLERY
+   ======================== */
+
+.photos-thumbnail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 0.5rem;
+}
+
+.thumbnail-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
   background: var(--muted);
-  box-shadow: 0 0 6px var(--muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-/* Sonner toast styling - uses theme variables */
-[data-sonner-toaster] {
-  --toast-bg: var(--bg-secondary) !important;
-  --toast-border: var(--border) !important;
-  --toast-text: var(--text-primary) !important;
+.thumbnail-item:hover {
+  border-color: var(--primary);
+  transform: scale(1.03);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
 
-/* Animation for subtle hover effects */
-@keyframes subtle-glow {
-  0%, 100% {
-    box-shadow: 0 4px 24px oklch(0 0 0 / 0.15);
-  }
-  50% {
-    box-shadow: 0 4px 32px oklch(0.55 0.2 280 / 0.15);
-  }
+.thumbnail-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.hover-glow:hover {
-  animation: subtle-glow 2s ease-in-out;
+/* Image Modal */
+.image-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease-out;
 }
 
-/* Smooth scale on hover for interactive cards */
-.card-hover-scale {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+.image-modal-content {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  animation: scaleIn 0.2s ease-out;
 }
 
-.card-hover-scale:hover {
-  transform: scale(1.02);
+.image-modal-image {
+  max-width: 90vw;
+  max-height: 85vh;
+  object-fit: contain;
+  border-radius: 8px;
 }
 
-/* Dropdown animation */
-@keyframes dropdown-enter {
+.image-modal-close {
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  z-index: 10;
+}
+
+.image-modal-close:hover {
+  background: var(--destructive);
+  border-color: var(--destructive);
+}
+
+.image-modal-counter {
+  position: absolute;
+  bottom: -32px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.image-modal-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.image-modal-nav:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.image-modal-nav-prev { left: -60px; }
+.image-modal-nav-next { right: -60px; }
+
+@media (max-width: 640px) {
+  .image-modal-nav-prev { left: 8px; }
+  .image-modal-nav-next { right: 8px; }
+  .image-modal-nav { width: 40px; height: 40px; }
+}
+
+/* ========================
+   PREMIUM BUTTON STYLES
+   ======================== */
+
+.btn-premium {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.btn-premium:hover {
+  transform: translateY(-1px);
+}
+
+.btn-premium:active {
+  transform: translateY(0);
+}
+
+/* ========================
+   DROPDOWN ANIMATION
+   ======================== */
+
+@keyframes dropdownSlide {
   from {
     opacity: 0;
-    transform: translateY(-8px) scale(0.96);
+    transform: translateY(-4px) scale(0.98);
   }
   to {
     opacity: 1;
@@ -469,399 +604,300 @@ html, body {
 }
 
 .dropdown-animate {
-  animation: dropdown-enter 0.15s ease-out;
+  animation: dropdownSlide 0.15s ease-out both;
+  transform-origin: top right;
 }
 
-/* Profile section cards with better styling */
-.talent-profile .profile-card {
-  padding: 16px 18px;
-  margin-bottom: 14px;
-  border-radius: 14px;
-  background: var(--card);
+/* ========================
+   EMPTY STATE
+   ======================== */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  text-align: center;
+}
+
+.empty-state-icon {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 1rem;
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+/* ========================
+   STATS CARD PREMIUM
+   ======================== */
+
+.stat-card {
+  background: var(--bg-card);
   border: 1px solid var(--border);
-  overflow: hidden;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  border-radius: 12px;
+  padding: 1rem;
+  transition: all 0.2s;
 }
 
-.talent-profile .profile-card:hover {
+.stat-card:hover {
+  border-color: var(--border-subtle);
+  background: var(--bg-elevated);
+}
+
+.stat-card-active {
   border-color: var(--primary);
-  box-shadow: 0 2px 12px oklch(0 0 0 / 0.1);
+  box-shadow: 0 0 0 1px var(--primary), 0 4px 16px -4px rgba(109, 40, 217, 0.3);
 }
 
-/* Better table row styling */
-.table-row-hover {
-  transition: background-color 0.15s ease;
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
 }
 
-.table-row-hover:hover {
-  background-color: var(--accent) !important;
+.stat-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
 }
 
-/* Status badge with pulse animation for active states */
-@keyframes status-pulse {
-  0%, 100% {
-    opacity: 1;
+/* ========================
+   TALENT CARD PREMIUM
+   ======================== */
+
+.talent-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 1rem;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.talent-card:hover {
+  border-color: var(--border);
+  background: var(--bg-elevated);
+  box-shadow: 0 4px 20px -4px rgba(0,0,0,0.3);
+  transform: translateY(-2px);
+}
+
+@media (max-width: 767px) {
+  .talent-card {
+    padding: 0.875rem;
   }
-  50% {
-    opacity: 0.7;
-  }
 }
 
-.status-pulse {
-  animation: status-pulse 2s ease-in-out infinite;
+/* ========================
+   PROFILE HEADER PREMIUM
+   ======================== */
+
+.profile-header {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-subtle);
 }
 
-/* Smooth tab indicator animation */
-.tab-indicator {
-  transition: left 0.2s ease, right 0.2s ease;
+/* ========================
+   NAV TABS PREMIUM
+   ======================== */
+
+.nav-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: all 0.15s;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  position: relative;
 }
 
-/* Better focus states for accessibility */
-button:focus-visible,
-a:focus-visible,
-input:focus-visible,
-select:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
+.nav-tab:hover {
+  color: var(--text-primary);
+  background: var(--accent);
 }
 
-/* Email text wrapping utility */
-.email-text {
-  word-break: break-all;
-  overflow-wrap: anywhere;
+.nav-tab-active {
+  color: var(--primary);
+  background: var(--accent);
 }
 
-/* Ensure long text doesn't overflow */
-.text-overflow-ellipsis {
+.nav-tab-active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--primary);
+  border-radius: 2px 2px 0 0;
+}
+
+/* ========================
+   BADGE VARIANTS
+   ======================== */
+
+.badge-new {
+  background: var(--status-new-bg);
+  color: var(--status-new);
+  border: 1px solid var(--status-new);
+}
+
+.badge-meeting {
+  background: var(--status-meeting-bg);
+  color: var(--status-meeting);
+  border: 1px solid var(--status-meeting);
+}
+
+.badge-kyc {
+  background: var(--status-kyc-bg);
+  color: var(--status-kyc);
+  border: 1px solid var(--status-kyc);
+}
+
+.badge-onboarded {
+  background: var(--status-onboarded-bg);
+  color: var(--status-onboarded);
+  border: 1px solid var(--status-onboarded);
+}
+
+.badge-rejected {
+  background: var(--status-rejected-bg);
+  color: var(--status-rejected);
+  border: 1px solid var(--status-rejected);
+}
+
+/* ========================
+   LOADING SKELETON
+   ======================== */
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--muted) 25%,
+    var(--accent) 50%,
+    var(--muted) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+/* ========================
+   HEADER PREMIUM
+   ======================== */
+
+.header-bar {
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-subtle);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* ========================
+   FOOTER PREMIUM
+   ======================== */
+
+.footer-bar {
+  background: var(--bg-primary);
+  border-top: 1px solid var(--border-subtle);
+  margin-top: 2rem;
+}
+
+/* ========================
+   TOGGLE BUTTON GROUP
+   ======================== */
+
+.toggle-group {
+  display: inline-flex;
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.375rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  transition: all 0.15s;
+}
+
+.toggle-btn:hover {
+  color: var(--text-primary);
+}
+
+.toggle-btn-active {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+/* ========================
+   INFO ROW STYLES
+   ======================== */
+
+.info-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.info-separator {
+  color: var(--border);
+}
+
+/* ========================
+   TEXT UTILITIES
+   ======================== */
+
+.text-gradient {
+  background: linear-gradient(135deg, var(--primary), var(--info));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.truncate-name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* Ensure dropdowns don't get clipped - CRITICAL for z-index fix */
-.dropdown-container {
-  position: relative;
-  overflow: visible !important;
-}
-
-/* Stats cards hover effect */
-.stats-card {
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-}
-
-.stats-card:hover {
-  transform: translateY(-2px);
-}
-
-/* Talent card in grid view */
-.talent-grid .talent-card {
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-}
-
-.talent-grid .talent-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px oklch(0 0 0 / 0.2);
-  border-color: var(--primary);
-}
-
-/* Dialog backdrop blur improvement */
-dialog, 
-[role="dialog"] {
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-}
-
 /* ========================
-   TALENT PROFILE DIALOG - Mobile Optimized
+   SECTION DIVIDER
    ======================== */
 
-/* Prevent ALL text overflow globally in profile */
-.talent-profile *,
-.talent-profile *::before,
-.talent-profile *::after {
-  word-break: break-word;
-  overflow-wrap: anywhere;
-}
-
-/* Global overflow hidden for profile content */
-.talent-profile-content {
-  overflow-x: hidden;
-  max-width: 100%;
-}
-
-/* Profile section cards */
-.talent-profile .profile-card {
-  padding: 12px 14px;
-  margin-bottom: 12px;
-  border-radius: 12px;
-  background: var(--card);
-  border: 1px solid var(--border);
-  overflow: hidden;
-}
-
-/* Profile section title */
-.talent-profile .profile-section-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 8px;
-}
-
-/* Profile field wrapper */
-.talent-profile .profile-field {
-  padding: 6px 0;
-  min-width: 0;
-  overflow: hidden;
-}
-
-/* Profile field label */
-.talent-profile .profile-field-label {
-  font-size: 12px;
-  color: var(--text-secondary);
-  font-weight: 500;
-  margin-bottom: 2px;
-  line-height: 1.3;
-}
-
-/* Profile field value */
-.talent-profile .profile-field-value {
-  font-size: 13px;
-  color: var(--text-primary);
-  line-height: 1.3;
-  word-break: break-word;
-  overflow-wrap: anywhere;
-  min-width: 0;
-}
-
-/* URL text handling - truncate with ellipsis for inline display */
-.talent-profile .url-text {
-  word-break: break-all;
-  overflow-wrap: anywhere;
-  font-size: 12px;
-  max-width: 100%;
-  display: block;
-}
-
-/* Photos thumbnail grid - clean gallery view */
-.talent-profile .photos-thumbnail-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 8px;
-  padding: 4px;
-}
-
-.talent-profile .thumbnail-item {
-  position: relative;
-  height: 140px;
-  width: 100%;
-  border-radius: 8px;
-  overflow: hidden;
-  cursor: pointer;
-  background: transparent;
+.section-divider {
   border: none;
-  padding: 0;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-.talent-profile .thumbnail-item:hover {
-  transform: scale(1.02);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.talent-profile .thumbnail-item img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 8px;
-}
-
-/* Image Modal / Lightbox */
-.talent-profile .image-modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.92);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  animation: fadeIn 0.15s ease-out;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.talent-profile .image-modal-content {
-  position: relative;
-  max-width: 90vw;
-  max-height: 85vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.talent-profile .image-modal-image {
-  max-width: 100%;
-  max-height: 85vh;
-  object-fit: contain;
-  border-radius: 4px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-}
-
-.talent-profile .image-modal-close {
-  position: fixed;
-  top: 16px;
-  right: 16px;
-  background: rgba(255, 255, 255, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  width: 48px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: white;
-  transition: all 0.15s ease;
-  z-index: 10000;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
-
-.talent-profile .image-modal-close:hover {
-  background: rgba(255, 255, 255, 0.4);
-  border-color: rgba(255, 255, 255, 0.5);
-  transform: scale(1.05);
-}
-
-.talent-profile .image-modal-close:active {
-  transform: scale(0.95);
-  background: rgba(255, 255, 255, 0.3);
-}
-
-.talent-profile .image-modal-counter {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.6);
-  color: white;
-  padding: 6px 16px;
-  border-radius: 20px;
-  font-size: 14px;
-  font-weight: 500;
-  z-index: 10000;
-}
-
-.talent-profile .image-modal-nav {
-  position: fixed;
-  top: 50%;
-  transform: translateY(-50%);
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  border-radius: 50%;
-  width: 52px;
-  height: 52px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: white;
-  transition: background 0.15s ease;
-  z-index: 10000;
-}
-
-.talent-profile .image-modal-nav:hover {
-  background: rgba(255, 255, 255, 0.25);
-}
-
-.talent-profile .image-modal-nav-prev {
-  left: 16px;
-}
-
-.talent-profile .image-modal-nav-next {
-  right: 16px;
-}
-
-/* Responsive adjustments for thumbnail grid */
-@media (max-width: 640px) {
-  .talent-profile .photos-thumbnail-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 6px;
-  }
-  
-  .talent-profile .thumbnail-item {
-    height: 120px;
-  }
-  
-  .talent-profile .image-modal-nav {
-    width: 44px;
-    height: 44px;
-  }
-}
-
-@media (min-width: 768px) {
-  .talent-profile .photos-thumbnail-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-
-@media (min-width: 1024px) {
-  .talent-profile .photos-thumbnail-grid {
-    grid-template-columns: repeat(5, 1fr);
-  }
-}
-
-@media (min-width: 1280px) {
-  .talent-profile .photos-thumbnail-grid {
-    grid-template-columns: repeat(6, 1fr);
-  }
-}
-
-/* Profile header */
-.talent-profile .profile-header {
-  margin-bottom: 16px;
-}
-
-.talent-profile .profile-header h2 {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 8px;
-  word-break: break-word;
-}
-
-/* Mobile profile optimizations */
-@media (max-width: 767px) {
-  .talent-profile .profile-card {
-    padding: 10px 12px;
-    margin-bottom: 10px;
-  }
-  
-  .talent-profile .profile-section-title {
-    font-size: 13px;
-  }
-  
-  .talent-profile .profile-field-label {
-    font-size: 11px;
-  }
-  
-  .talent-profile .profile-field-value {
-    font-size: 12px;
-  }
-  
-  .talent-profile .profile-header h2 {
-    font-size: 18px;
-  }
-}
-
-/* Ensure dialog doesn't overflow */
-.glass-dialog {
-  max-width: 100vw !important;
-  overflow-x: hidden;
-}
-
-.glass-dialog > * {
-  max-width: 100%;
-  overflow-x: hidden;
+  border-top: 1px solid var(--border-subtle);
+  margin: 1rem 0;
 }
