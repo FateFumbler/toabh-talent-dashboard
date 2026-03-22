@@ -496,35 +496,41 @@ export function ContractsTab() {
                   </tr>
                 </thead>
                 <tbody>
-                  {Object.entries(contractsByPhone).map(([phone, phoneContracts]) => (
+                  {Object.entries(contractsByPhone).map(([phone, phoneContracts]) => {
+                    // Guard against empty arrays
+                    if (!phoneContracts || phoneContracts.length === 0) {
+                      return null;
+                    }
+                    const firstContract = phoneContracts[0];
+                    return (
                     <tr key={phone} className="border-t">
                       <td className="px-4 py-3 text-sm text-foreground font-medium">
-                        {editingId === phoneContracts[0].id ? (
+                        {editingId === firstContract.id ? (
                           <input
                             value={editForm.name}
                             onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
                             className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm"
                           />
                         ) : (
-                          phoneContracts[0].name || 'N/A'
+                          firstContract.name || 'N/A'
                         )}
                       </td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">
                         {phone}
                       </td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">
-                        {editingId === phoneContracts[0].id ? (
+                        {editingId === firstContract.id ? (
                           <input
                             value={editForm.email}
                             onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
                             className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm"
                           />
                         ) : (
-                          phoneContracts[0].email || 'N/A'
+                          firstContract.email || 'N/A'
                         )}
                       </td>
                       <td className="px-4 py-3">
-                        {editingId === phoneContracts[0].id ? (
+                        {editingId === firstContract.id ? (
                           <input
                             value={editForm.contractLink}
                             onChange={(e) => setEditForm({ ...editForm, contractLink: e.target.value })}
@@ -611,7 +617,8 @@ export function ContractsTab() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

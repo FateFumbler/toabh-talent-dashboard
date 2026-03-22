@@ -24,6 +24,34 @@ import { Search, RefreshCw, Loader2 } from "lucide-react";
 import { type ColumnName, getInitialColumns } from "./ColumnVisibility";
 import { StatusDropdown } from "./StatusDropdown";
 
+// Helper to format height properly - converts inches to feet'inches" format
+function formatHeight(height: string | undefined | null): string {
+  if (!height) return "-";
+  const trimmed = height.trim();
+  if (!trimmed) return "-";
+  
+  // If it already contains a foot mark, it's probably already formatted correctly
+  if (trimmed.includes("'") || trimmed.includes("ft")) {
+    // Clean up and standardize format: 5'6" or 5'6
+    return trimmed.replace(/"/g, "").replace(/ ft /g, "'").replace(/ in$/g, "\"").replace(/ inches$/g, "\"");
+  }
+  
+  // If it's just a number, assume it's inches and convert to feet'inches"
+  const inches = parseInt(trimmed, 10);
+  if (!isNaN(inches)) {
+    if (inches >= 12) {
+      const feet = Math.floor(inches / 12);
+      const remainingInches = inches % 12;
+      return remainingInches > 0 ? `${feet}'${remainingInches}"` : `${feet}'`;
+    } else {
+      return `${inches}"`;
+    }
+  }
+  
+  // Return as-is if we can't parse it
+  return trimmed;
+}
+
 interface TalentTableProps {
   talents: Talent[];
   onStatusUpdate: (row: number, status: string) => void;
@@ -408,7 +436,7 @@ export function TalentTable({
                   )}
                   {visibleColumns.includes("Height") && (
                     <TableCell className="text-left text-muted-foreground py-4 px-4 align-middle">
-                      {talent["Height"] || "-"}
+                      {formatHeight(talent["Height"])}
                     </TableCell>
                   )}
                   {visibleColumns.includes("Status") && (

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { TalentTable } from "./components/TalentTable";
 import { TalentProfileDialog } from "./components/TalentProfile";
 import { ContractsTab } from "./components/ContractsTab";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Card, CardContent, CardHeader, CardTitle } from "./components/ui/card";
 import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
@@ -986,7 +987,9 @@ function App() {
 
         {/* Contracts Tab */}
         {activeTab === "contracts" && (
-          <ContractsTab />
+          <ErrorBoundary>
+            <ContractsTab />
+          </ErrorBoundary>
         )}
 
         {/* Settings Tab */}
