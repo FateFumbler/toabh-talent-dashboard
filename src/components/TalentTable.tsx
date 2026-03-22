@@ -331,28 +331,28 @@ export function TalentTable({
           <TableHeader>
             <TableRow className="hover:bg-transparent border-border/30">
               {visibleColumns.includes("Full Name") && (
-                <TableHead className="w-[200px] text-muted-foreground">Name</TableHead>
+                <TableHead className="w-[200px] text-left text-muted-foreground">Name</TableHead>
               )}
               {visibleColumns.includes("Instagram") && (
-                <TableHead className="text-muted-foreground">Instagram</TableHead>
+                <TableHead className="text-left text-muted-foreground">Instagram</TableHead>
               )}
               {visibleColumns.includes("City") && (
-                <TableHead className="text-muted-foreground">City</TableHead>
+                <TableHead className="text-left text-muted-foreground">City</TableHead>
               )}
               {visibleColumns.includes("Gender") && (
-                <TableHead className="text-muted-foreground">Gender</TableHead>
+                <TableHead className="text-center text-muted-foreground">Gender</TableHead>
               )}
               {visibleColumns.includes("Age") && (
-                <TableHead className="text-muted-foreground">Age</TableHead>
+                <TableHead className="text-center text-muted-foreground">Age</TableHead>
               )}
               {visibleColumns.includes("Height") && (
-                <TableHead className="text-muted-foreground">Height</TableHead>
+                <TableHead className="text-left text-muted-foreground">Height</TableHead>
               )}
               {visibleColumns.includes("Status") && (
-                <TableHead className="text-muted-foreground">Status</TableHead>
+                <TableHead className="text-center text-muted-foreground">Status</TableHead>
               )}
               {visibleColumns.includes("Talent Manager") && (
-                <TableHead className="text-muted-foreground">Talent Manager</TableHead>
+                <TableHead className="text-left text-muted-foreground">Talent Manager</TableHead>
               )}
               <TableHead className="text-right text-muted-foreground">Actions</TableHead>
             </TableRow>
@@ -378,42 +378,42 @@ export function TalentTable({
                     index % 2 === 1 ? 'bg-zinc-900/20' : ''
                   }`}
                 >
-                  <TableCell>
+                  <TableCell className="text-left py-4 px-4 align-middle">
                     <button
                       onClick={() => onTalentClick(talent["Full Name"])}
-                      className="text-primary hover:underline font-medium text-left truncate max-w-[180px] block"
+                      className="text-primary hover:underline font-medium text-left block"
                     >
                       {talent["Full Name"]}
                     </button>
                   </TableCell>
                   {visibleColumns.includes("Instagram") && (
-                    <TableCell className="text-muted-foreground truncate max-w-[120px]">
+                    <TableCell className="text-left text-muted-foreground py-4 px-4 align-middle">
                       {renderInstagramLink(talent["Instagram"])}
                     </TableCell>
                   )}
                   {visibleColumns.includes("City") && (
-                    <TableCell className="text-muted-foreground">
+                    <TableCell className="text-left text-muted-foreground py-4 px-4 align-middle">
                       {talent["City"] || "-"}
                     </TableCell>
                   )}
                   {visibleColumns.includes("Gender") && (
-                    <TableCell className="text-muted-foreground">
+                    <TableCell className="text-center text-muted-foreground py-4 px-4 align-middle">
                       {talent["Gender"] || "-"}
                     </TableCell>
                   )}
                   {visibleColumns.includes("Age") && (
-                    <TableCell className="text-muted-foreground">
+                    <TableCell className="text-center text-muted-foreground py-4 px-4 align-middle">
                       {talent["Age"] || "-"}
                     </TableCell>
                   )}
                   {visibleColumns.includes("Height") && (
-                    <TableCell className="text-muted-foreground">
+                    <TableCell className="text-left text-muted-foreground py-4 px-4 align-middle">
                       {talent["Height"] || "-"}
                     </TableCell>
                   )}
                   {visibleColumns.includes("Status") && (
-                    <TableCell>
-                      <div className="flex items-center gap-2">
+                    <TableCell className="text-center py-4 px-4 align-middle">
+                      <div className="flex items-center justify-center gap-2">
                         <span className={getStatusDot(talent["Status"])} />
                         <Badge variant={getStatusVariant(talent["Status"])}>
                           {talent["Status"] || "New"}
@@ -422,7 +422,7 @@ export function TalentTable({
                     </TableCell>
                   )}
                   {visibleColumns.includes("Talent Manager") && (
-                    <TableCell>
+                    <TableCell className="text-left py-4 px-4 align-middle">
                       {talent["Talent Manager"] ? (
                         <span className="text-sm text-foreground">{talent["Talent Manager"]}</span>
                       ) : (
@@ -431,14 +431,14 @@ export function TalentTable({
                           onValueChange={(v) => handleManagerSelect(talent.rowIndex, v)}
                           disabled={!!pendingUpdates[talent.rowIndex]}
                         >
-                          <SelectTrigger className="w-[130px] h-8 text-xs bg-input/50">
+                          <SelectTrigger className="w-[150px] h-8 text-xs bg-input/50">
                             {pendingUpdates[talent.rowIndex] === "manager" ? (
                               <Loader2 className="h-3 w-3 animate-spin" />
                             ) : (
                               <SelectValue placeholder="Assign..." />
                             )}
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="min-w-[150px]">
                             {MANAGERS.map((m) => (
                               <SelectItem key={m} value={m}>
                                 {m}
@@ -449,7 +449,7 @@ export function TalentTable({
                       )}
                     </TableCell>
                   )}
-                  <TableCell className="text-right">
+                  <TableCell className="text-right py-4 px-4 align-middle">
                     <StatusDropdown
                       currentStatus={(talent["Status"] as StatusValue) || "New"}
                       rowIndex={talent.rowIndex}

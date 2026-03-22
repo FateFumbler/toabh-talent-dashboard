@@ -216,7 +216,8 @@ export function StatusDropdown({
           ref={buttonRef}
           onClick={() => !disabled && setIsOpen(!isOpen)}
           disabled={disabled || isLoading}
-          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${colors.bg} ${colors.text} hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed`}
+          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap ${colors.bg} ${colors.text} hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed`}
+          style={{ minWidth: '140px', justifyContent: 'center' }}
         >
           {isLoading ? (
             <Loader2 className="h-3 w-3 animate-spin" />
@@ -228,7 +229,7 @@ export function StatusDropdown({
         </button>
 
         {isOpen && step === null && (
-          <div className="absolute left-0 top-full mt-1 z-50 w-48 bg-zinc-900 border border-border rounded-lg shadow-lg overflow-hidden">
+          <div className="absolute right-0 top-full mt-1 z-50 w-56 bg-zinc-900 border border-border rounded-lg shadow-lg overflow-hidden">
             <div className="py-1">
               {STATUS_VALUES.map((status) => {
                 const statusColor = statusColors[status];
@@ -243,9 +244,9 @@ export function StatusDropdown({
                     }`}
                   >
                     <span className={`w-2 h-2 rounded-full ${statusColor.dot}`} />
-                    <span>{status}</span>
+                    <span className="flex-1 text-left">{status}</span>
                     {isSelected && (
-                      <span className="ml-auto text-xs text-muted-foreground">Current</span>
+                      <span className="text-xs text-muted-foreground">Current</span>
                     )}
                   </button>
                 );
