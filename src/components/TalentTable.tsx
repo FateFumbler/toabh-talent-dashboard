@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Table,
   TableBody,
@@ -21,7 +21,7 @@ import { Card } from "@/components/ui/card";
 import type { Talent, StatusValue } from "@/types/talent";
 import { MANAGERS } from "@/types/talent";
 import { Search, RefreshCw, Loader2 } from "lucide-react";
-import { ColumnVisibility, type ColumnName, getInitialColumns, saveColumnPreferences } from "./ColumnVisibility";
+import { type ColumnName, getInitialColumns } from "./ColumnVisibility";
 import { StatusDropdown } from "./StatusDropdown";
 
 interface TalentTableProps {
@@ -34,7 +34,6 @@ interface TalentTableProps {
   lastUpdated: Date | null;
   pendingUpdates?: Record<number, "status" | "manager">;
   visibleColumns?: ColumnName[];
-  onColumnsChange?: (columns: ColumnName[]) => void;
   // Controlled status filter for bi-directional sync with quick filters
   statusFilter?: string;
   onStatusFilterChange?: (status: string) => void;
@@ -121,7 +120,6 @@ export function TalentTable({
   lastUpdated,
   pendingUpdates = {},
   visibleColumns: externalVisibleColumns,
-  onColumnsChange: externalOnColumnsChange,
   statusFilter: externalStatusFilter,
   onStatusFilterChange: externalOnStatusFilterChange,
 }: TalentTableProps) {
@@ -141,20 +139,9 @@ export function TalentTable({
     }
   };
   
-  // Column visibility state - use external if provided, otherwise internal
-  const [internalVisibleColumns, setInternalVisibleColumns] = useState<ColumnName[]>(getInitialColumns);
-  const visibleColumns = externalVisibleColumns || internalVisibleColumns;
-  const onColumnsChange = externalOnColumnsChange || ((cols: ColumnName[]) => {
-    setInternalVisibleColumns(cols);
-    saveColumnPreferences(cols);
-  });
-
-  // Initialize from localStorage on mount
-  useEffect(() => {
-    if (!externalVisibleColumns) {
-      setInternalVisibleColumns(getInitialColumns());
-    }
-  }, [externalVisibleColumns]);
+  // Column visibility - use external if provided, otherwise use initial columns
+  // Note: ColumnVisibility UI component (gear icon) has been removed
+  const visibleColumns = externalVisibleColumns || getInitialColumns();
 
   const uniqueStatuses = getUniqueValues(talents, "Status");
   const uniqueManagers = getUniqueValues(talents, "Talent Manager");
@@ -256,10 +243,6 @@ export function TalentTable({
               )}
             </div>
             <div className="flex items-center gap-2">
-              <ColumnVisibility 
-                visibleColumns={visibleColumns} 
-                onColumnsChange={onColumnsChange} 
-              />
               <Button
                 variant="outline"
                 size="sm"

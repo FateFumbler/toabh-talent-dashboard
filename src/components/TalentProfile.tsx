@@ -84,14 +84,22 @@ function extractDriveFileId(url: string): string | null {
 function getDriveThumbnailUrl(url: string): string | null {
   const fileId = extractDriveFileId(url);
   if (!fileId) return null;
-  return `https://drive.google.com/thumbnail?id=${fileId}&sz=w400`;
+  return `https://drive.google.com/thumbnail?id=${fileId}&sz=w300`;
 }
 
-// Get full-size Drive image URL
+// Get full-size Drive image URL (legacy - may fail due to CORS)
 function getDriveImageUrl(url: string): string | undefined {
   const fileId = extractDriveFileId(url);
   if (!fileId) return undefined;
   return `https://drive.google.com/uc?export=view&id=${fileId}`;
+}
+
+// Get modal image URL - always use thumbnail URL for reliability
+function getModalImageUrl(url: string): string | undefined {
+  const fileId = extractDriveFileId(url);
+  if (!fileId) return undefined;
+  // Use thumbnail URL directly - it's reliable and doesn't have CORS issues
+  return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
 }
 
 // Parse polaroid links (may be comma or newline separated)
@@ -591,7 +599,7 @@ export function TalentProfileDialog({
 
                           {/* Main image */}
                           <img
-                            src={getDriveImageUrl(polaroidLinks[currentImageIndex])}
+                            src={getModalImageUrl(polaroidLinks[currentImageIndex])}
                             alt={`Photo ${currentImageIndex + 1}`}
                             className="image-modal-image"
                           />
