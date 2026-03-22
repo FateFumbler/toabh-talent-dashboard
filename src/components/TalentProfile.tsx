@@ -87,13 +87,6 @@ function getDriveThumbnailUrl(url: string): string | null {
   return `https://drive.google.com/thumbnail?id=${fileId}&sz=w300`;
 }
 
-// Get full-size Drive image URL (legacy - may fail due to CORS)
-function getDriveImageUrl(url: string): string | undefined {
-  const fileId = extractDriveFileId(url);
-  if (!fileId) return undefined;
-  return `https://drive.google.com/uc?export=view&id=${fileId}`;
-}
-
 // Get modal image URL - always use thumbnail URL for reliability
 function getModalImageUrl(url: string): string | undefined {
   const fileId = extractDriveFileId(url);
