@@ -768,7 +768,7 @@ function App() {
                 onStatusFilterChange={handleStatusFilterChange}
               />
             ) : null}
-          </>
+          </ErrorBoundary>
         )}
 
         {/* Talent Profile Tab */}
