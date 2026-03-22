@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import type { Talent, TalentDetails } from "@/types/talent";
 import { fetchTalentMaster, fetchTalentDetails } from "@/services/api";
 import { fetchContracts } from "@/services/contractsApi";
+import { getLocalContracts } from "@/services/localContracts";
 import { Loader2, User, FileText, AlertTriangle, X, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import type { Contract } from "@/types/contract";
 
@@ -314,9 +315,13 @@ export function TalentProfileDialog({
       setProfile(merged);
       console.log("[Profile] Profile set, total fields:", Object.keys(merged).length);
       
-      // Fetch contracts for this talent (match by phone)
+      // Fetch contracts for this talent (match by phone) - from both sources
       try {
-        const allContracts = await fetchContracts();
+        const [sheetContracts, localContracts] = await Promise.all([
+          fetchContracts(),
+          Promise.resolve(getLocalContracts()),
+        ]);
+        const allContracts = [...sheetContracts, ...localContracts];
         // Filter contracts by normalized phone number
         const talentContracts = allContracts.filter((contract: Contract) => {
           const contractPhone = normalizePhone(contract.phone || '');

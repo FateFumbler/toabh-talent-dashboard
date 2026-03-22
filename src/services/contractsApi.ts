@@ -6,34 +6,14 @@ export async function fetchContracts(): Promise<Contract[]> {
   try {
     const response = await fetch(`${API_URL}?action=contracts`);
     const data = await response.json();
-    return data.contracts || [];
+    // Mark sheet contracts with source: 'sheet'
+    const contracts: Contract[] = (data.contracts || []).map((c: Contract) => ({
+      ...c,
+      source: 'sheet' as const,
+    }));
+    return contracts;
   } catch (error) {
     console.error('Failed to fetch contracts:', error);
     return [];
-  }
-}
-
-export async function addContract(contract: {
-  name: string;
-  email: string;
-  phone: string;
-  contractLink: string;
-}): Promise<{ success: boolean; error?: string }> {
-  try {
-    const formData = new FormData();
-    formData.append('action', 'add-contract');
-    formData.append('name', contract.name);
-    formData.append('email', contract.email);
-    formData.append('phone', contract.phone);
-    formData.append('contractLink', contract.contractLink);
-
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      body: formData,
-    });
-    return await response.json();
-  } catch (error) {
-    console.error('Failed to add contract:', error);
-    return { success: false, error: 'Network error' };
   }
 }

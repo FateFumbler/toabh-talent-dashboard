@@ -1,8 +1,11 @@
 export interface Contract {
+  id?: string; // unique ID for local contracts
   name: string;
   email: string;
   phone: string;
   contractLink: string;
+  source: 'sheet' | 'local'; // to know origin
+  createdAt?: string; // for local contracts
   rowIndex?: number;
 }
 

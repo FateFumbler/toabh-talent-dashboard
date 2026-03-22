@@ -2,40 +2,37 @@ import { useState, useEffect } from 'react';
 import { Card } from './ui/card';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { Search, FileText, ExternalLink, RefreshCw, Plus, X } from 'lucide-react';
+import { Search, FileText, ExternalLink, RefreshCw, Plus, Trash2 } from 'lucide-react';
 import type { Contract } from '../types/contract';
-import { fetchContracts, addContract } from '../services/contractsApi';
-import { fetchTalentMaster } from '../services/api';
-import type { Talent } from '../types/talent';
+import { fetchContracts } from '../services/contractsApi';
+import { getLocalContracts, addLocalContract, deleteLocalContract } from '../services/localContracts';
 
 export function ContractsTab() {
   const [contracts, setContracts] = useState<Contract[]>([]);
-  const [talents, setTalents] = useState<Talent[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [lastSync, setLastSync] = useState<Date | null>(null);
 
-  // Form state
-  const [showForm, setShowForm] = useState(false);
+  // Form state for adding new contract
+  const [showAddForm, setShowAddForm] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
     contractLink: '',
-    talentName: '',
   });
-  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState('');
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const [contractsData, talentData] = await Promise.all([
+      // Fetch both sources
+      const [sheetContracts, local] = await Promise.all([
         fetchContracts(),
-        fetchTalentMaster(),
+        Promise.resolve(getLocalContracts()),
       ]);
-
-      setContracts(contractsData);
-      setTalents(talentData);
+      // Merge: sheet first, then local
+      setContracts([...sheetContracts, ...local]);
       setLastSync(new Date());
     } catch (error) {
       console.error('Failed to load data:', error);
@@ -47,54 +44,41 @@ export function ContractsTab() {
     loadData();
   }, []);
 
-  const handleAddContract = async () => {
-    if (!formData.name || !formData.phone || !formData.contractLink) {
-      alert('Please fill in Name, Phone, and Contract Link');
-      return;
-    }
-
-    setSaving(true);
-    try {
-      const result = await addContract({
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        contractLink: formData.contractLink,
-      });
-      if (result.success) {
-        setFormData({ name: '', email: '', phone: '', contractLink: '', talentName: '' });
-        setShowForm(false);
-        await loadData();
-      } else {
-        alert(result.error || 'Failed to add contract. Please try again.');
-      }
-    } catch (error) {
-      console.error('Failed to add contract:', error);
-      alert('Failed to add contract. Please try again.');
-    }
-    setSaving(false);
-  };
-
-  const handleTalentSelect = (talentName: string) => {
-    const talent = talents.find((t) => t['Full Name'] === talentName);
-    if (talent) {
-      const talentAny = talent as any;
-      setFormData((prev) => ({
-        ...prev,
-        talentName,
-        name: talentAny['Full Name'] || talentName,
-        email: talentAny['Email '] || talentAny['Email'] || '',
-        phone: talentAny['Phone'] || talentAny['Phone Number'] || '',
-      }));
-    } else {
-      setFormData((prev) => ({ ...prev, talentName }));
-    }
-  };
-
   const handleViewContract = (link: string) => {
     if (link && link !== '') {
       window.open(link, '_blank', 'noopener,noreferrer');
     }
+  };
+
+  const handleAddContract = (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError('');
+
+    if (!formData.name.trim()) {
+      setFormError('Name is required');
+      return;
+    }
+    if (!formData.phone.trim()) {
+      setFormError('Phone number is required');
+      return;
+    }
+
+    addLocalContract({
+      name: formData.name.trim(),
+      email: formData.email.trim(),
+      phone: formData.phone.trim(),
+      contractLink: formData.contractLink.trim(),
+    });
+
+    // Reset form and refresh
+    setFormData({ name: '', email: '', phone: '', contractLink: '' });
+    setShowAddForm(false);
+    loadData();
+  };
+
+  const handleDeleteLocal = (id: string) => {
+    deleteLocalContract(id);
+    loadData();
   };
 
   // Filter contracts by search
@@ -134,7 +118,7 @@ export function ContractsTab() {
             <RefreshCw className="h-4 w-4 mr-2" />
             Sync
           </Button>
-          <Button size="sm" onClick={() => setShowForm(!showForm)}>
+          <Button variant="default" size="sm" onClick={() => setShowAddForm(!showAddForm)}>
             <Plus className="h-4 w-4 mr-2" />
             Add Contract
           </Button>
@@ -142,102 +126,56 @@ export function ContractsTab() {
       </div>
 
       {/* Add Contract Form */}
-      {showForm && (
-        <Card className="p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Add New Contract</h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowForm(false)}
-              className="h-8 w-8 p-0"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {/* Select Talent Dropdown */}
-          <div>
-            <label className="text-sm font-medium mb-2 block">Select Talent *</label>
-            <select
-              value={formData.talentName}
-              onChange={(e) => handleTalentSelect(e.target.value)}
-              className="w-full h-10 px-3 bg-background border border-input rounded-md text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-            >
-              <option value="">Select a talent from Talent Master...</option>
-              {talents.map((talent) => {
-                const talentAny = talent as any;
-                return (
-                  <option
-                    key={talent.rowIndex}
-                    value={talentAny['Full Name'] || ''}
-                  >
-                    {talentAny['Full Name']} -{' '}
-                    {talentAny['Phone'] || talentAny['Phone Number'] || 'No phone'}
-                  </option>
-                );
-              })}
-            </select>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                Name *
-              </label>
-              <Input
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, name: e.target.value }))
-                }
-                placeholder="Enter name"
-              />
+      {showAddForm && (
+        <Card className="p-4 border-primary/50">
+          <h3 className="font-semibold mb-3">Add Local Contract</h3>
+          <form onSubmit={handleAddContract} className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm text-muted-foreground">Name *</label>
+                <Input
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="Talent name"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-muted-foreground">Phone *</label>
+                <Input
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  placeholder="Phone number"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-muted-foreground">Email</label>
+                <Input
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  placeholder="Email address"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-muted-foreground">Contract Link</label>
+                <Input
+                  value={formData.contractLink}
+                  onChange={(e) => setFormData({ ...formData, contractLink: e.target.value })}
+                  placeholder="Google Drive link"
+                  className="mt-1"
+                />
+              </div>
             </div>
-            <div>
-              <label className="text-sm font-medium mb-2 block">Email</label>
-              <Input
-                type="email"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, email: e.target.value }))
-                }
-                placeholder="Enter email"
-              />
+            {formError && <p className="text-sm text-destructive">{formError}</p>}
+            <div className="flex gap-2">
+              <Button type="submit" size="sm">Save Contract</Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => setShowAddForm(false)}>
+                Cancel
+              </Button>
             </div>
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                Phone *
-              </label>
-              <Input
-                value={formData.phone}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, phone: e.target.value }))
-                }
-                placeholder="Enter phone number"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                Google Doc Link *
-              </label>
-              <Input
-                value={formData.contractLink}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, contractLink: e.target.value }))
-                }
-                placeholder="Paste Google Doc link..."
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setShowForm(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleAddContract} disabled={saving}>
-              {saving ? 'Adding...' : 'Add Contract'}
-            </Button>
-          </div>
+          </form>
         </Card>
       )}
 
@@ -280,6 +218,12 @@ export function ContractsTab() {
                   <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
                     Contract Doc Link
                   </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                    Source
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -313,6 +257,39 @@ export function ContractsTab() {
                         ))}
                       </div>
                     </td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-1">
+                        {phoneContracts.map((contract, idx) => (
+                          <span
+                            key={idx}
+                            className={`inline-flex items-center px-2 py-0.5 rounded text-xs ${
+                              contract.source === 'local'
+                                ? 'bg-primary/20 text-primary'
+                                : 'bg-muted text-muted-foreground'
+                            }`}
+                          >
+                            {contract.source === 'local' ? 'Local' : 'Sheet'}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-1">
+                        {phoneContracts.map((contract, idx) =>
+                          contract.source === 'local' && contract.id ? (
+                            <Button
+                              key={idx}
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteLocal(contract.id!)}
+                              className="h-7 px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          ) : null
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -324,8 +301,7 @@ export function ContractsTab() {
       {/* Empty State */}
       {!loading && filteredContracts.length === 0 && (
         <div className="text-center py-12 text-muted-foreground">
-          No contracts found. Click &quot;Add Contract&quot; to add your first
-          contract.
+          No contracts found. Add contracts manually or sync to refresh.
         </div>
       )}
     </div>
