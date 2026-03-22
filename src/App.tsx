@@ -1359,6 +1359,3 @@ import {
 import { StatusDropdown } from "@/components/StatusDropdown";
 
 export default App;
-import { StatusDropdown } from "@/components/StatusDropdown";
-
-export default App;
