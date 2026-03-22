@@ -16,6 +16,7 @@ import { Loader2, User, FileText, AlertTriangle, X, ChevronLeft, ChevronRight, E
 import type { Contract } from "@/types/contract";
 import { toast } from "sonner";
 import { StatusDropdown } from "./StatusDropdown";
+import { AnimatedList } from "./ui/AnimatedList";
 
 interface TalentProfileProps {
   name: string | null;
@@ -713,32 +714,23 @@ export function TalentProfileDialog({
                     
                     {/* Manager Dropdown Panel */}
                     {isManagerDropdownOpen && (
-                      <div className="absolute left-0 top-full mt-1 z-50 w-48 bg-gray-800 border border-gray-600 rounded-lg shadow-lg overflow-hidden">
-                        <div className="py-1">
-                          {MANAGERS.map((manager) => {
-                            const isSelected = manager === profileManager;
-                            return (
-                              <button
-                                key={manager}
-                                onClick={() => {
-                                  if (onManagerAssign && typeof rowIndex === 'number') {
-                                    onManagerAssign(rowIndex, manager);
-                                    toast.success(`Manager updated to ${manager}`);
-                                  }
-                                  setIsManagerDropdownOpen(false);
-                                }}
-                                className={`w-full flex items-center px-3 py-3 sm:py-2 text-sm text-white hover:bg-gray-700 transition-colors min-h-[44px] ${
-                                  isSelected ? "bg-gray-700/50" : ""
-                                }`}
-                              >
-                                <span className="flex-1 text-left">{manager}</span>
-                                {isSelected && (
-                                  <span className="text-xs text-gray-400">Current</span>
-                                )}
-                              </button>
-                            );
-                          })}
-                        </div>
+                      <div className="absolute left-0 top-full mt-1 z-50 w-56 bg-gray-800 border border-gray-600 rounded-lg shadow-lg overflow-hidden p-2">
+                        <AnimatedList
+                          items={MANAGERS.map(manager => ({ label: manager, value: manager }))}
+                          onItemSelect={(item) => {
+                            if (onManagerAssign && typeof rowIndex === 'number') {
+                              onManagerAssign(rowIndex, item.value);
+                              toast.success(`Manager updated to ${item.value}`);
+                            }
+                            setIsManagerDropdownOpen(false);
+                          }}
+                          showGradients={true}
+                          displayScrollbar={false}
+                          enableArrowNavigation={true}
+                          selectedValue={profileManager || undefined}
+                          className="w-full"
+                          itemClassName=""
+                        />
                       </div>
                     )}
                   </div>
