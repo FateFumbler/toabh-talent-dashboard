@@ -8,7 +8,7 @@ import { Badge } from "./components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./components/ui/select";
 import { fetchTalentMaster, fetchTalentDetails, updateStatus, assignManager } from "./services/api";
 import type { Talent, TalentDetails } from "@/types/talent";
-import { RefreshCw, Users, AlertCircle, LayoutGrid, List, User, Search, ExternalLink, FileText, Loader2, ChevronDown, Settings as SettingsIcon } from "lucide-react";
+import { RefreshCw, AlertCircle, LayoutGrid, List, User, Search, ExternalLink, FileText, Loader2, ChevronDown, Settings as SettingsIcon } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import { Settings, type Theme, getStoredTheme, useTheme } from "./components/Settings";
 
