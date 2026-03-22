@@ -273,10 +273,7 @@ export function ContractsTab() {
                     Email
                   </th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                    Contract Link
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                    Created Date
+                    Contract Doc Link
                   </th>
                 </tr>
               </thead>
@@ -310,9 +307,6 @@ export function ContractsTab() {
                           </Button>
                         ))}
                       </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">
-                      {phoneContracts[0]['Created Date'] || 'N/A'}
                     </td>
                   </tr>
                 ))}

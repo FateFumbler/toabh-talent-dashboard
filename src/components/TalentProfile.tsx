@@ -527,11 +527,6 @@ export function TalentProfileDialog({
                 <div className="text-xs text-muted-foreground">
                   {contract['Email'] || 'No email'} • {contract['Phone Number'] || 'No phone'}
                 </div>
-                {contract['Created Date'] && (
-                  <div className="text-xs text-muted-foreground">
-                    Added: {contract['Created Date']}
-                  </div>
-                )}
               </div>
               {contract['Contract Drive Link'] && (
                 <Button
