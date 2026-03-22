@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card } from './ui/card';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { Search, FileText, ExternalLink, RefreshCw, Plus, Trash2, ChevronDown, Pencil } from 'lucide-react';
+import { Search, FileText, ExternalLink, RefreshCw, Plus, Trash2, ChevronDown, Pencil, LayoutGrid, List } from 'lucide-react';
 import type { Contract } from '../types/contract';
 import { fetchContracts } from '../services/contractsApi';
 import { fetchTalentMaster } from '../services/api';
@@ -294,42 +294,46 @@ export function ContractsTab() {
   );
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-4">
+      {/* Header - mobile-friendly with wrapping */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Contracts</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Contracts</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">
             {contracts.length} contract{contracts.length !== 1 ? 's' : ''} found
             {lastSync && ` • Last synced: ${lastSync.toLocaleTimeString()}`}
           </p>
         </div>
-        <div className="flex gap-2">
+        {/* Action buttons - wraps on mobile */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* View toggle - icon only, matching Talent Master style */}
           <div className="flex items-center gap-1 bg-gray-800/50 rounded-lg p-1">
             <button
               onClick={() => setView('list')}
-              className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
+              className={`p-2 rounded-md transition-colors ${
                 view === 'list'
                   ? 'bg-purple-600 text-white'
-                  : 'bg-transparent text-gray-400 hover:text-white hover:bg-gray-700'
+                  : 'text-gray-400 hover:text-white'
               }`}
+              title="List View"
             >
-              List
+              <List className="h-4 w-4" />
             </button>
             <button
               onClick={() => setView('grid')}
-              className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
+              className={`p-2 rounded-md transition-colors ${
                 view === 'grid'
                   ? 'bg-purple-600 text-white'
-                  : 'bg-transparent text-gray-400 hover:text-white hover:bg-gray-700'
+                  : 'text-gray-400 hover:text-white'
               }`}
+              title="Grid View"
             >
-              Grid
+              <LayoutGrid className="h-4 w-4" />
             </button>
           </div>
-          <Button variant="outline" size="sm" onClick={loadData}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Sync
+          <Button variant="outline" size="sm" onClick={loadData} className="px-2 sm:px-3">
+            <RefreshCw className="h-4 w-4 sm:mr-1" />
+            <span className="hidden sm:inline">Sync</span>
           </Button>
           <Button variant="default" size="sm" onClick={() => {
             setShowAddForm(!showAddForm);
@@ -338,9 +342,9 @@ export function ContractsTab() {
               setFormData({ name: '', email: '', phone: '', contractLink: '' });
               setTalentSearch('');
             }
-          }}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Contract
+          }} className="px-2 sm:px-3">
+            <Plus className="h-4 w-4 sm:mr-1" />
+            <span className="hidden sm:inline">Add</span>
           </Button>
         </div>
       </div>
