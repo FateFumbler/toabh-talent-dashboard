@@ -284,3 +284,14 @@ className="... p-0 sm:p-2 sm:rounded-full sm:hover:bg-accent border-0 sm:border 
 
 ### 16. Don't Touch Vercel Without Permission
 **Rule:** Ainesh explicitly said "do not deploy anything on Vercel until I ask you to." All changes go to `redesign` branch and the Cloudflare tunnel only. Vercel deploys only when Ainesh explicitly requests.
+
+### 17. Loop Prevention — Stop Asking, Start Doing
+**Pattern:** Agent loses context/confidence and starts asking "what would you like?" or "what kind of modifications?" in a loop instead of acting.
+**Root cause:** Model gets confused by conversation state, loses track of what was already decided.
+**Fix:** When user gives a directive, just DO it. Never ask clarifying questions more than once. If uncertain, make a decision and commit. User will correct if wrong.
+**Rule:** "When in doubt, act. Don't ask. The user will stop you if you're wrong."
+**Signs of looping:**
+- "What kind of modifications would you like?"
+- "Can you tell me more about...?"
+- "Would you like me to...?"
+- Same question asked 2+ times
