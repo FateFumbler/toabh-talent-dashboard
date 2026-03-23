@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   Table,
   TableBody,
@@ -20,7 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import type { Talent, StatusValue } from "@/types/talent";
 import { MANAGERS } from "@/types/talent";
-import { Search, RefreshCw, Loader2, X, SlidersHorizontal } from "lucide-react";
+import { Search, RefreshCw, Loader2, X, SlidersHorizontal, ChevronDown } from "lucide-react";
 import { StatusDropdown } from "./StatusDropdown";
 import type { ColumnName } from "./ColumnVisibility";
 import { getInitialColumns } from "./ColumnVisibility";
@@ -163,9 +164,10 @@ export function TalentTable({
   const [internalStatusFilter, setInternalStatusFilter] = useState<string>("all");
   const [managerFilter, setManagerFilter] = useState<string>("all");
   const [cityFilter, setCityFilter] = useState<string>("all");
-  const [selectedManagers, setSelectedManagers] = useState<Record<number, string>>({});
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "az" | "za">("newest");
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [openManagerDropdown, setOpenManagerDropdown] = useState<number | null>(null);
+  const [managerDropdownPosition, setManagerDropdownPosition] = useState<{ top: number; left: number; width: number } | null>(null);
 
   const statusFilter =
     externalStatusFilter !== undefined
@@ -227,8 +229,58 @@ export function TalentTable({
   }, [talents, search, statusFilter, managerFilter, cityFilter, sortBy]);
 
   const handleManagerSelect = (rowIndex: number, manager: string) => {
-    setSelectedManagers((prev) => ({ ...prev, [rowIndex]: manager }));
     onManagerAssign(rowIndex, manager);
+  };
+
+  // Manager dropdown handlers (portal-based, viewport-constrained)
+  useEffect(() => {
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpenManagerDropdown(null);
+        setManagerDropdownPosition(null);
+      }
+    }
+    if (openManagerDropdown !== null) {
+      document.addEventListener("keydown", handleEscape);
+      return () => document.removeEventListener("keydown", handleEscape);
+    }
+  }, [openManagerDropdown]);
+
+  useEffect(() => {
+    if (openManagerDropdown === null) return;
+    const handleScroll = () => {
+      setOpenManagerDropdown(null);
+      setManagerDropdownPosition(null);
+    };
+    window.addEventListener("scroll", handleScroll, true);
+    window.addEventListener("resize", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll, true);
+      window.removeEventListener("resize", handleScroll);
+    };
+  }, [openManagerDropdown]);
+
+  const handleManagerTriggerClick = (rowIndex: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (pendingUpdates[rowIndex]) return;
+    if (openManagerDropdown === rowIndex) {
+      setOpenManagerDropdown(null);
+      setManagerDropdownPosition(null);
+    } else {
+      if (e.currentTarget instanceof HTMLElement) {
+        const rect = e.currentTarget.getBoundingClientRect();
+        setManagerDropdownPosition({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+      }
+      setOpenManagerDropdown(rowIndex);
+    }
+  };
+
+  const handleManagerItemSelect = (manager: string) => {
+    if (openManagerDropdown !== null) {
+      handleManagerSelect(openManagerDropdown, manager);
+      setOpenManagerDropdown(null);
+      setManagerDropdownPosition(null);
+    }
   };
 
   const hasActiveFilters = () => {
@@ -554,28 +606,20 @@ export function TalentTable({
                           {talent["Talent Manager"]}
                         </span>
                       ) : (
-                        <Select
-                          value={selectedManagers[talent.rowIndex] || ""}
-                          onValueChange={(v) =>
-                            handleManagerSelect(talent.rowIndex!, v)
-                          }
+                        <button
+                          onClick={(e) => handleManagerTriggerClick(talent.rowIndex!, e)}
                           disabled={!!pendingUpdates[talent.rowIndex]}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary text-secondary-foreground rounded-lg text-xs font-medium hover:bg-secondary/80 transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-border/50 whitespace-nowrap"
                         >
-                          <SelectTrigger className="w-[150px] h-8 text-xs">
-                            {pendingUpdates[talent.rowIndex] === "manager" ? (
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                            ) : (
-                              <SelectValue placeholder="Assign..." />
-                            )}
-                          </SelectTrigger>
-                          <SelectContent className="min-w-[150px]">
-                            {MANAGERS.map((m) => (
-                              <SelectItem key={m} value={m}>
-                                {m}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                          {pendingUpdates[talent.rowIndex] === "manager" ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <>
+                              <span>Assign...</span>
+                              <ChevronDown className="h-3 w-3 opacity-70" />
+                            </>
+                          )}
+                        </button>
                       )}
                     </TableCell>
                   )}
@@ -597,6 +641,43 @@ export function TalentTable({
           </TableBody>
         </Table>
       </div>
+
+      {/* Manager dropdown portal — rendered outside table to avoid overflow clipping */}
+      {openManagerDropdown !== null && managerDropdownPosition && typeof document !== "undefined" &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-50"
+            onMouseDown={() => {
+              setOpenManagerDropdown(null);
+              setManagerDropdownPosition(null);
+            }}
+          >
+            <div
+              className="bg-popover border border-border rounded-xl shadow-xl overflow-hidden animate-scale-in"
+              style={{
+                position: "fixed",
+                top: `${managerDropdownPosition.top}px`,
+                left: `${Math.max(8, Math.min(managerDropdownPosition.left, window.innerWidth - 182))}px`,
+                width: "174px",
+                maxWidth: "calc(100vw - 16px)",
+              }}
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              <div className="py-1">
+                {MANAGERS.map((manager) => (
+                  <button
+                    key={manager}
+                    onClick={() => handleManagerItemSelect(manager)}
+                    className="w-full flex items-center px-3 py-3 sm:py-2.5 text-sm text-popover-foreground hover:bg-accent transition-colors min-h-[44px] text-left"
+                  >
+                    {manager}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }
