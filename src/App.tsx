@@ -1443,77 +1443,82 @@ function TalentGridView({
             <Card
               key={talent.rowIndex}
               className="talent-card"
-              onClick={() => onTalentClick(talent["Full Name"], talent.rowIndex!)}
             >
               <div className="flex flex-col gap-3">
-                {/* Header */}
-                <div className="flex items-start gap-3">
-                  <div className="bg-muted p-1 rounded-lg shrink-0 overflow-hidden">
-                    {profileImageUrl ? (
-                      <img
-                        src={profileImageUrl}
-                        alt={talent["Full Name"]}
-                        className="h-10 w-10 object-cover rounded-md"
-                        onError={(e) => {
-                          e.currentTarget.style.display = "none";
-                          e.currentTarget.nextElementSibling?.classList.remove("hidden");
-                        }}
-                      />
-                    ) : null}
-                    <div
-                      className={`bg-muted p-2 rounded-lg shrink-0 ${profileImageUrl ? "hidden" : ""}`}
+                {/* Clickable header area */}
+                <div
+                  className="cursor-pointer"
+                  onClick={() => onTalentClick(talent["Full Name"], talent.rowIndex!)}
+                >
+                  {/* Header */}
+                  <div className="flex items-start gap-3">
+                    <div className="bg-muted p-1 rounded-lg shrink-0 overflow-hidden">
+                      {profileImageUrl ? (
+                        <img
+                          src={profileImageUrl}
+                          alt={talent["Full Name"]}
+                          className="h-10 w-10 object-cover rounded-md"
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none";
+                            e.currentTarget.nextElementSibling?.classList.remove("hidden");
+                          }}
+                        />
+                      ) : null}
+                      <div
+                        className={`bg-muted p-2 rounded-lg shrink-0 ${profileImageUrl ? "hidden" : ""}`}
+                      >
+                        <User className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-foreground truncate capitalize">
+                        {talent["Full Name"]}
+                      </div>
+                      <div className="text-sm text-muted-foreground truncate">
+                        {talent["Instagram"] ? (
+                          renderInstagramLink(talent["Instagram"])
+                        ) : (
+                          <span className="text-muted-foreground/50">No Instagram</span>
+                        )}
+                      </div>
+                    </div>
+                    <Badge
+                      variant={getStatusVariant(talent["Status"])}
+                      className="shrink-0 text-xs"
                     >
-                      <User className="h-5 w-5 text-muted-foreground" />
-                    </div>
+                      {talent["Status"] || "New"}
+                    </Badge>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-foreground truncate capitalize">
-                      {talent["Full Name"]}
-                    </div>
-                    <div className="text-sm text-muted-foreground truncate">
-                      {talent["Instagram"] ? (
-                        renderInstagramLink(talent["Instagram"])
-                      ) : (
-                        <span className="text-muted-foreground/50">No Instagram</span>
-                      )}
-                    </div>
+
+                  {/* Info Row */}
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-muted-foreground truncate">
+                      {talent["City"] || "Unknown city"}
+                    </span>
+                    <span className="text-border">•</span>
+                    <span className="text-muted-foreground truncate">
+                      {talent["Talent Manager"] || "No manager"}
+                    </span>
                   </div>
-                  <Badge
-                    variant={getStatusVariant(talent["Status"])}
-                    className="shrink-0 text-xs"
-                  >
-                    {talent["Status"] || "New"}
-                  </Badge>
-                </div>
 
-                {/* Info Row */}
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="text-muted-foreground truncate">
-                    {talent["City"] || "Unknown city"}
-                  </span>
-                  <span className="text-border">•</span>
-                  <span className="text-muted-foreground truncate">
-                    {talent["Talent Manager"] || "No manager"}
-                  </span>
-                </div>
-
-                {/* Details Row */}
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-                  {talent["Gender"] && (
-                    <span className="whitespace-nowrap">{talent["Gender"]}</span>
-                  )}
-                  {talent["Gender"] && talent["Age"] && (
-                    <span className="text-border">•</span>
-                  )}
-                  {talent["Age"] && (
-                    <span className="whitespace-nowrap">{talent["Age"]} yrs</span>
-                  )}
-                  {(talent["Gender"] || talent["Age"]) && talent["Height"] && (
-                    <span className="text-border">•</span>
-                  )}
-                  {talent["Height"] && (
-                    <span className="whitespace-nowrap">{formatHeight(talent["Height"])}</span>
-                  )}
+                  {/* Details Row */}
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                    {talent["Gender"] && (
+                      <span className="whitespace-nowrap">{talent["Gender"]}</span>
+                    )}
+                    {talent["Gender"] && talent["Age"] && (
+                      <span className="text-border">•</span>
+                    )}
+                    {talent["Age"] && (
+                      <span className="whitespace-nowrap">{talent["Age"]} yrs</span>
+                    )}
+                    {(talent["Gender"] || talent["Age"]) && talent["Height"] && (
+                      <span className="text-border">•</span>
+                    )}
+                    {talent["Height"] && (
+                      <span className="whitespace-nowrap">{formatHeight(talent["Height"])}</span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Actions */}
