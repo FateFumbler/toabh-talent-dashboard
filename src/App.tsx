@@ -675,33 +675,33 @@ function App() {
       </header>
 
       {/* Tab Navigation */}
-      <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
-        <div className="flex items-center justify-between border-b border-border pb-px">
-          <div className="flex items-center gap-1 sm:gap-2">
+      <div className="container mx-auto px-3 sm:px-4 py-2 sm:py-3">
+        <div className="flex items-center justify-between">
+          {/* Left: Talent + Contracts grouped */}
+          <div className="flex items-center">
             <button
               onClick={() => setActiveTab("talent-master")}
               className={`nav-tab ${activeTab === "talent-master" ? "nav-tab-active" : ""}`}
             >
-              <List className="h-4 w-4" />
-              <span className="hidden xs:inline">Talent Master</span>
-              <span className="xs:hidden">Talent</span>
+              Talent
             </button>
             <button
               onClick={() => setActiveTab("contracts")}
               className={`nav-tab ${activeTab === "contracts" ? "nav-tab-active" : ""}`}
             >
-              <FileText className="h-4 w-4" />
-              <span>Contracts</span>
+              Contracts
             </button>
           </div>
+          {/* Right: Settings icon only */}
           <button
             onClick={() => setActiveTab("settings")}
             className={`nav-tab ${activeTab === "settings" ? "nav-tab-active" : ""}`}
+            title="Settings"
           >
-            <SettingsIcon className="h-4 w-4" />
-            <span className="hidden sm:inline">Settings</span>
+            <SettingsIcon className="h-[18px] w-[18px]" />
           </button>
         </div>
+        <div className="border-b border-border" />
       </div>
 
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
