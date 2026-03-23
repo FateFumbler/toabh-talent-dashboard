@@ -624,8 +624,9 @@ export function TalentTable({
                     </TableCell>
                   )}
                   <TableCell className="text-right py-3 px-4 align-middle">
+                    <div className="flex items-center justify-end gap-2">
                     {talent["Phone"] && (
-                      <div className="flex items-center justify-center gap-1.5 mr-2">
+                      <div className="flex items-center justify-center gap-1.5">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -659,6 +660,7 @@ export function TalentTable({
                       isLoading={pendingUpdates[talent.rowIndex] === "status"}
                       hasManager={!!talent["Talent Manager"]}
                     />
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
