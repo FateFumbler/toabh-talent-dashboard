@@ -212,3 +212,75 @@ Always use `relative` on parent containers when using `absolute` positioning ins
 **Cause:** Didn't check `origin/redesign` state before making changes.
 **Fix:** Always `git log origin/redesign --oneline -5` and check what the remote has before assuming what needs to change.
 **Rule:** After a stash pop conflict or branch switch, always diff against `origin/redesign` to understand the actual current state before making new edits.
+
+## Issues Encountered (March 23, 2026)
+
+### 11. Card Grid Equal Height Layout
+**Problem:** Grid cards had varying heights based on content length, causing Manager/Status buttons to overflow or look misaligned between cards in the same row.
+**Cause:** Card container was not using flex column layout with content area set to grow.
+**Fix:** Made `.talent-card` a flex column (`display: flex; flex-direction: column`), added `h-full` to inner wrapper, and set the clickable content area to `flex-1` so it grows to push the actions bar to the bottom of every card.
+```tsx
+<Card className="talent-card">  {/* CSS: display: flex; flex-direction: column */}
+  <div className="flex flex-col gap-3 h-full">
+    <div className="cursor-pointer flex-1">  {/* Content grows */}
+      {/* Header, details, etc */}
+    </div>
+    <div className="pt-2 border-t card-actions">  {/* Actions pinned to bottom */}
+      {/* StatusDropdown, ManagerDropdown */}
+    </div>
+  </div>
+</Card>
+```
+**Rule:** For card grids with action buttons at the bottom, use flex column + `flex-1` on content to equalize heights and pin actions. CSS Grid handles row equalization, but the inner flex layout ensures content fills the space.
+
+### 12. Portal Dropdowns Re-Anchor on Scroll (Not Close)
+**Problem:** ManagerDropdown closed on scroll because the scroll handler called `setIsOpen(false)`. User experience was poor — dropdowns should stay open and re-position.
+**Cause:** Initial fix used `onScroll = () => setIsOpen(false)` to prevent floating portals, but closing the dropdown on every scroll event is disruptive.
+**Fix:** Changed scroll handler to recalculate position from trigger's `getBoundingClientRect()` instead of closing:
+```tsx
+const handleScroll = () => {
+  if (triggerRef.current) {
+    const rect = triggerRef.current.getBoundingClientRect();
+    setDropdownPosition({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+  }
+};
+window.addEventListener("scroll", handleScroll, true);
+window.addEventListener("resize", handleScroll);
+```
+**Rule:** For portal-based dropdowns, re-anchor on scroll (update position) rather than close. The `true` capture phase catches all scroll events including nested containers. Also listen to `resize` for completeness.
+
+### 13. Default Filter Exclusions (Reactive List)
+**Problem:** Need to exclude "Rejected" and "Onboarded" statuses by default on page load, but still allow explicit filtering to show them.
+**Cause:** The `activeTile` state defaults to `null` which maps to "all" (show everything). Changing the default to exclude specific statuses would break the filter tile behavior.
+**Fix:** Modified the `matchesStatus` logic inside the filter function to treat "all" as "everything except Rejected and Onboarded":
+```typescript
+// In TalentGridView (line ~1298) and TalentTable (line ~199)
+const matchesStatus = 
+  !activeTile || activeTile === "all" 
+    ? (status !== "Rejected" && status !== "Onboarded")
+    : status === activeTile;
+```
+When a talent's status changes to Rejected/Onboarded, they disappear immediately because the list re-renders reactively.
+**Rule:** For "default exclude" filter behavior, modify the filter predicate for the "all" case rather than changing the default filter state. This preserves explicit filter selections while providing the desired default behavior.
+
+### 14. Removing Borders from UI Elements
+**Problem:** Multiple UI elements had borders that looked heavy/distracting (stat cards, filter dropdowns, buttons, toggle group).
+**Fix pattern:** For each element type:
+- **shadcn Select:** Remove `border` from `SelectTrigger` and `SelectContent` className
+- **CSS classes:** Remove `border` property from `.stat-card`, `.btn-premium`, `.toggle-group`
+- **Inline classes:** Remove `border` from button JSX directly
+**Rule:** When removing borders systematically, check ALL layers: CSS classes, component props, and shadcn component internals. One element type might be styled in multiple places.
+
+### 15. Mobile vs Desktop Dialog Close Button
+**Problem:** X close button on dialogs had a circle/padding on mobile that looked heavy. User wanted bare X on mobile, circle on desktop.
+**Fix:** Use responsive prefixes to conditionally apply styling:
+```tsx
+className="... p-0 sm:p-2 sm:rounded-full sm:hover:bg-accent border-0 sm:border border-transparent sm:focus:ring-2 sm:focus:ring-ring sm:focus:ring-offset-2 sm:ring-offset-background"
+```
+- `p-0 sm:p-2` — no padding on mobile, padding on desktop
+- `border-0 sm:border` — no border on mobile, border on desktop
+- `sm:rounded-full` — no rounding on mobile (square), circle on desktop
+**Rule:** For mobile-only style changes on shared components, prefix ALL styling classes with `sm:` to scope them to desktop. The mobile state should be the "naked" version (p-0, border-0, no rounding).
+
+### 16. Don't Touch Vercel Without Permission
+**Rule:** Ainesh explicitly said "do not deploy anything on Vercel until I ask you to." All changes go to `redesign` branch and the Cloudflare tunnel only. Vercel deploys only when Ainesh explicitly requests.
