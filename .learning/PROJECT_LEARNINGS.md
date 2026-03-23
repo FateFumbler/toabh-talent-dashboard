@@ -193,3 +193,9 @@ Always use `relative` on parent containers when using `absolute` positioning ins
 - [ ] No Vercel deploys without explicit user approval
 - [ ] When changing CSS, scan ALL adjacent styles to avoid unintended side effects on other components
 - [ ] Wrap multiple sibling elements in a flex container with gap when sharing a table cell — don't rely on individual margins
+
+### 9. Matching Dropdown Button Sizes Across Components
+**Problem:** Assign Manager dropdown was visually different size from Status/Action dropdown on desktop.
+**Cause:** Manager button used `text-xs rounded-lg` while StatusDropdown used `text-sm rounded-full min-w-[140px]`.
+**Fix:** Use responsive classes to match on desktop only: `sm:rounded-full`, `text-sm`, `sm:min-w-[140px]`, `justify-center`. Keep mobile styles unchanged.
+**Rule:** When matching UI elements, use `sm:` prefix to scope changes to desktop only. Copy exact values (min-width, border-radius, font-size) from the reference component.
