@@ -862,8 +862,8 @@ html, body {
 
 .toggle-group {
   display: inline-flex;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 3px;
   gap: 0;
@@ -880,10 +880,10 @@ html, body {
   border: none;
   /* Outline used instead of border for internal dividers — sits outside
      background-box so the active tab's solid bg covers it cleanly. */
-  outline: 1px solid #e5e7eb;
+  outline: 1px solid var(--border);
   outline-offset: -1px;
   background: transparent;
-  color: #4b5563;
+  color: var(--text-muted);
   transition: background 0.15s ease, color 0.15s ease;
   border-radius: 0;
   -webkit-tap-highlight-color: transparent;
@@ -898,14 +898,14 @@ html, body {
 }
 
 .toggle-btn:hover:not(.toggle-btn-active) {
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
 }
 
 .toggle-btn-active {
-  background: #5e5adb;
-  color: #ffffff;
-  outline-color: #5e5adb;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  outline-color: var(--primary);
 }
 
 /* ========================
