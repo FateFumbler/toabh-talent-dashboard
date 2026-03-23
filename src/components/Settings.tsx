@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useState } from "react";
-import { Sun, Moon, Smartphone, Lock, Eye, EyeOff } from "lucide-react";
+import { Sun, Moon, Smartphone, Lock, Eye, EyeOff, Monitor, Grid3x3, List } from "lucide-react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 
@@ -7,6 +7,8 @@ export type Theme = "light" | "dark" | "system";
 
 const THEME_STORAGE_KEY = "toabh-theme";
 const SHOW_DELETE_STORAGE_KEY = "toabh_contracts_show_delete";
+const DEFAULT_VIEW_MOBILE_KEY = "toabh-default-view-mobile";
+const DEFAULT_VIEW_DESKTOP_KEY = "toabh-default-view-desktop";
 
 function getSystemTheme(): "light" | "dark" {
   if (typeof window === "undefined") return "dark";
@@ -100,6 +102,56 @@ function ThemeToggle({ currentTheme, onThemeChange }: ThemeToggleProps) {
   );
 }
 
+interface ViewModeToggleProps {
+  value: "list" | "grid";
+  onChange: (mode: "list" | "grid") => void;
+  label: string;
+  icon: React.ReactNode;
+}
+
+function ViewModeToggle({ value, onChange, label, icon }: ViewModeToggleProps) {
+  return (
+    <div className="flex items-center justify-between py-2">
+      <div className="flex items-center gap-2">
+        {icon}
+        <span className="text-sm text-foreground">{label}</span>
+      </div>
+      <div className="inline-flex items-center gap-1 bg-secondary/50 rounded-lg p-1">
+        <button
+          onClick={() => onChange("grid")}
+          className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md transition-all duration-200 ${
+            value === "grid"
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+          }`}
+        >
+          <Grid3x3 className="h-4 w-4" />
+          Grid
+        </button>
+        <button
+          onClick={() => onChange("list")}
+          className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md transition-all duration-200 ${
+            value === "list"
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+          }`}
+        >
+          <List className="h-4 w-4" />
+          List
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Helper exports for App.tsx
+export function getStoredViewDefault(device: "mobile" | "desktop"): "list" | "grid" {
+  const key = device === "mobile" ? DEFAULT_VIEW_MOBILE_KEY : DEFAULT_VIEW_DESKTOP_KEY;
+  const stored = localStorage.getItem(key);
+  if (stored === "list" || stored === "grid") return stored;
+  return "grid"; // default
+}
+
 interface SettingsProps {
   theme: Theme;
   onThemeChange: (theme: Theme) => void;
@@ -111,10 +163,18 @@ export function Settings({ theme, onThemeChange }: SettingsProps) {
   const [passwordError, setPasswordError] = useState(false);
   const [showDeleteButtons, setShowDeleteButtons] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [mobileView, setMobileView] = useState<"list" | "grid">("grid");
+  const [desktopView, setDesktopView] = useState<"list" | "grid">("grid");
 
   useEffect(() => {
     const stored = localStorage.getItem(SHOW_DELETE_STORAGE_KEY);
     setShowDeleteButtons(stored === "true");
+
+    const storedMobile = localStorage.getItem(DEFAULT_VIEW_MOBILE_KEY);
+    if (storedMobile === "list" || storedMobile === "grid") setMobileView(storedMobile);
+
+    const storedDesktop = localStorage.getItem(DEFAULT_VIEW_DESKTOP_KEY);
+    if (storedDesktop === "list" || storedDesktop === "grid") setDesktopView(storedDesktop);
   }, []);
 
   const handlePasswordSubmit = () => {
@@ -131,6 +191,16 @@ export function Settings({ theme, onThemeChange }: SettingsProps) {
     const newValue = !showDeleteButtons;
     setShowDeleteButtons(newValue);
     localStorage.setItem(SHOW_DELETE_STORAGE_KEY, String(newValue));
+  };
+
+  const handleMobileViewChange = (mode: "list" | "grid") => {
+    setMobileView(mode);
+    localStorage.setItem(DEFAULT_VIEW_MOBILE_KEY, mode);
+  };
+
+  const handleDesktopViewChange = (mode: "list" | "grid") => {
+    setDesktopView(mode);
+    localStorage.setItem(DEFAULT_VIEW_DESKTOP_KEY, mode);
   };
 
   if (!isAuthenticated) {
@@ -219,6 +289,28 @@ export function Settings({ theme, onThemeChange }: SettingsProps) {
               ? `Using ${getSystemTheme()} mode (detected from your device)`
               : `Using ${theme} mode`}
           </p>
+        </div>
+
+        <hr className="border-border my-6" />
+
+        {/* View Mode Defaults */}
+        <div className="mb-6">
+          <h3 className="text-sm font-semibold text-foreground mb-3">Default View Mode</h3>
+          <p className="text-xs text-muted-foreground mb-4">Choose the default layout when the dashboard loads</p>
+          <div className="space-y-3">
+            <ViewModeToggle
+              value={mobileView}
+              onChange={handleMobileViewChange}
+              label="Mobile"
+              icon={<Smartphone className="h-4 w-4 text-muted-foreground" />}
+            />
+            <ViewModeToggle
+              value={desktopView}
+              onChange={handleDesktopViewChange}
+              label="Desktop"
+              icon={<Monitor className="h-4 w-4 text-muted-foreground" />}
+            />
+          </div>
         </div>
 
         <hr className="border-border my-6" />

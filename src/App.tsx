@@ -377,11 +377,18 @@ function App() {
   const { setTheme } = useTheme();
   const [viewMode, setViewMode] = useState<"list" | "grid">(() => {
     if (typeof window !== "undefined") {
+      // Check for manual override first
       const saved = localStorage.getItem("toabh-view-mode") as "list" | "grid";
       if (saved) return saved;
-      return "grid";
+      // Fall back to Settings defaults (per-device)
+      const isMobile = window.innerWidth < 1024;
+      const key = isMobile ? "toabh-default-view-mobile" : "toabh-default-view-desktop";
+      const defaultView = localStorage.getItem(key) as "list" | "grid" | null;
+      if (defaultView === "list" || defaultView === "grid") return defaultView;
+      // Default: grid for mobile, list for desktop
+      return isMobile ? "grid" : "list";
     }
-    return "grid";
+    return "list";
   });
   const [profileSearch, setProfileSearch] = useState("");
   const [selectedProfile, setSelectedProfile] = useState<
