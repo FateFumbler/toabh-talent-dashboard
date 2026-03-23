@@ -136,8 +136,14 @@ Always use `relative` on parent containers when using `absolute` positioning ins
 
 ### 17. Mobile List View Not Working
 **Problem:** List view on mobile always fell through to grid view because of `windowWidth < 1024` logic.
-**Fix:** TBD (agent working on it)
+**Fix:** Disabled list view toggle on mobile (opacity-50 + disabled) since table layout doesn't work on small screens.
 **Rule:** Test both view modes (list + grid) on mobile after any layout changes.
+
+### 18. View Mode Defaults in Settings
+**Problem:** User wanted configurable default view mode for mobile and desktop.
+**Fix:** Added Settings page with Mobile/Desktop default view mode toggles. Stored in `toabh-default-view-mobile` and `toabh-default-view-desktop` localStorage keys. Manual toggle still uses `toabh-view-mode` as override.
+**Pattern:** Three-tier view mode logic: 1) Manual toggle override (`toabh-view-mode`), 2) Settings defaults (`toabh-default-view-*`), 3) Hardcoded fallback (grid=mobile, list=desktop).
+**Rule:** When adding configurable defaults, always check: override first, then per-device default, then hardcoded fallback.
 
 ## Agent Workflow Rules
 
