@@ -193,9 +193,22 @@ Always use `relative` on parent containers when using `absolute` positioning ins
 - [ ] No Vercel deploys without explicit user approval
 - [ ] When changing CSS, scan ALL adjacent styles to avoid unintended side effects on other components
 - [ ] Wrap multiple sibling elements in a flex container with gap when sharing a table cell — don't rely on individual margins
+- [ ] When matching two components' sizes, diff their className strings line by line — look for responsive classes (`sm:min-h-[auto]`) one has and the other doesn't
+- [ ] After stash pop or branch switch, diff against `origin/redesign` before making new edits
+- [ ] `min-h-[44px]` is for mobile touch targets — add `sm:min-h-[auto]` to remove it on desktop
 
-### 9. Matching Dropdown Button Sizes Across Components
-**Problem:** Assign Manager dropdown was visually different size from Status/Action dropdown on desktop.
-**Cause:** Manager button used `text-xs rounded-lg` while StatusDropdown used `text-sm rounded-full min-w-[140px]`.
-**Fix:** Use responsive classes to match on desktop only: `sm:rounded-full`, `text-sm`, `sm:min-w-[140px]`, `justify-center`. Keep mobile styles unchanged.
-**Rule:** When matching UI elements, use `sm:` prefix to scope changes to desktop only. Copy exact values (min-width, border-radius, font-size) from the reference component.
+### 9. Matching Component Trigger Sizes Across Responsive Breakpoints
+**Problem:** ManagerDropdown and StatusDropdown looked different sizes in card view on desktop.
+**Cause:** StatusDropdown had `min-h-[44px] sm:min-h-[auto]` — removing the mobile 44px touch target on desktop. ManagerDropdown had `min-h-[44px]` without the `sm:` override, so it stayed 44px tall on desktop.
+**Fix:** Add `sm:min-h-[auto]` to ManagerDropdown trigger to match StatusDropdown.
+**Pattern for matching two components:**
+1. Compare their trigger `className` strings side by side
+2. Look for classes one has that the other doesn't (especially responsive ones like `sm:`)
+3. Copy the exact responsive overrides — don't just eyeball the desktop appearance
+**Rule:** When matching UI elements across components, check ALL responsive classes (`sm:`, `md:`), not just the base ones. A `sm:min-h-[auto]` on one component and not the other will cause a visible size difference on desktop that looks identical on mobile.
+
+### 10. Always Check Before Editing — Remote May Already Have the Fix
+**Problem:** Spent time editing App.tsx to swap DropdownMenu for ManagerDropdown, but the remote redesign branch already had ManagerDropdown in place.
+**Cause:** Didn't check `origin/redesign` state before making changes.
+**Fix:** Always `git log origin/redesign --oneline -5` and check what the remote has before assuming what needs to change.
+**Rule:** After a stash pop conflict or branch switch, always diff against `origin/redesign` to understand the actual current state before making new edits.
