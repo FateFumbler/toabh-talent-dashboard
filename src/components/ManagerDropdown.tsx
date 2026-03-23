@@ -68,7 +68,7 @@ export function ManagerDropdown({
   useEffect(() => {
     if (!isOpen || !triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
-    setDropdownPosition({ top: rect.bottom + window.scrollY + 4, left: rect.left + window.scrollX, width: rect.width });
+    setDropdownPosition({ top: rect.bottom + 4, left: rect.left, width: rect.width });
   }, [isOpen]);
 
   const handleTriggerClick = (e: React.MouseEvent) => {
@@ -106,7 +106,7 @@ export function ManagerDropdown({
       className="fixed bg-popover border border-border rounded-xl shadow-xl z-[9999] overflow-hidden"
       style={{
         top: `${dropdownPosition.top}px`,
-        left: `${Math.max(8, dropdownPosition.left)}px`,
+        left: `${Math.max(8, Math.min(dropdownPosition.left, window.innerWidth - 240 - 8))}px`,
         width: "220px",
       }}
     >
@@ -114,7 +114,7 @@ export function ManagerDropdown({
         {/* Unassigned */}
         <button
           onClick={() => handleSelect("")}
-          className={`w-full flex items-center gap-3 px-3 py-2 sm:py-1.5 text-sm transition-colors min-h-[36px] hover:bg-accent ${
+          className={`w-full flex items-center gap-3 px-3 py-3 sm:py-2.5 text-sm transition-colors min-h-[44px] hover:bg-accent ${
             !currentManager ? "bg-accent/60 font-medium text-foreground" : "text-popover-foreground"
           }`}
         >
@@ -133,7 +133,7 @@ export function ManagerDropdown({
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: idx * 0.03, duration: 0.15 }}
-              className={`w-full flex items-center gap-3 px-3 py-2 sm:py-1.5 text-sm transition-colors min-h-[36px] hover:bg-accent ${
+              className={`w-full flex items-center gap-3 px-3 py-3 sm:py-2.5 text-sm transition-colors min-h-[44px] hover:bg-accent ${
                 isSelected ? `${mColors.bg} font-medium` : "text-popover-foreground"
               }`}
             >
@@ -153,8 +153,8 @@ export function ManagerDropdown({
         ref={triggerRef}
         onClick={handleTriggerClick}
         disabled={disabled}
-        className={`inline-flex items-center gap-2 px-2.5 py-1.5 sm:py-1 rounded-full text-xs font-medium transition-all whitespace-nowrap min-h-[36px] border ${colors.border} ${colors.bg} ${colors.text} hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`}
-        style={{ minWidth: "120px", justifyContent: "center" }}
+        className={`inline-flex items-center gap-2 px-3 py-2 sm:py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap min-h-[44px] border ${colors.border} ${colors.bg} ${colors.text} hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`}
+        style={{ minWidth: "160px", justifyContent: "center" }}
       >
         {currentManager ? (
           <>
@@ -165,7 +165,7 @@ export function ManagerDropdown({
           <span className="text-muted-foreground">Assign Manager</span>
         )}
         <ChevronDown
-          className="h-3.5 w-3.5 sm:h-3 sm:w-3 transition-transform duration-200"
+          className="h-4 w-4 sm:h-3 sm:w-3 transition-transform duration-200"
           style={{ transform: isOpen ? "rotate(180deg)" : "rotate(0deg)" }}
         />
       </button>
