@@ -124,6 +124,21 @@ Always use `relative` on parent containers when using `absolute` positioning ins
 **Fix:** Always verify with `git log` after agent completes. If no new commit, the work wasn't done.
 **Rule:** Trust but verify. Check git log, run tsc, run build after every agent completion.
 
+### 15. Toggle Group Hardcoded Colors Broke Theme
+**Problem:** Toggle group (list/grid view) used hardcoded hex colors (`#ffffff`, `#e5e7eb`, `#4b5563`). When the app switched to light mode, the toggle appeared dark/black because the hardcoded white didn't adapt.
+**Fix:** Replace all hardcoded colors with CSS variables: `var(--bg-secondary)`, `var(--border)`, `var(--text-muted)`, `var(--primary)`.
+**Rule:** NEVER use hardcoded hex colors (`#ffffff`, `#e5e7eb`, etc.) in any component that needs to work in both light and dark mode. Always use CSS custom properties.
+
+### 16. One Change Shouldn't Break Another
+**Problem:** When fixing the header tabs, the toggle group styling broke because adjacent CSS was affected.
+**Fix:** After ANY CSS or component change, verify that ALL other UI elements still work correctly. Run through a quick mental checklist: header, tabs, toggle, cards, dropdowns, stat cards.
+**Rule:** Every visual fix must include a regression check of adjacent components.
+
+### 17. Mobile List View Not Working
+**Problem:** List view on mobile always fell through to grid view because of `windowWidth < 1024` logic.
+**Fix:** TBD (agent working on it)
+**Rule:** Test both view modes (list + grid) on mobile after any layout changes.
+
 ## Agent Workflow Rules
 
 ### Always Create LEARNINGS.md in Every Project
@@ -147,3 +162,4 @@ Always use `relative` on parent containers when using `absolute` positioning ins
 - [ ] Verify git log after agent tasks to confirm work was done
 - [ ] Keep nav tabs minimal: text-only, underline active state
 - [ ] No Vercel deploys without explicit user approval
+- [ ] When changing CSS, scan ALL adjacent styles to avoid unintended side effects on other components
