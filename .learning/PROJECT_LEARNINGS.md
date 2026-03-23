@@ -148,6 +148,12 @@ Always use `relative` on parent containers when using `absolute` positioning ins
 **Pattern:** Three-tier view mode logic: 1) Manual toggle override (`toabh-view-mode`), 2) Settings defaults (`toabh-default-view-*`), 3) Hardcoded fallback (grid=mobile, list=desktop).
 **Rule:** When adding configurable defaults, always check: override first, then per-device default, then hardcoded fallback.
 
+### 19. Card onClick Interferes with Child Dropdowns
+**Problem:** Status dropdown in grid cards didn't work. The entire `<Card>` had `onClick={() => onTalentClick(...)}` which intercepted ALL clicks, including dropdown interactions.
+**Root Cause:** Even with `e.stopPropagation()` on the dropdown trigger, React's event delegation and portal rendering caused edge cases where the card's click handler still fired.
+**Fix:** Removed `onClick` from the `<Card>` element. Moved the click handler to a wrapper `<div>` around only the content area (header, info, details). The actions area (StatusDropdown, MoreMenu) sits OUTSIDE the clickable div.
+**Rule:** Never put `onClick` on a card container that also contains interactive children (dropdowns, buttons). Instead, make only the content area clickable and keep interactive elements outside the click zone.
+
 ## Agent Workflow Rules
 
 ### Always Create LEARNINGS.md in Every Project
