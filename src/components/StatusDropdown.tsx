@@ -63,8 +63,8 @@ export function StatusDropdown({
     if (!isOpen || !triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
     setDropdownPosition({
-      top: rect.bottom + 4,
-      left: rect.left,
+      top: rect.bottom + window.scrollY + 4,
+      left: rect.left + window.scrollX,
       width: rect.width,
     });
   };
@@ -148,8 +148,8 @@ export function StatusDropdown({
       if (triggerRef.current) {
         const rect = triggerRef.current.getBoundingClientRect();
         setDropdownPosition({
-          top: rect.bottom + 4,
-          left: rect.left,
+          top: rect.bottom + window.scrollY + 4,
+          left: rect.left + window.scrollX,
           width: rect.width,
         });
       }
@@ -165,7 +165,7 @@ export function StatusDropdown({
   const dropdownContent = isOpen && dropdownPosition ? (
     <div
       ref={dropdownContentRef}
-      className="dropdown-animate fixed bg-popover border border-border rounded-xl shadow-xl z-50 overflow-hidden"
+      className="dropdown-animate absolute bg-popover border border-border rounded-xl shadow-xl z-50 overflow-hidden"
       style={{
         top: `${dropdownPosition.top}px`,
         left: `${Math.max(8, Math.min(dropdownPosition.left, window.innerWidth - dropdownPosition.width - 8))}px`,
