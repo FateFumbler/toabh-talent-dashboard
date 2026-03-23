@@ -162,7 +162,7 @@ export function ManagerDropdown({
             <span>{currentManager}</span>
           </>
         ) : (
-          <span className="text-muted-foreground">Assign Manager</span>
+          <span className="text-muted-foreground"><span className="sm:hidden">Assign Manager</span><span className="hidden sm:inline">Manager</span></span>
         )}
         <ChevronDown
           className="h-4 w-4 sm:h-3 sm:w-3 transition-transform duration-200"
