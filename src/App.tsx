@@ -35,6 +35,7 @@ import {
   Loader2,
   ChevronDown,
   SlidersHorizontal,
+  ArrowUpDown,
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import {
@@ -376,6 +377,7 @@ function App() {
     typeof window !== "undefined" ? window.innerWidth : 1200
   );
   const [activeTile, setActiveTile] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<"new" | "old" | "az" | "za">("new");
 
   const handleThemeChange = (t: Theme) => {
     setThemeState(t);
@@ -754,6 +756,21 @@ function App() {
                       {lastUpdated.toLocaleTimeString()}
                     </span>
                   )}
+
+                  {/* Sort dropdown */}
+                  <div className="flex items-center gap-1.5">
+                    <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as "new" | "old" | "az" | "za")}
+                      className="bg-secondary hover:bg-secondary/80 text-secondary-foreground border border-border text-sm rounded-lg px-2.5 py-1.5 cursor-pointer"
+                    >
+                      <option value="new">New</option>
+                      <option value="old">Old</option>
+                      <option value="az">A–Z</option>
+                      <option value="za">Z–A</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -816,6 +833,7 @@ function App() {
                   onFiltersToggle={() => setFiltersOpen(!filtersOpen)}
                   statusFilter={activeTile || "all"}
                   onStatusFilterChange={handleStatusFilterChange}
+                  sortBy={sortBy}
                 />
               ) : null}
             </>
@@ -1243,6 +1261,7 @@ interface TalentGridViewProps {
   onFiltersToggle?: () => void;
   statusFilter?: string;
   onStatusFilterChange?: (status: string) => void;
+  sortBy?: "new" | "old" | "az" | "za";
 }
 
 function TalentGridView({
@@ -1257,6 +1276,7 @@ function TalentGridView({
   onFiltersToggle,
   statusFilter: externalStatusFilter,
   onStatusFilterChange: externalOnStatusFilterChange,
+  sortBy = "new",
 }: TalentGridViewProps) {
   const [search, setSearch] = useState("");
   const [internalStatusFilter, setInternalStatusFilter] = useState<string>("all");
@@ -1306,6 +1326,22 @@ function TalentGridView({
     return filtered.sort((a, b) => b.rowIndex - a.rowIndex);
   }, [talents, search, statusFilter, managerFilter, cityFilter]);
 
+  const sortedTalents = useMemo(() => {
+    const sorted = [...filteredTalents];
+    switch (sortBy) {
+      case "new":
+        return sorted.sort((a, b) => (b.rowIndex || 0) - (a.rowIndex || 0));
+      case "old":
+        return sorted.sort((a, b) => (a.rowIndex || 0) - (b.rowIndex || 0));
+      case "az":
+        return sorted.sort((a, b) => (a["Full Name"] || "").localeCompare(b["Full Name"] || ""));
+      case "za":
+        return sorted.sort((a, b) => (b["Full Name"] || "").localeCompare(a["Full Name"] || ""));
+      default:
+        return sorted;
+    }
+  }, [filteredTalents, sortBy]);
+
   const handleManagerSelect = (rowIndex: number, manager: string) => {
     onManagerAssign(rowIndex, manager);
   };
@@ -1341,7 +1377,7 @@ function TalentGridView({
         {/* Mobile filter toggle */}
         <div className="flex items-center justify-between mt-3 md:hidden">
           <span className="text-sm text-muted-foreground">
-            {filteredTalents.length} of {talents.length} talents
+            {sortedTalents.length} of {talents.length} talents
           </span>
           <button
             onClick={onFiltersToggle}
@@ -1408,7 +1444,7 @@ function TalentGridView({
 
       {/* Talent Cards Grid */}
       <div className="talent-grid">
-        {filteredTalents.map((talent) => {
+        {sortedTalents.map((talent) => {
           const mergedTalent = mergeTalentWithDetails(talent, talentDetailsMap);
           const polaroidLinks = parsePolaroidLinks(
             mergedTalent["Upload Polaroids (Required)"]
@@ -1550,7 +1586,7 @@ function TalentGridView({
         })}
       </div>
 
-      {filteredTalents.length === 0 && (
+      {sortedTalents.length === 0 && (
         <div className="empty-state text-muted-foreground">
           No talents match your filters
         </div>
