@@ -298,20 +298,19 @@ function StatCard({
   onClick: () => void;
   icon: React.ReactNode;
 }) {
-  const colorMap: Record<string, { border: string; glow: string }> = {
-    purple: { border: "border-l-purple-500", glow: "rgba(168, 85, 247, 0.25)" },
-    blue: { border: "border-l-blue-500", glow: "rgba(59, 130, 246, 0.25)" },
-    orange: { border: "border-l-orange-500", glow: "rgba(249, 115, 22, 0.25)" },
-    green: { border: "border-l-green-500", glow: "rgba(34, 197, 94, 0.25)" },
+  const colorMap: Record<string, { shadow: string; glow: string }> = {
+    purple: { shadow: "inset 4px 0 0 0 #a855f7", glow: "rgba(168, 85, 247, 0.25)" },
+    blue: { shadow: "inset 4px 0 0 0 #3b82f6", glow: "rgba(59, 130, 246, 0.25)" },
+    orange: { shadow: "inset 4px 0 0 0 #f97316", glow: "rgba(249, 115, 22, 0.25)" },
+    green: { shadow: "inset 4px 0 0 0 #22c55e", glow: "rgba(34, 197, 94, 0.25)" },
   };
   const c = colorMap[color] || colorMap.purple;
 
   return (
     <button
       onClick={onClick}
-      className={`stat-card text-left border-l-4 ${c.border} ${
-        isActive ? "stat-card-active" : ""
-      }`}
+      className={`stat-card text-left ${isActive ? "stat-card-active" : ""}`}
+      style={{ boxShadow: c.shadow }}
     >
       <div className="flex items-center justify-between mb-3">
         <span className="stat-label">{label}</span>

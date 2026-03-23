@@ -1,9 +1,15 @@
 import { useEffect, useState, useCallback, useRef, Component } from "react";
-import { createPortal } from "react-dom";
 import type { ReactNode } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { Talent, TalentDetails, StatusValue } from "@/types/talent";
 import { MANAGERS } from "@/types/talent";
 import { fetchTalentMaster, fetchTalentDetails } from "@/services/api";
@@ -18,12 +24,9 @@ import {
   ChevronLeft,
   ChevronRight,
   ExternalLink,
-  ChevronDown,
 } from "lucide-react";
 import type { Contract } from "@/types/contract";
 import { toast } from "sonner";
-import { StatusDropdown } from "./StatusDropdown";
-import { AnimatedList } from "./ui/AnimatedList";
 
 interface TalentProfileProps {
   name: string | null;
@@ -32,7 +35,6 @@ interface TalentProfileProps {
   onStatusUpdate?: (row: number, status: string) => void;
   onManagerAssign?: (row: number, manager: string) => void;
   rowIndex?: number;
-  isStatusLoading?: boolean;
 }
 
 interface ErrorBoundaryState {
@@ -217,7 +219,6 @@ export function TalentProfileDialog({
   onStatusUpdate,
   onManagerAssign,
   rowIndex,
-  isStatusLoading,
 }: TalentProfileProps) {
   const [profile, setProfile] = useState<
     (Talent & Partial<TalentDetails>) | null
@@ -225,8 +226,6 @@ export function TalentProfileDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [contracts, setContracts] = useState<Contract[]>([]);
-  const [isManagerDropdownOpen, setIsManagerDropdownOpen] = useState(false);
-  const managerDropdownRef = useRef<HTMLDivElement>(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -240,55 +239,8 @@ export function TalentProfileDialog({
       setIsModalOpen(false);
       setCurrentImageIndex(0);
       imageCountRef.current = 0;
-      setIsManagerDropdownOpen(false);
     }
   }, [open]);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        managerDropdownRef.current &&
-        !managerDropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsManagerDropdownOpen(false);
-      }
-    }
-
-    if (isManagerDropdownOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
-    }
-  }, [isManagerDropdownOpen]);
-
-  useEffect(() => {
-    function handleEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setIsManagerDropdownOpen(false);
-      }
-    }
-
-    if (isManagerDropdownOpen) {
-      document.addEventListener("keydown", handleEscape);
-      return () => document.removeEventListener("keydown", handleEscape);
-    }
-  }, [isManagerDropdownOpen]);
-
-  // Reposition manager dropdown on scroll
-  useEffect(() => {
-    if (!isManagerDropdownOpen) return;
-    
-    const handleScroll = () => {
-      setIsManagerDropdownOpen(false);
-    };
-    
-    window.addEventListener("scroll", handleScroll, true);
-    window.addEventListener("resize", handleScroll);
-    
-    return () => {
-      window.removeEventListener("scroll", handleScroll, true);
-      window.removeEventListener("resize", handleScroll);
-    };
-  }, [isManagerDropdownOpen]);
 
   const openModal = (index: number) => {
     setCurrentImageIndex(index);
@@ -809,19 +761,33 @@ export function TalentProfileDialog({
             <div className="talent-profile space-y-5 p-6">
               {/* Header */}
               <div className="profile-header">
-                <h2 className="text-2xl font-bold text-foreground break-words">
+                <h2 className="text-xl sm:text-2xl font-bold text-foreground break-words">
                   {profileName}
                 </h2>
-                <div className="flex flex-wrap items-center gap-3 mt-3">
+                <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-3 mt-3">
                   {typeof rowIndex === "number" && onStatusUpdate ? (
-                    <StatusDropdown
-                      currentStatus={(profileStatus as StatusValue) || "New"}
-                      rowIndex={rowIndex}
-                      onStatusChange={onStatusUpdate}
-                      disabled={false}
-                      isLoading={isStatusLoading}
-                      hasManager={!!profileManager}
-                    />
+                    <Select
+                      value={profileStatus as StatusValue}
+                      onValueChange={(value) => {
+                        if (value === "Onboarded" && !profileManager) {
+                          toast.error("Please assign a Talent Manager first");
+                          return;
+                        }
+                        onStatusUpdate(rowIndex, value);
+                        toast.success(`Status updated to ${value}`);
+                      }}
+                    >
+                      <SelectTrigger className="w-full sm:w-[180px] min-h-[44px]">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="New">New</SelectItem>
+                        <SelectItem value="Meeting Required">Meeting Required</SelectItem>
+                        <SelectItem value="KYC Required">KYC Required</SelectItem>
+                        <SelectItem value="Onboarded">Onboarded</SelectItem>
+                        <SelectItem value="Rejected">Rejected</SelectItem>
+                      </SelectContent>
+                    </Select>
                   ) : (
                     <Badge
                       variant={getStatusVariant(profileStatus)}
@@ -832,104 +798,39 @@ export function TalentProfileDialog({
                   )}
 
                   {/* Manager */}
-                  <div className="relative" ref={managerDropdownRef}>
-                    {profileManager ? (
-                      typeof rowIndex === "number" && onManagerAssign ? (
-                        <button
-                          onClick={() =>
-                            setIsManagerDropdownOpen(!isManagerDropdownOpen)
-                          }
-                          className="inline-flex items-center gap-1.5 px-3 py-2 bg-secondary text-secondary-foreground rounded-full text-sm font-medium hover:bg-secondary/80 transition-all min-h-[44px] sm:min-h-[auto] border border-border"
-                        >
-                          <span>Manager: {profileManager}</span>
-                          <ChevronDown
-                            className="h-4 w-4 transition-transform duration-200"
-                            style={{
-                              transform: isManagerDropdownOpen
-                                ? "rotate(180deg)"
-                                : "rotate(0deg)",
-                            }}
-                          />
-                        </button>
-                      ) : (
-                        <Badge variant="outline" className="text-xs sm:text-sm break-words">
-                          Manager: {profileManager}
-                        </Badge>
-                      )
-                    ) : typeof rowIndex === "number" && onManagerAssign ? (
-                      <button
-                        onClick={() =>
-                          setIsManagerDropdownOpen(!isManagerDropdownOpen)
-                        }
-                        className="inline-flex items-center gap-1.5 px-3 py-2 bg-secondary text-secondary-foreground rounded-full text-sm font-medium hover:bg-secondary/80 transition-all min-h-[44px] sm:min-h-[auto] border border-border"
-                      >
-                        <span>Assign Manager</span>
-                        <ChevronDown
-                          className="h-4 w-4 transition-transform duration-200"
-                          style={{
-                            transform: isManagerDropdownOpen
-                              ? "rotate(180deg)"
-                              : "rotate(0deg)",
-                          }}
-                        />
-                      </button>
-                    ) : (
-                      <Badge
-                        variant="outline"
-                        className="text-xs sm:text-sm text-muted-foreground"
-                      >
-                        No Manager Assigned
-                      </Badge>
-                    )}
-
-                    {isManagerDropdownOpen &&
-                      typeof document !== "undefined" &&
-                      createPortal(
-                        <div
-                          className="fixed inset-0 z-50"
-                          onClick={() => setIsManagerDropdownOpen(false)}
-                        >
-                          <div
-                            className="absolute bg-popover border border-border rounded-xl shadow-xl p-2 animate-scale-in"
-                            style={{
-                              top:
-                                (managerDropdownRef.current?.getBoundingClientRect()
-                                  .bottom ?? 0) + 4,
-                              left:
-                                managerDropdownRef.current?.getBoundingClientRect()
-                                  .left ?? 0,
-                            }}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <AnimatedList
-                              items={MANAGERS.map((manager) => ({
-                                label: manager,
-                                value: manager,
-                              }))}
-                              onItemSelect={(item) => {
-                                if (
-                                  onManagerAssign &&
-                                  typeof rowIndex === "number"
-                                ) {
-                                  onManagerAssign(rowIndex, item.value);
-                                  toast.success(
-                                    `Manager updated to ${item.value}`
-                                  );
-                                }
-                                setIsManagerDropdownOpen(false);
-                              }}
-                              showGradients={true}
-                              displayScrollbar={false}
-                              enableArrowNavigation={true}
-                              selectedValue={profileManager || undefined}
-                              className="w-full sm:w-56"
-                              itemClassName=""
-                            />
-                          </div>
-                        </div>,
-                        document.body
-                      )}
-                  </div>
+                  {typeof rowIndex === "number" && onManagerAssign ? (
+                    <Select
+                      value={profileManager || "unassigned"}
+                      onValueChange={(value) => {
+                        if (value === "unassigned") return;
+                        onManagerAssign(rowIndex, value);
+                        toast.success(`Manager updated to ${value}`);
+                      }}
+                    >
+                      <SelectTrigger className="w-full sm:w-[200px] min-h-[44px]">
+                        <SelectValue placeholder="Assign Manager" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="unassigned">Unassigned</SelectItem>
+                        {MANAGERS.map((manager) => (
+                          <SelectItem key={manager} value={manager}>
+                            {manager}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : profileManager ? (
+                    <Badge variant="outline" className="text-xs sm:text-sm break-words">
+                      Manager: {profileManager}
+                    </Badge>
+                  ) : (
+                    <Badge
+                      variant="outline"
+                      className="text-xs sm:text-sm text-muted-foreground"
+                    >
+                      No Manager Assigned
+                    </Badge>
+                  )}
                 </div>
               </div>
 
