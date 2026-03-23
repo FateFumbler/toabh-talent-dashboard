@@ -335,7 +335,14 @@ export function TalentProfileDialog({
         const allContracts = [...sheetContracts, ...localContracts];
         const talentContracts = allContracts.filter((contract: Contract) => {
           const contractPhone = normalizePhone(contract.phone || "");
-          return contractPhone === talentPhone;
+          if (contractPhone === talentPhone) return true;
+          // Name-based fallback for local contracts
+          if (contract.source === 'local') {
+            const talentName = String(talent["Full Name"] || "").toLowerCase().trim();
+            const contractName = String(contract.name || "").toLowerCase().trim();
+            if (talentName && contractName && talentName === contractName) return true;
+          }
+          return false;
         });
         setContracts(talentContracts);
       } catch (err) {
@@ -645,38 +652,65 @@ export function TalentProfileDialog({
         <h3 className="profile-section-title">
           Contracts ({contracts.length})
         </h3>
-        <div className="space-y-2">
+        <div className="space-y-3">
           {contracts.map((contract, idx) => (
             <div
-              key={idx}
-              className="flex items-center justify-between p-2 bg-muted/30 rounded-lg"
+              key={contract.id || idx}
+              className="border border-border rounded-xl p-4 bg-card hover:border-primary/40 transition-colors"
             >
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-foreground truncate">
-                  {contract.name || "Unnamed"}
+              <div className="flex items-start gap-3">
+                {/* Document Icon */}
+                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <FileText className="w-5 h-5 text-primary" />
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  {contract.email || "No email"} • {contract.phone || "No phone"}
+
+                {/* Contract Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-semibold text-foreground">
+                      {contract.name || "Unnamed Contract"}
+                    </span>
+                    <Badge
+                      variant="secondary"
+                      className={`text-xs px-2 py-0.5 ${
+                        contract.source === 'local'
+                          ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
+                          : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
+                      }`}
+                    >
+                      {contract.source === 'local' ? 'Local' : 'Sheet'}
+                    </Badge>
+                  </div>
+
+                  <div className="mt-1 flex flex-col gap-0.5 text-xs text-muted-foreground">
+                    {contract.email && (
+                      <span className="truncate">{contract.email}</span>
+                    )}
+                    {contract.phone && (
+                      <span className="truncate">{contract.phone}</span>
+                    )}
+                  </div>
                 </div>
+
+                {/* CTA Button */}
+                {contract.contractLink && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() =>
+                      window.open(
+                        contract.contractLink,
+                        "_blank",
+                        "noopener,noreferrer"
+                      )
+                    }
+                    className="flex-shrink-0 gap-1.5"
+                  >
+                    View Talent Management Agreement
+                    <ExternalLink className="h-3 w-3" />
+                  </Button>
+                )}
               </div>
-              {contract.contractLink && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    window.open(
-                      contract.contractLink,
-                      "_blank",
-                      "noopener,noreferrer"
-                    )
-                  }
-                  className="ml-2 shrink-0"
-                >
-                  <FileText className="h-3 w-3 mr-1" />
-                  View
-                  <ExternalLink className="h-3 w-3 ml-1" />
-                </Button>
-              )}
             </div>
           ))}
         </div>
