@@ -742,7 +742,7 @@ function App() {
                   <button
                     onClick={loadTalents}
                     disabled={isLoading}
-                    className="btn-premium bg-secondary hover:bg-secondary/80 text-secondary-foreground border border-border"
+                    className="btn-premium bg-secondary hover:bg-secondary/80 text-secondary-foreground"
                   >
                     <RefreshCw
                       className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
@@ -760,7 +760,7 @@ function App() {
                   {/* Mobile filter toggle */}
                   <button
                     onClick={() => setFiltersOpen(!filtersOpen)}
-                    className="lg:hidden btn-premium bg-secondary hover:bg-secondary/80 text-secondary-foreground border border-border"
+                    className="lg:hidden btn-premium bg-secondary hover:bg-secondary/80 text-secondary-foreground"
                   >
                     <SlidersHorizontal className="h-4 w-4" />
                   </button>

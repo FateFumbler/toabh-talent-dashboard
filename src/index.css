@@ -586,7 +586,7 @@ html, body {
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
-  border: 1px solid transparent;
+  border: none;
   transition: all 0.15s;
   white-space: nowrap;
 }
@@ -646,7 +646,7 @@ html, body {
 
 .stat-card {
   background: var(--bg-card);
-  border: 1px solid var(--border);
+  border: none;
   border-radius: 12px;
   padding: 1rem;
   transition: all 0.2s;
@@ -655,12 +655,10 @@ html, body {
 }
 
 .stat-card:hover {
-  border-color: var(--border-subtle);
   background: var(--bg-elevated);
 }
 
 .stat-card-active {
-  border-color: var(--primary);
   box-shadow: 0 0 0 1px var(--primary), 0 4px 16px -4px rgba(109, 40, 217, 0.3);
 }
 
