@@ -501,7 +501,7 @@ export function TalentTable({
                   Talent Manager
                 </TableHead>
               )}
-              <TableHead className="text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <TableHead className="text-right sm:text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Actions
               </TableHead>
             </TableRow>
