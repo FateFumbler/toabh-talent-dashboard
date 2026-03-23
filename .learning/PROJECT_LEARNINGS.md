@@ -96,3 +96,54 @@ useEffect(() => {
 - Toasts/notifications: z-70
 
 Always use `relative` on parent containers when using `absolute` positioning inside.
+
+## Issues Encountered (March 23, 2026)
+
+### 10. Tab Toggle Hardcoded Colors
+**Problem:** Toggle group used hardcoded white backgrounds (`#ffffff`, `#e5e7eb`) which breaks dark mode.
+**Fix:** Use theme tokens or media queries. Active state should use `var(--primary)` or indigo (`#5E5ADB`).
+**Rule:** Never use hardcoded hex colors in CSS that's meant to be theme-aware. Use CSS variables or Tailwind theme tokens.
+
+### 11. Stat Card Border Clipping on Mobile
+**Problem:** `border-left-4` added extra width to card dimensions, pushing cards beyond grid cells on mobile.
+**Fix:** Use `box-shadow: inset 4px 0 0 0 <color>` instead of `border-left`. Shadow renders inside the element.
+**Also:** Add `min-width: 0` to grid items and `overflow: hidden` to stat-card container.
+
+### 12. Header Tab Navigation - Minimal Design
+**Problem:** Tabs with icons and pill-style indicators looked cluttered on mobile.
+**Fix:** Remove icons from tabs, use simple text-only tabs. Active state = bold + underline. Group related tabs left, utility buttons right.
+**Rule:** Less is more on mobile navigation. Text tabs > icon tabs > pill tabs.
+
+### 13. Dropdown Overflow in Table Containers
+**Problem:** `overflow: auto` on table wrapper clips absolutely-positioned dropdowns.
+**Fix:** Use React `createPortal` to render dropdown at `document.body` level. Position using `getBoundingClientRect()`.
+**Also:** Clamp viewport bounds: `left: Math.max(8, Math.min(left, window.innerWidth - menuWidth))`
+
+### 14. Agents Not Completing Work
+**Problem:** Subagents sometimes report "completed" but made no actual changes.
+**Fix:** Always verify with `git log` after agent completes. If no new commit, the work wasn't done.
+**Rule:** Trust but verify. Check git log, run tsc, run build after every agent completion.
+
+## Agent Workflow Rules
+
+### Always Create LEARNINGS.md in Every Project
+- Every project must have a `.learning/PROJECT_LEARNINGS.md` or `LEARNINGS.md` file
+- Update it after every fix, bug, or design decision
+- Include: What went wrong, what fixed it, what to never do again
+- This prevents the same mistakes from happening repeatedly
+
+### Never Again (Updated)
+- [ ] Always use `String(value || '')` before calling .trim() or other string methods
+- [ ] Always test logo in both light and dark mode on both desktop and mobile
+- [ ] Add `e.stopPropagation()` on dropdown click handlers
+- [ ] Extract duplicate functions to shared utils
+- [ ] Use theme tokens (bg-muted, text-foreground) not hardcoded colors
+- [ ] Test dropdown positioning near viewport edges
+- [ ] Use box-shadow inset instead of border for one-sided accents
+- [ ] Add min-width: 0 to grid items to prevent overflow
+- [ ] Use portals for dropdowns inside overflow containers
+- [ ] Never use hardcoded hex colors in theme-aware CSS
+- [ ] Always update learnings after every fix (MANDATORY)
+- [ ] Verify git log after agent tasks to confirm work was done
+- [ ] Keep nav tabs minimal: text-only, underline active state
+- [ ] No Vercel deploys without explicit user approval
