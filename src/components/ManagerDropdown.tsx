@@ -68,7 +68,7 @@ export function ManagerDropdown({
   useEffect(() => {
     if (!isOpen || !triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
-    setDropdownPosition({ top: rect.bottom + window.scrollY + 4, left: rect.left + window.scrollX, width: rect.width });
+    setDropdownPosition({ top: rect.bottom + 4, left: rect.left, width: rect.width });
   }, [isOpen]);
 
   const handleTriggerClick = (e: React.MouseEvent) => {
@@ -77,7 +77,7 @@ export function ManagerDropdown({
     if (!isOpen) {
       if (triggerRef.current) {
         const rect = triggerRef.current.getBoundingClientRect();
-        setDropdownPosition({ top: rect.bottom + window.scrollY + 4, left: rect.left + window.scrollX, width: rect.width });
+        setDropdownPosition({ top: rect.bottom + 4, left: rect.left, width: rect.width });
       }
       setIsOpen(true);
     } else {
@@ -103,10 +103,10 @@ export function ManagerDropdown({
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95, y: -4 }}
       transition={{ duration: 0.15, ease: "easeOut" }}
-      className="absolute bg-popover border border-border rounded-xl shadow-xl z-[9999] overflow-hidden"
+      className="fixed bg-popover border border-border rounded-xl shadow-xl z-[9999] overflow-hidden"
       style={{
         top: `${dropdownPosition.top}px`,
-        left: `${Math.max(8, dropdownPosition.left)}px`,
+        left: `${Math.max(8, Math.min(dropdownPosition.left, window.innerWidth - 240 - 8))}px`,
         width: "220px",
       }}
     >
