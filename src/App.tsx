@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { TalentTable } from "./components/TalentTable";
 import { TalentProfileDialog } from "./components/TalentProfile";
 import { ContractsTab } from "./components/ContractsTab";
@@ -21,8 +21,8 @@ import {
   assignManager,
 } from "./services/api";
 import type { Talent, TalentDetails } from "@/types/talent";
-import { MANAGERS } from "@/types/talent";
 import { StatusDropdown } from "@/components/StatusDropdown";
+import { ManagerDropdown } from "@/components/ManagerDropdown";
 import {
   RefreshCw,
   LayoutGrid,
@@ -1533,9 +1533,11 @@ function TalentGridView({
                       hasManager={!!talent["Talent Manager"]}
                     />
 
-                    <GridMoreMenu
-                      talent={talent}
-                      onManagerSelect={handleManagerSelect}
+                    <ManagerDropdown
+                      currentManager={talent["Talent Manager"]}
+                      rowIndex={talent.rowIndex!}
+                      onManagerChange={handleManagerSelect}
+                      disabled={!!pendingUpdates[talent.rowIndex]}
                     />
                   </div>
                 </div>
@@ -1549,115 +1551,6 @@ function TalentGridView({
         <div className="empty-state text-muted-foreground">
           No talents match your filters
         </div>
-      )}
-    </div>
-  );
-}
-
-// More menu for grid view cards
-function GridMoreMenu({
-  talent,
-  onManagerSelect,
-}: {
-  talent: Talent;
-  onManagerSelect: (rowIndex: number, manager: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const [showAll, setShowAll] = useState(false);
-  const [menuPosition, setMenuPosition] = useState<{ right: number; left: number } | null>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const managers = MANAGERS as string[];
-  const visibleManagers = showAll ? managers : managers.slice(0, 4);
-
-  useEffect(() => {
-    if (open && buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      const menuWidth = 192; // w-48 = 12rem = 192px
-      const leftEdge = rect.left - menuWidth;
-      
-      // Check if menu would overflow on the left
-      if (leftEdge < 8) {
-        setMenuPosition({ right: window.innerWidth - rect.right - 8, left: -1 });
-      } else {
-        setMenuPosition({ right: 0, left: -1 });
-      }
-    }
-  }, [open]);
-
-  return (
-    <div className="relative">
-      <Button
-        ref={buttonRef}
-        variant="ghost"
-        size="sm"
-        className="h-8 w-8 p-0"
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen(!open);
-        }}
-      >
-        <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-          <circle cx="12" cy="5" r="2" />
-          <circle cx="12" cy="12" r="2" />
-          <circle cx="12" cy="19" r="2" />
-        </svg>
-      </Button>
-
-      {open && (
-        <>
-          <div
-            className="fixed inset-0 z-40"
-            onClick={(e) => {
-              e.stopPropagation();
-              setOpen(false);
-            }}
-          />
-          <div 
-            className="dropdown-animate absolute top-full mt-1 z-50 w-48 bg-popover border border-border rounded-xl shadow-xl p-1"
-            style={{
-              right: menuPosition?.right ?? 0,
-              left: menuPosition?.left ?? 'auto',
-              maxWidth: `${window.innerWidth - 16}px`,
-            }}
-          >
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onManagerSelect(talent.rowIndex!, talent["Talent Manager"] || "");
-                setOpen(false);
-              }}
-              className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-popover-foreground hover:bg-accent rounded-lg transition-colors"
-            >
-              {talent["Talent Manager"] ? "Change Manager" : "Assign Manager"}
-            </button>
-            <hr className="my-1 border-border" />
-            {visibleManagers.map((m: string) => (
-              <button
-                key={m}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onManagerSelect(talent.rowIndex!, m);
-                  setOpen(false);
-                }}
-                className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-popover-foreground hover:bg-accent rounded-lg transition-colors"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
-                {m}
-              </button>
-            ))}
-            {managers.length > 4 && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowAll(!showAll);
-                }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-accent rounded-lg transition-colors"
-              >
-                {showAll ? "Show less" : `+${managers.length - 4} more`}
-              </button>
-            )}
-          </div>
-        </>
       )}
     </div>
   );
