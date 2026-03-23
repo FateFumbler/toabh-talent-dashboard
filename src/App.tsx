@@ -379,11 +379,9 @@ function App() {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("toabh-view-mode") as "list" | "grid";
       if (saved) return saved;
-      const width = window.innerWidth;
-      if (width < 1024) return "grid";
-      return "list";
+      return "grid";
     }
-    return "list";
+    return "grid";
   });
   const [profileSearch, setProfileSearch] = useState("");
   const [selectedProfile, setSelectedProfile] = useState<
