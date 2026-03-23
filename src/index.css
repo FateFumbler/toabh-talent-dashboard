@@ -688,6 +688,8 @@ html, body {
   padding: 1rem;
   transition: all 0.2s;
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
 }
 
 .talent-card:hover {

@@ -1423,10 +1423,10 @@ function TalentGridView({
               key={talent.rowIndex}
               className="talent-card"
             >
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-3 h-full">
                 {/* Clickable header area */}
                 <div
-                  className="cursor-pointer"
+                  className="cursor-pointer flex-1"
                   onClick={() => onTalentClick(talent["Full Name"], talent.rowIndex!)}
                 >
                   {/* Header */}
