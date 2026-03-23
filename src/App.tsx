@@ -1296,7 +1296,9 @@ function TalentGridView({
         talent["City"]?.toLowerCase().includes(searchLower);
 
       const matchesStatus =
-        statusFilter === "all" || talent["Status"] === statusFilter;
+        statusFilter === "all"
+          ? talent["Status"] !== "Rejected" && talent["Status"] !== "Onboarded"
+          : talent["Status"] === statusFilter;
       const matchesManager =
         managerFilter === "all" || talent["Talent Manager"] === managerFilter;
       const matchesCity = cityFilter === "all" || talent["City"] === cityFilter;
