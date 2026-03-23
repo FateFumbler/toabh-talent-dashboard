@@ -1549,7 +1549,14 @@ function TalentGridView({
 
                 {/* Actions */}
                 <div className="pt-2 border-t border-border/50 card-actions">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-row sm:flex-col items-center sm:items-stretch justify-between gap-2">
+                    <ManagerDropdown
+                      currentManager={talent["Talent Manager"]}
+                      rowIndex={talent.rowIndex!}
+                      onManagerChange={handleManagerSelect}
+                      disabled={!!pendingUpdates[talent.rowIndex]}
+                    />
+
                     <StatusDropdown
                       currentStatus={(talent["Status"] as any) || "New"}
                       rowIndex={talent.rowIndex}
@@ -1557,13 +1564,6 @@ function TalentGridView({
                       disabled={!!pendingUpdates[talent.rowIndex]}
                       isLoading={pendingUpdates[talent.rowIndex] === "status"}
                       hasManager={!!talent["Talent Manager"]}
-                    />
-
-                    <ManagerDropdown
-                      currentManager={talent["Talent Manager"]}
-                      rowIndex={talent.rowIndex!}
-                      onManagerChange={handleManagerSelect}
-                      disabled={!!pendingUpdates[talent.rowIndex]}
                     />
                   </div>
                 </div>
