@@ -787,8 +787,9 @@ function App() {
                   <div className="toggle-group">
                     <button
                       onClick={() => handleViewModeChange("list")}
-                      className={`toggle-btn ${viewMode === "list" ? "toggle-btn-active" : ""}`}
-                      title="List View"
+                      className={`toggle-btn ${viewMode === "list" ? "toggle-btn-active" : ""} ${windowWidth < 1024 ? "opacity-50 cursor-not-allowed" : ""}`}
+                      title={windowWidth < 1024 ? "List view not available on mobile" : "List View"}
+                      disabled={windowWidth < 1024}
                     >
                       <List className="h-4 w-4" />
                     </button>
