@@ -1,6 +1,6 @@
 import type { Talent, TalentProfile, TalentDetails } from "../types/talent";
 
-const API_URL = "https://script.google.com/macros/s/AKfycbyrHsfBPmcSb9YeAUKH9cQ0taILerK7VQ8kNjpI_OZvwSYgD2zw6Sh-xSgVKV40_bWIPQ/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbxZlFw4rsk8ZYPIcKTMJq4U0Amls-lzpG07LxafUPsyvATKYT8jfIhlC0JgInHby6yRNg/exec";
 
 // Talent_Details sheet column indices (0-based)
 const FIELDS = {
