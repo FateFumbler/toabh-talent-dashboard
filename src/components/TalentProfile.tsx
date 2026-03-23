@@ -807,13 +807,16 @@ export function TalentProfileDialog({
                         toast.success(`Manager updated to ${value}`);
                       }}
                     >
-                      <SelectTrigger className="w-full sm:w-[200px] min-h-[44px]">
+                      <SelectTrigger className="w-full sm:w-[200px] min-h-[44px] text-sm">
                         <SelectValue placeholder="Assign Manager" />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="unassigned">Unassigned</SelectItem>
+                      <SelectContent
+                        className="sm:max-w-[200px] max-w-[calc(100vw-32px)]"
+                        style={{ maxWidth: "min(100vw - 16px, 220px)" }}
+                      >
+                        <SelectItem value="unassigned" className="py-3 min-h-[44px]">Unassigned</SelectItem>
                         {MANAGERS.map((manager) => (
-                          <SelectItem key={manager} value={manager}>
+                          <SelectItem key={manager} value={manager} className="py-3 min-h-[44px]">
                             {manager}
                           </SelectItem>
                         ))}
