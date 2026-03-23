@@ -56,6 +56,7 @@ export function StatusDropdown({
   const [isOpen, setIsOpen] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number; width: number } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const dropdownContentRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const updatePosition = () => {
@@ -70,10 +71,11 @@ export function StatusDropdown({
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
+      const target = event.target as Node;
+      // Check if click is inside trigger OR inside portal'd dropdown content
+      const insideTrigger = dropdownRef.current?.contains(target);
+      const insideDropdown = dropdownContentRef.current?.contains(target);
+      if (!insideTrigger && !insideDropdown) {
         setIsOpen(false);
         setDropdownPosition(null);
       }
@@ -162,6 +164,7 @@ export function StatusDropdown({
 
   const dropdownContent = isOpen && dropdownPosition ? (
     <div
+      ref={dropdownContentRef}
       className="dropdown-animate fixed bg-popover border border-border rounded-xl shadow-xl z-50 overflow-hidden"
       style={{
         top: `${dropdownPosition.top}px`,

@@ -3,15 +3,7 @@ import type { ReactNode } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import type { Talent, TalentDetails, StatusValue } from "@/types/talent";
-import { MANAGERS } from "@/types/talent";
 import { fetchTalentMaster, fetchTalentDetails } from "@/services/api";
 import { fetchContracts } from "@/services/contractsApi";
 import { getLocalContracts } from "@/services/localContracts";
@@ -26,7 +18,8 @@ import {
   ExternalLink,
 } from "lucide-react";
 import type { Contract } from "@/types/contract";
-import { toast } from "sonner";
+import { StatusDropdown } from "./StatusDropdown";
+import { ManagerDropdown } from "./ManagerDropdown";
 
 interface TalentProfileProps {
   name: string | null;
@@ -766,28 +759,12 @@ export function TalentProfileDialog({
                 </h2>
                 <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-3 mt-3">
                   {typeof rowIndex === "number" && onStatusUpdate ? (
-                    <Select
-                      value={profileStatus as StatusValue}
-                      onValueChange={(value) => {
-                        if (value === "Onboarded" && !profileManager) {
-                          toast.error("Please assign a Talent Manager first");
-                          return;
-                        }
-                        onStatusUpdate(rowIndex, value);
-                        toast.success(`Status updated to ${value}`);
-                      }}
-                    >
-                      <SelectTrigger className="w-full sm:w-[180px] min-h-[44px]">
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="New">New</SelectItem>
-                        <SelectItem value="Meeting Required">Meeting Required</SelectItem>
-                        <SelectItem value="KYC Required">KYC Required</SelectItem>
-                        <SelectItem value="Onboarded">Onboarded</SelectItem>
-                        <SelectItem value="Rejected">Rejected</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <StatusDropdown
+                      currentStatus={profileStatus as StatusValue}
+                      rowIndex={rowIndex}
+                      onStatusChange={onStatusUpdate}
+                      hasManager={!!profileManager}
+                    />
                   ) : (
                     <Badge
                       variant={getStatusVariant(profileStatus)}
@@ -799,29 +776,11 @@ export function TalentProfileDialog({
 
                   {/* Manager */}
                   {typeof rowIndex === "number" && onManagerAssign ? (
-                    <Select
-                      value={profileManager || "unassigned"}
-                      onValueChange={(value) => {
-                        if (value === "unassigned") return;
-                        onManagerAssign(rowIndex, value);
-                        toast.success(`Manager updated to ${value}`);
-                      }}
-                    >
-                      <SelectTrigger className="w-full sm:w-[200px] min-h-[44px] text-sm">
-                        <SelectValue placeholder="Assign Manager" />
-                      </SelectTrigger>
-                      <SelectContent
-                        className="sm:max-w-[200px] max-w-[calc(100vw-32px)]"
-                        style={{ maxWidth: "min(100vw - 16px, 220px)" }}
-                      >
-                        <SelectItem value="unassigned" className="py-3 min-h-[44px]">Unassigned</SelectItem>
-                        {MANAGERS.map((manager) => (
-                          <SelectItem key={manager} value={manager} className="py-3 min-h-[44px]">
-                            {manager}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <ManagerDropdown
+                      currentManager={profileManager}
+                      rowIndex={rowIndex}
+                      onManagerChange={onManagerAssign}
+                    />
                   ) : profileManager ? (
                     <Badge variant="outline" className="text-xs sm:text-sm break-words">
                       Manager: {profileManager}

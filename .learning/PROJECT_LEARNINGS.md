@@ -13,10 +13,13 @@
 - `dark:hidden` = hide when DARK = show in LIGHT
 - `hidden dark:block` = hide when LIGHT = show in DARK
 
-### 2. Dropdown Click Opens Profile Instead
+### 2. Dropdown Click Opens Profile Instead (RESOLVED)
 **Problem:** Clicking status dropdown opened the talent profile instead.
 **Cause:** Click event bubbling up from dropdown trigger to parent card.
-**Fix:** Add `e.stopPropagation()` to dropdown trigger button's onClick handler.
+**Fix (initial):** Added `e.stopPropagation()` to dropdown trigger button's onClick handler.
+**Fix (root cause):** The `handleClickOutside` listener in StatusDropdown checked `dropdownRef.current.contains(event.target)` but the dropdown content was rendered via `createPortal` to `document.body` — so it was NOT inside `dropdownRef`. Every click on a dropdown item was detected as "click outside" and closed the dropdown before the selection registered.
+**Final Fix:** Added `dropdownContentRef` to the portal'd dropdown container. Updated click-outside handler to check both `dropdownRef` (trigger) and `dropdownContentRef` (portal'd dropdown). Now clicks on dropdown items are correctly detected as "inside" the dropdown.
+**Rule:** When using `createPortal`, always ensure click-outside handlers check BOTH the trigger container AND the portal'd content container.
 
 ### 3. Height.trim() Error
 **Problem:** `height.trim is not a function` error in list view.
