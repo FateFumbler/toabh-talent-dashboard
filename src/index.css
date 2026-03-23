@@ -866,7 +866,7 @@ html, body {
 .toggle-group {
   display: inline-flex;
   background: var(--bg-secondary);
-  border: 1px solid var(--border);
+  border: none;
   border-radius: 8px;
   padding: 3px;
   gap: 0;
