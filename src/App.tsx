@@ -324,34 +324,11 @@ function StatCard({
   );
 }
 
-// Helper to format height properly
+// Helper to format height - returns raw value as-is
 function formatHeight(height: string | number | undefined | null): string {
   if (!height) return "-";
   const trimmed = String(height).trim();
-  if (!trimmed) return "-";
-  
-  // Handle formats like "5'5 in feet 65 in inches" or "5'6 in feet"
-  // Extract just the feet'inches portion
-  const feetInchesMatch = trimmed.match(/(\d+'\d+"?)/);
-  if (feetInchesMatch) {
-    return feetInchesMatch[1].replace(/"/g, "");
-  }
-  
-  if (trimmed.includes("'") || trimmed.includes("ft")) {
-    // Clean up formats like 5'5" or 5'6
-    return trimmed.replace(/"/g, "").replace(/ ft /g, "'").replace(/ in$/g, "\"").replace(/ inches$/g, "\"");
-  }
-  const inches = parseInt(trimmed, 10);
-  if (!isNaN(inches)) {
-    if (inches >= 12) {
-      const feet = Math.floor(inches / 12);
-      const remainingInches = inches % 12;
-      return remainingInches > 0 ? `${feet}'${remainingInches}"` : `${feet}'`;
-    } else {
-      return `${inches}"`;
-    }
-  }
-  return trimmed;
+  return trimmed || "-";
 }
 
 function App() {
