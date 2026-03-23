@@ -609,7 +609,7 @@ export function TalentTable({
                         <button
                           onClick={(e) => handleManagerTriggerClick(talent.rowIndex!, e)}
                           disabled={!!pendingUpdates[talent.rowIndex]}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary text-secondary-foreground rounded-lg text-xs font-medium hover:bg-secondary/80 transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-border/50 whitespace-nowrap"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:py-1.5 bg-secondary text-secondary-foreground sm:rounded-full rounded-lg text-sm sm:text-sm font-medium hover:bg-secondary/80 transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-border/50 whitespace-nowrap sm:min-w-[140px] justify-center"
                         >
                           {pendingUpdates[talent.rowIndex] === "manager" ? (
                             <Loader2 className="h-3 w-3 animate-spin" />

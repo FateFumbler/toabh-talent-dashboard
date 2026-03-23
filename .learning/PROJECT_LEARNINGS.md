@@ -46,6 +46,20 @@ const trimmed = String(height || '').trim();
 **Problem:** Dark blue backgrounds looked inconsistent.
 **Fix:** Use `bg-muted` for all avatar placeholders.
 
+### 8. Spacing Between Inline Elements in Table Cells
+**Problem:** Phone/WhatsApp icons and StatusDropdown overlapped in list view Actions column.
+**Cause:** Icons div and StatusDropdown were siblings inside TableCell with no flex wrapper or gap between them.
+**Fix:** Wrap both in a flex container with `gap-2` to control spacing. Individual `mr-2` on the icons div alone wasn't enough since TableCell isn't a flex container.
+```tsx
+<TableCell className="text-right py-3 px-4 align-middle">
+  <div className="flex items-center justify-end gap-2">
+    {talent["Phone"] && <div className="flex items-center gap-1.5">...</div>}
+    <StatusDropdown ... />
+  </div>
+</TableCell>
+```
+**Rule:** When multiple interactive elements share a table cell, always wrap them in a flex container with explicit gap. Don't rely on margin on individual children inside non-flex parent.
+
 ## Design Decisions
 
 ### Theme System
@@ -178,3 +192,4 @@ Always use `relative` on parent containers when using `absolute` positioning ins
 - [ ] Keep nav tabs minimal: text-only, underline active state
 - [ ] No Vercel deploys without explicit user approval
 - [ ] When changing CSS, scan ALL adjacent styles to avoid unintended side effects on other components
+- [ ] Wrap multiple sibling elements in a flex container with gap when sharing a table cell — don't rely on individual margins
