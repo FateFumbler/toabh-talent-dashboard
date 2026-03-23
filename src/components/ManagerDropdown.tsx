@@ -61,7 +61,19 @@ export function ManagerDropdown({
     }
     if (isOpen) {
       document.addEventListener("keydown", handleEscape);
-      return () => document.removeEventListener("keydown", handleEscape);
+      const handleScroll = () => {
+        if (triggerRef.current) {
+          const rect = triggerRef.current.getBoundingClientRect();
+          setDropdownPosition({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+        }
+      };
+      window.addEventListener("scroll", handleScroll, true);
+      window.addEventListener("resize", handleScroll);
+      return () => {
+        document.removeEventListener("keydown", handleEscape);
+        window.removeEventListener("scroll", handleScroll, true);
+        window.removeEventListener("resize", handleScroll);
+      };
     }
   }, [isOpen]);
 
