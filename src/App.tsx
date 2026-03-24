@@ -389,6 +389,10 @@ function App() {
   const uniqueManagers = useMemo(() => {
     const managers = getUniqueValues(talents, "Talent Manager");
     console.log("DEBUG: talents count:", talents.length, "uniqueManagers:", managers);
+    if (talents.length > 0) {
+      console.log("Sample talent keys:", Object.keys(talents[0]));
+      console.log("Sample talent['Talent Manager']:", talents[0]["Talent Manager"]);
+    }
     return managers;
   }, [talents]);
 
