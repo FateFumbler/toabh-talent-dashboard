@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { TalentTable } from "./components/TalentTable";
 import { TalentProfileDialog } from "./components/TalentProfile";
 import { ContractsTab } from "./components/ContractsTab";
@@ -331,13 +331,7 @@ function formatHeight(height: string | number | undefined | null): string {
   return trimmed || "-";
 }
 
-// Helper to get unique non-empty values from talent array
-function getUniqueValues<T>(arr: T[], key: keyof T): string[] {
-  const managers = arr
-    .map(row => (row[key] || "").toString().trim())
-    .filter(name => name.length > 0);
-  return Array.from(new Set(managers)).sort();
-}
+
 
 function App() {
   const [talents, setTalents] = useState<Talent[]>([]);
@@ -385,17 +379,7 @@ function App() {
   );
   const [activeTile, setActiveTile] = useState<string | null>(null);
 
-  // Compute unique managers from talents (excludes empty/undefined)
-  const uniqueManagers = useMemo(() => {
-    const managers = getUniqueValues(talents, "Talent Manager");
-    console.log("DEBUG: talents count:", talents.length, "uniqueManagers:", managers);
-    if (talents.length > 0) {
-      console.log("Sample talent['Talent Manager']:", talents[0]["Talent Manager"]);
-      const rawManagers = talents.map(t => t["Talent Manager"]).filter(v => v);
-      console.log("All raw Talent Manager values:", rawManagers);
-    }
-    return managers;
-  }, [talents]);
+
 
   const handleThemeChange = (t: Theme) => {
     setThemeState(t);
@@ -810,7 +794,6 @@ function App() {
               {viewMode === "list" && windowWidth >= 1024 && (
                 <TalentTable
                   talents={talents}
-                  managers={uniqueManagers}
                   onStatusUpdate={handleStatusUpdate}
                   onManagerAssign={handleManagerAssign}
                   onTalentClick={handleTalentClick}
