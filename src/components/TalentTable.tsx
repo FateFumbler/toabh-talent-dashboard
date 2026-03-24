@@ -20,7 +20,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import type { Talent, StatusValue } from "@/types/talent";
-import { MANAGERS } from "@/types/talent";
 import { Search, RefreshCw, Loader2, X, SlidersHorizontal, ChevronDown } from "lucide-react";
 import { StatusDropdown } from "./StatusDropdown";
 import type { ColumnName } from "./ColumnVisibility";
@@ -30,6 +29,7 @@ import { getInitialColumns } from "./ColumnVisibility";
 
 interface TalentTableProps {
   talents: Talent[];
+  managers: string[];
   onStatusUpdate: (row: number, status: string) => void;
   onManagerAssign: (row: number, manager: string) => void;
   onTalentClick: (name: string, rowIndex: number) => void;
@@ -113,14 +113,15 @@ const getStatusVariant = (
 };
 
 const getUniqueValues = (talents: Talent[], key: keyof Talent): string[] => {
-  const values = talents
-    .map((t) => t[key])
-    .filter((v) => v && v.toString().trim() !== "");
-  return [...new Set(values)].sort() as string[];
+  const managers = talents
+    .map(row => (row[key] || "").toString().trim())
+    .filter(name => name.length > 0);
+  return Array.from(new Set(managers)).sort();
 };
 
 export function TalentTable({
   talents,
+  managers,
   onStatusUpdate,
   onManagerAssign,
   onTalentClick,
@@ -158,6 +159,11 @@ export function TalentTable({
   const uniqueStatuses = getUniqueValues(talents, "Status");
   const uniqueManagers = getUniqueValues(talents, "Talent Manager");
   const uniqueCities = getUniqueValues(talents, "City");
+  
+  console.log("DEBUG TalentTable: talents count:", talents.length, "uniqueManagers:", uniqueManagers);
+  if (talents.length > 0) {
+    console.log("TalentTable raw Talent Manager values:", talents.map(t => t["Talent Manager"]).filter(Boolean));
+  }
 
   const filteredTalents = useMemo(() => {
     let filtered = talents.filter((talent) => {
@@ -665,7 +671,7 @@ export function TalentTable({
               onMouseDown={(e) => e.stopPropagation()}
             >
               <div className="py-1">
-                {MANAGERS.map((manager) => (
+                {managers.map((manager) => (
                   <button
                     key={manager}
                     onClick={() => handleManagerItemSelect(manager)}

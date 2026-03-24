@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { TalentTable } from "./components/TalentTable";
 import { TalentProfileDialog } from "./components/TalentProfile";
 import { ContractsTab } from "./components/ContractsTab";
@@ -331,6 +331,8 @@ function formatHeight(height: string | number | undefined | null): string {
   return trimmed || "-";
 }
 
+
+
 function App() {
   const [talents, setTalents] = useState<Talent[]>([]);
   const [talentDetailsMap, setTalentDetailsMap] = useState<
@@ -376,6 +378,8 @@ function App() {
     typeof window !== "undefined" ? window.innerWidth : 1200
   );
   const [activeTile, setActiveTile] = useState<string | null>(null);
+
+
 
   const handleThemeChange = (t: Theme) => {
     setThemeState(t);
@@ -1205,6 +1209,7 @@ function App() {
         rowIndex={selectedTalentRowIndex ?? undefined}
         onStatusUpdate={handleStatusUpdate}
         onManagerAssign={handleManagerAssign}
+        managers={uniqueManagers}
       />
 
       {/* Toast notifications */}
@@ -1454,8 +1459,8 @@ function TalentGridView({
                         {talent["Full Name"]}
                       </div>
                       <div className="text-sm text-muted-foreground truncate">
-                        {talent["Instagram"] ? (
-                          renderInstagramLink((talent as unknown as Record<string, string | undefined>)["Instagram"] || (talent as unknown as Record<string, string | undefined>)["Instagram Link"])
+                        {(mergedTalent["Instagram"] || mergedTalent["Instagram Link"]) ? (
+                          renderInstagramLink(mergedTalent["Instagram"] || mergedTalent["Instagram Link"])
                         ) : (
                           <span className="text-muted-foreground/50">No Instagram</span>
                         )}
@@ -1531,6 +1536,7 @@ function TalentGridView({
                   <div className="flex flex-row sm:flex-col items-center sm:items-stretch justify-between gap-2">
                     <ManagerDropdown
                       currentManager={talent["Talent Manager"]}
+                      managers={uniqueManagers}
                       rowIndex={talent.rowIndex!}
                       onManagerChange={handleManagerSelect}
                       disabled={!!pendingUpdates[talent.rowIndex]}

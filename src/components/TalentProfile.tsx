@@ -27,6 +27,7 @@ interface TalentProfileProps {
   onOpenChange: (open: boolean) => void;
   onStatusUpdate?: (row: number, status: string) => void;
   onManagerAssign?: (row: number, manager: string) => void;
+  managers?: string[];
   rowIndex?: number;
 }
 
@@ -176,6 +177,7 @@ export function TalentProfileDialog({
   onOpenChange,
   onStatusUpdate,
   onManagerAssign,
+  managers,
   rowIndex,
 }: TalentProfileProps) {
   const [profile, setProfile] = useState<
@@ -250,14 +252,11 @@ export function TalentProfileDialog({
     }
   }, [name, open]);
 
-  const normalizePhone = (phone: string): string => {
+  const normalizePhone = (phone: string | number): string => {
     if (!phone) return "";
-    let normalized = phone.replace(/[^\d+]/g, "");
-    if (normalized.startsWith("+91")) {
-      normalized = normalized.substring(3);
-    }
-    normalized = normalized.replace(/^0+/, "");
-    return normalized;
+    return String(phone)
+      .replace(/\D/g, "")
+      .slice(-10);
   };
 
   const loadProfile = async () => {
@@ -776,6 +775,7 @@ export function TalentProfileDialog({
                   {typeof rowIndex === "number" && onManagerAssign ? (
                     <ManagerDropdown
                       currentManager={profileManager}
+                      managers={managers || []}
                       rowIndex={rowIndex}
                       onManagerChange={onManagerAssign}
                     />

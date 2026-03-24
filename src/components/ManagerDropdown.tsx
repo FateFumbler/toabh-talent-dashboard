@@ -4,40 +4,67 @@ import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { ChevronDown, UserCircle } from "lucide-react";
-import { MANAGERS } from "@/types/talent";
 import { toast } from "sonner";
 
-// Distinct color pairs per manager (border + background tint)
-const managerColors: Record<string, { border: string; bg: string; text: string; dot: string }> = {
-  Aryan:      { border: "border-violet-500/50",   bg: "bg-violet-500/15",   text: "text-violet-300", dot: "bg-violet-400" },
-  "Saloni Kale":    { border: "border-pink-500/50",     bg: "bg-pink-500/15",     text: "text-pink-300",   dot: "bg-pink-400" },
-  Jhalak:     { border: "border-amber-500/50",   bg: "bg-amber-500/15",   text: "text-amber-300",  dot: "bg-amber-400" },
-  Prashant:   { border: "border-cyan-500/50",    bg: "bg-cyan-500/15",    text: "text-cyan-300",   dot: "bg-cyan-400" },
-  Anvitha:    { border: "border-emerald-500/50", bg: "bg-emerald-500/15", text: "text-emerald-300",dot: "bg-emerald-400" },
-  Khadija:    { border: "border-rose-500/50",    bg: "bg-rose-500/15",    text: "text-rose-300",   dot: "bg-rose-400" },
-};
+// Color palette
+const colors = [
+  "#6D28D9", "#9333EA", "#7C3AED",
+  "#2563EB", "#0891B2", "#059669",
+  "#CA8A04", "#DC2626", "#DB2777"
+];
 
-const defaultColors = { border: "border-border", bg: "bg-muted", text: "text-muted-foreground", dot: "bg-muted-foreground" };
-
-function getManagerColors(manager: string) {
-  return managerColors[manager] || defaultColors;
+// Consistent color generator based on name hash
+function getManagerColor(name: string): { border: string; bg: string; text: string; dot: string } {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const color = colors[Math.abs(hash) % colors.length];
+  return {
+    border: `border-[${color}]/50`,
+    bg: `bg-[${color}]/15`,
+    text: `text-[${color}]`,
+    dot: `bg-[${color}]`
+  };
 }
 
 interface ManagerDropdownProps {
   currentManager: string | null | undefined;
+  managers: string[];
   rowIndex: number;
   onManagerChange: (row: number, manager: string) => void;
   disabled?: boolean;
 }
 
+// Estimated dropdown height for smart positioning (avoids layout thrash before render)
+const MANAGER_DROPDOWN_HEIGHT = 320;
+
+function getSmartPosition(rect: DOMRect, dropdownWidth: number) {
+  const spaceBelow = window.innerHeight - rect.bottom;
+  const spaceAbove = rect.top;
+  const margin = 16;
+
+  // Flip up if not enough space below, but only if there's more room above than below
+  const flipUp = spaceBelow < MANAGER_DROPDOWN_HEIGHT + margin && spaceAbove > spaceBelow;
+
+  const top = flipUp
+    ? rect.top - MANAGER_DROPDOWN_HEIGHT - 8
+    : rect.bottom + 4;
+
+  const left = Math.max(margin, Math.min(rect.left, window.innerWidth - dropdownWidth - margin));
+
+  return { top, left, flipUp };
+}
+
 export function ManagerDropdown({
   currentManager,
+  managers,
   rowIndex,
   onManagerChange,
   disabled,
 }: ManagerDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number; width: number } | null>(null);
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number; width: number; flipUp?: boolean } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
@@ -64,7 +91,8 @@ export function ManagerDropdown({
       const handleScroll = () => {
         if (triggerRef.current) {
           const rect = triggerRef.current.getBoundingClientRect();
-          setDropdownPosition({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+          const pos = getSmartPosition(rect, 220);
+          setDropdownPosition({ top: pos.top, left: pos.left, width: rect.width, flipUp: pos.flipUp });
         }
       };
       window.addEventListener("scroll", handleScroll, true);
@@ -80,7 +108,8 @@ export function ManagerDropdown({
   useEffect(() => {
     if (!isOpen || !triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
-    setDropdownPosition({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+    const pos = getSmartPosition(rect, 220);
+    setDropdownPosition({ top: pos.top, left: pos.left, width: rect.width, flipUp: pos.flipUp });
   }, [isOpen]);
 
   const handleTriggerClick = (e: React.MouseEvent) => {
@@ -89,7 +118,8 @@ export function ManagerDropdown({
     if (!isOpen) {
       if (triggerRef.current) {
         const rect = triggerRef.current.getBoundingClientRect();
-        setDropdownPosition({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+        const pos = getSmartPosition(rect, 220);
+        setDropdownPosition({ top: pos.top, left: pos.left, width: rect.width, flipUp: pos.flipUp });
       }
       setIsOpen(true);
     } else {
@@ -107,18 +137,18 @@ export function ManagerDropdown({
     setIsOpen(false);
   };
 
-  const colors = getManagerColors(currentManager || "");
+  const colors = getManagerColor(currentManager || "");
 
   const dropdownContent = isOpen && dropdownPosition ? (
     <motion.div
-      initial={{ opacity: 0, scale: 0.95, y: -4 }}
+      initial={{ opacity: 0, scale: 0.95, y: dropdownPosition.flipUp ? 4 : -4 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95, y: -4 }}
+      exit={{ opacity: 0, scale: 0.95, y: dropdownPosition.flipUp ? 4 : -4 }}
       transition={{ duration: 0.15, ease: "easeOut" }}
       className="fixed bg-popover border border-border rounded-xl shadow-xl z-[9999] overflow-hidden"
       style={{
         top: `${dropdownPosition.top}px`,
-        left: `${Math.max(8, Math.min(dropdownPosition.left, window.innerWidth - 240 - 8))}px`,
+        left: `${dropdownPosition.left}px`,
         width: "220px",
       }}
     >
@@ -135,8 +165,8 @@ export function ManagerDropdown({
           {!currentManager && <span className="text-xs text-muted-foreground">Current</span>}
         </button>
 
-        {MANAGERS.map((manager, idx) => {
-          const mColors = getManagerColors(manager);
+        {managers.map((manager, idx) => {
+          const mColors = getManagerColor(manager);
           const isSelected = manager === currentManager;
           return (
             <motion.button
