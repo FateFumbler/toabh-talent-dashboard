@@ -332,23 +332,11 @@ function formatHeight(height: string | number | undefined | null): string {
 }
 
 // Helper to get unique non-empty values from talent array
-// Dedupes case-insensitively and trims whitespace
 function getUniqueValues<T>(arr: T[], key: keyof T): string[] {
-  const seen = new Set<string>();
-  const result: string[] = [];
-  
-  for (const t of arr) {
-    const raw = t[key];
-    const value = raw?.toString().trim();
-    if (!value) continue;
-    const normalized = value.toLowerCase();
-    if (!seen.has(normalized)) {
-      seen.add(normalized);
-      result.push(value);
-    }
-  }
-  
-  return result.sort();
+  const managers = arr
+    .map(row => (row[key] || "").toString().trim())
+    .filter(name => name.length > 0);
+  return Array.from(new Set(managers)).sort();
 }
 
 function App() {
