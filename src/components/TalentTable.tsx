@@ -159,6 +159,11 @@ export function TalentTable({
   const uniqueStatuses = getUniqueValues(talents, "Status");
   const uniqueManagers = getUniqueValues(talents, "Talent Manager");
   const uniqueCities = getUniqueValues(talents, "City");
+  
+  console.log("DEBUG TalentTable: talents count:", talents.length, "uniqueManagers:", uniqueManagers);
+  if (talents.length > 0) {
+    console.log("TalentTable raw Talent Manager values:", talents.map(t => t["Talent Manager"]).filter(Boolean));
+  }
 
   const filteredTalents = useMemo(() => {
     let filtered = talents.filter((talent) => {
