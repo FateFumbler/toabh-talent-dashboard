@@ -5,6 +5,26 @@ import { toast } from "sonner";
 import type { StatusValue } from "@/types/talent";
 import { STATUS_VALUES } from "@/types/talent";
 
+// Estimated dropdown height for smart positioning
+const STATUS_DROPDOWN_HEIGHT = 260;
+
+function getSmartPosition(rect: DOMRect, dropdownWidth: number) {
+  const spaceBelow = window.innerHeight - rect.bottom;
+  const spaceAbove = rect.top;
+  const margin = 16;
+
+  // Flip up if not enough space below, but only if there's more room above than below
+  const flipUp = spaceBelow < STATUS_DROPDOWN_HEIGHT + margin && spaceAbove > spaceBelow;
+
+  const top = flipUp
+    ? rect.top - STATUS_DROPDOWN_HEIGHT - 8
+    : rect.bottom + 4;
+
+  const left = Math.max(margin, Math.min(rect.left, window.innerWidth - dropdownWidth - margin));
+
+  return { top, left, flipUp };
+}
+
 // Status colors using standard Tailwind + semantic tokens
 const statusStyles: Record<
   StatusValue,
@@ -62,9 +82,10 @@ export function StatusDropdown({
   const updatePosition = () => {
     if (!isOpen || !triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
+    const pos = getSmartPosition(rect, rect.width);
     setDropdownPosition({
-      top: rect.bottom + 4,
-      left: rect.left,
+      top: pos.top,
+      left: pos.left,
       width: rect.width,
     });
   };
@@ -147,9 +168,10 @@ export function StatusDropdown({
       // Calculate position first, then open immediately
       if (triggerRef.current) {
         const rect = triggerRef.current.getBoundingClientRect();
+        const pos = getSmartPosition(rect, rect.width);
         setDropdownPosition({
-          top: rect.bottom + 4,
-          left: rect.left,
+          top: pos.top,
+          left: pos.left,
           width: rect.width,
         });
       }

@@ -36,6 +36,26 @@ interface ManagerDropdownProps {
   disabled?: boolean;
 }
 
+// Estimated dropdown height for smart positioning (avoids layout thrash before render)
+const MANAGER_DROPDOWN_HEIGHT = 320;
+
+function getSmartPosition(rect: DOMRect, dropdownWidth: number) {
+  const spaceBelow = window.innerHeight - rect.bottom;
+  const spaceAbove = rect.top;
+  const margin = 16;
+
+  // Flip up if not enough space below, but only if there's more room above than below
+  const flipUp = spaceBelow < MANAGER_DROPDOWN_HEIGHT + margin && spaceAbove > spaceBelow;
+
+  const top = flipUp
+    ? rect.top - MANAGER_DROPDOWN_HEIGHT - 8
+    : rect.bottom + 4;
+
+  const left = Math.max(margin, Math.min(rect.left, window.innerWidth - dropdownWidth - margin));
+
+  return { top, left, flipUp };
+}
+
 export function ManagerDropdown({
   currentManager,
   managers,
@@ -44,7 +64,7 @@ export function ManagerDropdown({
   disabled,
 }: ManagerDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number; width: number } | null>(null);
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number; width: number; flipUp?: boolean } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
@@ -71,7 +91,8 @@ export function ManagerDropdown({
       const handleScroll = () => {
         if (triggerRef.current) {
           const rect = triggerRef.current.getBoundingClientRect();
-          setDropdownPosition({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+          const pos = getSmartPosition(rect, 220);
+          setDropdownPosition({ top: pos.top, left: pos.left, width: rect.width, flipUp: pos.flipUp });
         }
       };
       window.addEventListener("scroll", handleScroll, true);
@@ -87,7 +108,8 @@ export function ManagerDropdown({
   useEffect(() => {
     if (!isOpen || !triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
-    setDropdownPosition({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+    const pos = getSmartPosition(rect, 220);
+    setDropdownPosition({ top: pos.top, left: pos.left, width: rect.width, flipUp: pos.flipUp });
   }, [isOpen]);
 
   const handleTriggerClick = (e: React.MouseEvent) => {
@@ -96,7 +118,8 @@ export function ManagerDropdown({
     if (!isOpen) {
       if (triggerRef.current) {
         const rect = triggerRef.current.getBoundingClientRect();
-        setDropdownPosition({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+        const pos = getSmartPosition(rect, 220);
+        setDropdownPosition({ top: pos.top, left: pos.left, width: rect.width, flipUp: pos.flipUp });
       }
       setIsOpen(true);
     } else {
@@ -118,14 +141,14 @@ export function ManagerDropdown({
 
   const dropdownContent = isOpen && dropdownPosition ? (
     <motion.div
-      initial={{ opacity: 0, scale: 0.95, y: -4 }}
+      initial={{ opacity: 0, scale: 0.95, y: dropdownPosition.flipUp ? 4 : -4 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95, y: -4 }}
+      exit={{ opacity: 0, scale: 0.95, y: dropdownPosition.flipUp ? 4 : -4 }}
       transition={{ duration: 0.15, ease: "easeOut" }}
       className="fixed bg-popover border border-border rounded-xl shadow-xl z-[9999] overflow-hidden"
       style={{
         top: `${dropdownPosition.top}px`,
-        left: `${Math.max(8, Math.min(dropdownPosition.left, window.innerWidth - 240 - 8))}px`,
+        left: `${dropdownPosition.left}px`,
         width: "220px",
       }}
     >
