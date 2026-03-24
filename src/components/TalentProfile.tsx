@@ -250,14 +250,11 @@ export function TalentProfileDialog({
     }
   }, [name, open]);
 
-  const normalizePhone = (phone: string): string => {
+  const normalizePhone = (phone: string | number): string => {
     if (!phone) return "";
-    let normalized = phone.replace(/[^\d+]/g, "");
-    if (normalized.startsWith("+91")) {
-      normalized = normalized.substring(3);
-    }
-    normalized = normalized.replace(/^0+/, "");
-    return normalized;
+    return String(phone)
+      .replace(/\D/g, "")
+      .slice(-10);
   };
 
   const loadProfile = async () => {

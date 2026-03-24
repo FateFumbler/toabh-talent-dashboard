@@ -1454,8 +1454,8 @@ function TalentGridView({
                         {talent["Full Name"]}
                       </div>
                       <div className="text-sm text-muted-foreground truncate">
-                        {mergedTalent["Instagram Link"] ? (
-                          renderInstagramLink(mergedTalent["Instagram Link"])
+                        {(mergedTalent["Instagram"] || mergedTalent["Instagram Link"]) ? (
+                          renderInstagramLink(mergedTalent["Instagram"] || mergedTalent["Instagram Link"])
                         ) : (
                           <span className="text-muted-foreground/50">No Instagram</span>
                         )}
