@@ -1281,9 +1281,9 @@ function TalentGridView({
 
   const getUniqueValues = (arr: Talent[], key: keyof Talent): string[] => {
     const values = arr
-      .map((t) => t[key])
-      .filter((v) => v && v.toString().trim() !== "");
-    return [...new Set(values)].sort() as string[];
+      .map((t) => (t[key] || "").toString().trim())
+      .filter((v) => v.length > 0);
+    return Array.from(new Set(values)).sort();
   };
 
   const uniqueStatuses = getUniqueValues(talents, "Status");
