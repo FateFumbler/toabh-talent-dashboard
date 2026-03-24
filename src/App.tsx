@@ -387,16 +387,7 @@ function App() {
 
   // Compute unique managers from talents (excludes empty/undefined)
   const uniqueManagers = useMemo(() => {
-    const managers = getUniqueValues(talents, "Talent Manager");
-    console.log("DEBUG: talents count:", talents.length, "uniqueManagers:", managers);
-    if (talents.length > 0) {
-      console.log("Sample talent keys:", Object.keys(talents[0]));
-      console.log("Sample talent['Talent Manager']:", talents[0]["Talent Manager"]);
-      // Log all raw Talent Manager values to debug missing ones
-      const rawManagers = talents.map(t => t["Talent Manager"]).filter(v => v);
-      console.log("All raw Talent Manager values:", rawManagers);
-    }
-    return managers;
+    return getUniqueValues(talents, "Talent Manager");
   }, [talents]);
 
   const handleThemeChange = (t: Theme) => {
