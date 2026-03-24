@@ -404,6 +404,9 @@ function App() {
     if (talents.length > 0) {
       console.log("Sample talent keys:", Object.keys(talents[0]));
       console.log("Sample talent['Talent Manager']:", talents[0]["Talent Manager"]);
+      // Log all raw Talent Manager values to debug missing ones
+      const rawManagers = talents.map(t => t["Talent Manager"]).filter(v => v);
+      console.log("All raw Talent Manager values:", rawManagers);
     }
     return managers;
   }, [talents]);

@@ -170,6 +170,8 @@ export function TalentTable({
   const uniqueStatuses = getUniqueValues(talents, "Status");
   const uniqueManagers = getUniqueValues(talents, "Talent Manager");
   const uniqueCities = getUniqueValues(talents, "City");
+  
+  console.log("DEBUG TalentTable: uniqueManagers:", uniqueManagers);
 
   const filteredTalents = useMemo(() => {
     let filtered = talents.filter((talent) => {
