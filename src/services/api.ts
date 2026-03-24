@@ -2,6 +2,45 @@ import type { Talent, TalentProfile, TalentDetails } from "../types/talent";
 
 const API_URL = "https://script.google.com/macros/s/AKfycbxZlFw4rsk8ZYPIcKTMJq4U0Amls-lzpG07LxafUPsyvATKYT8jfIhlC0JgInHby6yRNg/exec";
 
+// Cache config
+const CACHE_PREFIX = `toabh_cache_`;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+function getCacheKey(apiUrl: string): string {
+  // Use last 20 chars of URL as key to differentiate dev vs prod
+  return `${CACHE_PREFIX}${apiUrl.slice(-20)}`;
+}
+
+interface CachedData<T> {
+  data: T;
+  timestamp: number;
+}
+
+function getCachedData<T>(key: string): T | null {
+  try {
+    const cached = localStorage.getItem(key);
+    if (!cached) return null;
+    const parsed: CachedData<T> = JSON.parse(cached);
+    const isExpired = Date.now() - parsed.timestamp > CACHE_TTL;
+    if (isExpired) {
+      localStorage.removeItem(key);
+      return null;
+    }
+    return parsed.data;
+  } catch {
+    return null;
+  }
+}
+
+function setCachedData<T>(key: string, data: T): void {
+  try {
+    const cacheEntry: CachedData<T> = { data, timestamp: Date.now() };
+    localStorage.setItem(key, JSON.stringify(cacheEntry));
+  } catch {
+    // Silent fail - cache errors shouldn't break the app
+  }
+}
+
 // Talent_Details sheet column indices (0-based)
 const FIELDS = {
   TIMESTAMP: 0,
@@ -112,11 +151,26 @@ function mapProfileData(row: any[]): Record<string, any> {
 }
 
 export async function fetchTalentMaster(): Promise<Talent[]> {
+  const cacheKey = getCacheKey(`${API_URL}?action=talent-master`);
+
+  // Check cache first
+  const cached = getCachedData<Talent[]>(cacheKey);
+  if (cached) {
+    // Return cached data immediately, but refresh in background
+    fetch(`${API_URL}?action=talent-master`, { redirect: 'follow' })
+      .then(res => res.json())
+      .then(data => setCachedData(cacheKey, data as Talent[]))
+      .catch(() => {}); // Silent fail
+    return cached;
+  }
+
+  // No cache - fetch fresh
   try {
     const response = await fetch(`${API_URL}?action=talent-master`, {
       redirect: 'follow',
     });
     const data = await response.json();
+    setCachedData(cacheKey, data as Talent[]);
     return data as Talent[];
   } catch (error) {
     console.error("Error fetching talent master:", error);
@@ -125,11 +179,18 @@ export async function fetchTalentMaster(): Promise<Talent[]> {
 }
 
 export async function fetchTalentProfile(name: string): Promise<TalentProfile> {
+  const cacheKey = getCacheKey(`${API_URL}?action=talent-profile&name=${name}`);
+
+  // Check cache first
+  const cached = getCachedData<TalentProfile>(cacheKey);
+  if (cached) return cached;
+
   try {
     const response = await fetch(`${API_URL}?action=talent-profile&name=${encodeURIComponent(name)}`, {
       redirect: 'follow',
     });
     const data = await response.json();
+    setCachedData(cacheKey, data as TalentProfile);
     return data as TalentProfile;
   } catch (error) {
     console.error("Error fetching talent profile:", error);
@@ -138,28 +199,36 @@ export async function fetchTalentProfile(name: string): Promise<TalentProfile> {
 }
 
 export async function fetchTalentDetails(): Promise<TalentDetails[]> {
+  const cacheKey = getCacheKey(`${API_URL}?action=talent-details`);
+
+  // Check cache first
+  const cached = getCachedData<TalentDetails[]>(cacheKey);
+  if (cached) return cached;
+
   try {
     const response = await fetch(`${API_URL}?action=talent-details`, {
       redirect: 'follow',
     });
     const text = await response.text();
     const rawData = JSON.parse(text);
-    
+
     // The API returns a flat array of values per row, not key-value objects
     // We need to check if data is already mapped (has "Email Address" key) or needs mapping
+    let result: TalentDetails[] = rawData;
     if (Array.isArray(rawData) && rawData.length > 0) {
       // Check if first row is an array of values (needs mapping) or array of objects (already mapped)
       if (Array.isArray(rawData[0])) {
         // rawData is [[val1, val2, ...], [val1, val2, ...], ...]
         // Map each row array to an object with proper keys
-        return rawData.map(row => mapProfileData(row)) as TalentDetails[];
+        result = rawData.map(row => mapProfileData(row)) as TalentDetails[];
       } else if (typeof rawData[0] === 'object' && rawData[0] !== null) {
         // Already mapped as array of objects
-        return rawData as TalentDetails[];
+        result = rawData as TalentDetails[];
       }
     }
-    
-    return rawData as TalentDetails[];
+
+    setCachedData(cacheKey, result);
+    return result;
   } catch (error) {
     console.error("Error fetching talent details:", error);
     throw error;
