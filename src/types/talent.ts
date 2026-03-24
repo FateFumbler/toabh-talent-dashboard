@@ -132,6 +132,6 @@ export type StatusValue = "New" | "Meeting Required" | "KYC Required" | "Onboard
 
 export const STATUS_VALUES: StatusValue[] = ["New", "Meeting Required", "KYC Required", "Onboarded", "Rejected"];
 
-export const MANAGERS = ["Aryan", "Saloni Kale", "Jhalak", "Prashant", "Anvitha", "Khadija"];
+export const MANAGERS: string[] = []; // Populated at runtime from Talent_Master
 
 export const ACTION_STATUSES: StatusValue[] = ["Meeting Required", "KYC Required", "Onboarded", "Rejected"];

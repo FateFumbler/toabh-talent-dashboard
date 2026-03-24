@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { ChevronDown, UserCircle } from "lucide-react";
-import { MANAGERS } from "@/types/talent";
 import { toast } from "sonner";
 
 // Distinct color pairs per manager (border + background tint)
@@ -25,6 +24,7 @@ function getManagerColors(manager: string) {
 
 interface ManagerDropdownProps {
   currentManager: string | null | undefined;
+  managers: string[];
   rowIndex: number;
   onManagerChange: (row: number, manager: string) => void;
   disabled?: boolean;
@@ -32,6 +32,7 @@ interface ManagerDropdownProps {
 
 export function ManagerDropdown({
   currentManager,
+  managers,
   rowIndex,
   onManagerChange,
   disabled,
@@ -135,7 +136,7 @@ export function ManagerDropdown({
           {!currentManager && <span className="text-xs text-muted-foreground">Current</span>}
         </button>
 
-        {MANAGERS.map((manager, idx) => {
+        {managers.map((manager, idx) => {
           const mColors = getManagerColors(manager);
           const isSelected = manager === currentManager;
           return (

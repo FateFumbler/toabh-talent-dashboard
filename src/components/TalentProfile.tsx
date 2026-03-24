@@ -27,6 +27,7 @@ interface TalentProfileProps {
   onOpenChange: (open: boolean) => void;
   onStatusUpdate?: (row: number, status: string) => void;
   onManagerAssign?: (row: number, manager: string) => void;
+  managers?: string[];
   rowIndex?: number;
 }
 
@@ -176,6 +177,7 @@ export function TalentProfileDialog({
   onOpenChange,
   onStatusUpdate,
   onManagerAssign,
+  managers,
   rowIndex,
 }: TalentProfileProps) {
   const [profile, setProfile] = useState<
@@ -773,6 +775,7 @@ export function TalentProfileDialog({
                   {typeof rowIndex === "number" && onManagerAssign ? (
                     <ManagerDropdown
                       currentManager={profileManager}
+                      managers={managers || []}
                       rowIndex={rowIndex}
                       onManagerChange={onManagerAssign}
                     />

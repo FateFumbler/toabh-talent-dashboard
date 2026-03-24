@@ -331,6 +331,14 @@ function formatHeight(height: string | number | undefined | null): string {
   return trimmed || "-";
 }
 
+// Helper to get unique non-empty values from talent array
+function getUniqueValues<T>(arr: T[], key: keyof T): string[] {
+  const values = arr
+    .map((t) => t[key])
+    .filter((v) => v && v.toString().trim() !== "");
+  return [...new Set(values)].sort() as string[];
+}
+
 function App() {
   const [talents, setTalents] = useState<Talent[]>([]);
   const [talentDetailsMap, setTalentDetailsMap] = useState<
@@ -376,6 +384,11 @@ function App() {
     typeof window !== "undefined" ? window.innerWidth : 1200
   );
   const [activeTile, setActiveTile] = useState<string | null>(null);
+
+  // Compute unique managers from talents (excludes empty/undefined)
+  const uniqueManagers = useMemo(() => {
+    return getUniqueValues(talents, "Talent Manager");
+  }, [talents]);
 
   const handleThemeChange = (t: Theme) => {
     setThemeState(t);
@@ -790,6 +803,7 @@ function App() {
               {viewMode === "list" && windowWidth >= 1024 && (
                 <TalentTable
                   talents={talents}
+                  managers={uniqueManagers}
                   onStatusUpdate={handleStatusUpdate}
                   onManagerAssign={handleManagerAssign}
                   onTalentClick={handleTalentClick}
@@ -1205,6 +1219,7 @@ function App() {
         rowIndex={selectedTalentRowIndex ?? undefined}
         onStatusUpdate={handleStatusUpdate}
         onManagerAssign={handleManagerAssign}
+        managers={uniqueManagers}
       />
 
       {/* Toast notifications */}
@@ -1531,6 +1546,7 @@ function TalentGridView({
                   <div className="flex flex-row sm:flex-col items-center sm:items-stretch justify-between gap-2">
                     <ManagerDropdown
                       currentManager={talent["Talent Manager"]}
+                      managers={uniqueManagers}
                       rowIndex={talent.rowIndex!}
                       onManagerChange={handleManagerSelect}
                       disabled={!!pendingUpdates[talent.rowIndex]}

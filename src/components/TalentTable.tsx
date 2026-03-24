@@ -20,7 +20,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import type { Talent, StatusValue } from "@/types/talent";
-import { MANAGERS } from "@/types/talent";
 import { Search, RefreshCw, Loader2, X, SlidersHorizontal, ChevronDown } from "lucide-react";
 import { StatusDropdown } from "./StatusDropdown";
 import type { ColumnName } from "./ColumnVisibility";
@@ -30,6 +29,7 @@ import { getInitialColumns } from "./ColumnVisibility";
 
 interface TalentTableProps {
   talents: Talent[];
+  managers: string[];
   onStatusUpdate: (row: number, status: string) => void;
   onManagerAssign: (row: number, manager: string) => void;
   onTalentClick: (name: string, rowIndex: number) => void;
@@ -121,6 +121,7 @@ const getUniqueValues = (talents: Talent[], key: keyof Talent): string[] => {
 
 export function TalentTable({
   talents,
+  managers,
   onStatusUpdate,
   onManagerAssign,
   onTalentClick,
@@ -665,7 +666,7 @@ export function TalentTable({
               onMouseDown={(e) => e.stopPropagation()}
             >
               <div className="py-1">
-                {MANAGERS.map((manager) => (
+                {managers.map((manager) => (
                   <button
                     key={manager}
                     onClick={() => handleManagerItemSelect(manager)}
