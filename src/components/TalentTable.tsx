@@ -29,7 +29,6 @@ import { getInitialColumns } from "./ColumnVisibility";
 
 interface TalentTableProps {
   talents: Talent[];
-  managers: string[];
   onStatusUpdate: (row: number, status: string) => void;
   onManagerAssign: (row: number, manager: string) => void;
   onTalentClick: (name: string, rowIndex: number) => void;
@@ -121,7 +120,6 @@ const getUniqueValues = (talents: Talent[], key: keyof Talent): string[] => {
 
 export function TalentTable({
   talents,
-  managers,
   onStatusUpdate,
   onManagerAssign,
   onTalentClick,
@@ -159,11 +157,6 @@ export function TalentTable({
   const uniqueStatuses = getUniqueValues(talents, "Status");
   const uniqueManagers = getUniqueValues(talents, "Talent Manager");
   const uniqueCities = getUniqueValues(talents, "City");
-  
-  console.log("DEBUG TalentTable: talents count:", talents.length, "uniqueManagers:", uniqueManagers);
-  if (talents.length > 0) {
-    console.log("TalentTable raw Talent Manager values:", talents.map(t => t["Talent Manager"]).filter(Boolean));
-  }
 
   const filteredTalents = useMemo(() => {
     let filtered = talents.filter((talent) => {
@@ -671,7 +664,7 @@ export function TalentTable({
               onMouseDown={(e) => e.stopPropagation()}
             >
               <div className="py-1">
-                {managers.map((manager) => (
+                {uniqueManagers.map((manager) => (
                   <button
                     key={manager}
                     onClick={() => handleManagerItemSelect(manager)}
