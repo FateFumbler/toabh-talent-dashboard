@@ -1454,7 +1454,7 @@ function TalentGridView({
                         {talent["Full Name"]}
                       </div>
                       <div className="text-sm text-muted-foreground truncate">
-                        {talent["Instagram"] ? (
+                        {(talent["Instagram"] || (talent as unknown as Record<string, string | undefined>)["Instagram Link"]) ? (
                           renderInstagramLink((talent as unknown as Record<string, string | undefined>)["Instagram"] || (talent as unknown as Record<string, string | undefined>)["Instagram Link"])
                         ) : (
                           <span className="text-muted-foreground/50">No Instagram</span>
