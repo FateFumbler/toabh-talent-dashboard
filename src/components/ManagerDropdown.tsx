@@ -6,20 +6,26 @@ import { motion, AnimatePresence } from "motion/react";
 import { ChevronDown, UserCircle } from "lucide-react";
 import { toast } from "sonner";
 
-// Distinct color pairs per manager (border + background tint)
-const managerColors: Record<string, { border: string; bg: string; text: string; dot: string }> = {
-  Aryan:      { border: "border-violet-500/50",   bg: "bg-violet-500/15",   text: "text-violet-300", dot: "bg-violet-400" },
-  "Saloni Kale":    { border: "border-pink-500/50",     bg: "bg-pink-500/15",     text: "text-pink-300",   dot: "bg-pink-400" },
-  Jhalak:     { border: "border-amber-500/50",   bg: "bg-amber-500/15",   text: "text-amber-300",  dot: "bg-amber-400" },
-  Prashant:   { border: "border-cyan-500/50",    bg: "bg-cyan-500/15",    text: "text-cyan-300",   dot: "bg-cyan-400" },
-  Anvitha:    { border: "border-emerald-500/50", bg: "bg-emerald-500/15", text: "text-emerald-300",dot: "bg-emerald-400" },
-  Khadija:    { border: "border-rose-500/50",    bg: "bg-rose-500/15",    text: "text-rose-300",   dot: "bg-rose-400" },
-};
+// Color palette
+const colors = [
+  "#6D28D9", "#9333EA", "#7C3AED",
+  "#2563EB", "#0891B2", "#059669",
+  "#CA8A04", "#DC2626", "#DB2777"
+];
 
-const defaultColors = { border: "border-border", bg: "bg-muted", text: "text-muted-foreground", dot: "bg-muted-foreground" };
-
-function getManagerColors(manager: string) {
-  return managerColors[manager] || defaultColors;
+// Consistent color generator based on name hash
+function getManagerColor(name: string): { border: string; bg: string; text: string; dot: string } {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const color = colors[Math.abs(hash) % colors.length];
+  return {
+    border: `border-[${color}]/50`,
+    bg: `bg-[${color}]/15`,
+    text: `text-[${color}]`,
+    dot: `bg-[${color}]`
+  };
 }
 
 interface ManagerDropdownProps {
@@ -108,7 +114,7 @@ export function ManagerDropdown({
     setIsOpen(false);
   };
 
-  const colors = getManagerColors(currentManager || "");
+  const colors = getManagerColor(currentManager || "");
 
   const dropdownContent = isOpen && dropdownPosition ? (
     <motion.div
@@ -137,7 +143,7 @@ export function ManagerDropdown({
         </button>
 
         {managers.map((manager, idx) => {
-          const mColors = getManagerColors(manager);
+          const mColors = getManagerColor(manager);
           const isSelected = manager === currentManager;
           return (
             <motion.button
