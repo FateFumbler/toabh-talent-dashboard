@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { TalentTable } from "./components/TalentTable";
 import { TalentProfileDialog } from "./components/TalentProfile";
 import { ContractsTab } from "./components/ContractsTab";
@@ -1209,7 +1209,6 @@ function App() {
         rowIndex={selectedTalentRowIndex ?? undefined}
         onStatusUpdate={handleStatusUpdate}
         onManagerAssign={handleManagerAssign}
-        managers={uniqueManagers}
       />
 
       {/* Toast notifications */}
