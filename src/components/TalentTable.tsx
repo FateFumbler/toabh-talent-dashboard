@@ -113,10 +113,21 @@ const getStatusVariant = (
 };
 
 const getUniqueValues = (talents: Talent[], key: keyof Talent): string[] => {
-  const values = talents
-    .map((t) => t[key])
-    .filter((v) => v && v.toString().trim() !== "");
-  return [...new Set(values)].sort() as string[];
+  const seen = new Set<string>();
+  const result: string[] = [];
+  
+  for (const t of talents) {
+    const raw = t[key];
+    const value = raw?.toString().trim();
+    if (!value) continue;
+    const normalized = value.toLowerCase();
+    if (!seen.has(normalized)) {
+      seen.add(normalized);
+      result.push(value);
+    }
+  }
+  
+  return result.sort();
 };
 
 export function TalentTable({
