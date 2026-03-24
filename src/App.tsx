@@ -387,7 +387,14 @@ function App() {
 
   // Compute unique managers from talents (excludes empty/undefined)
   const uniqueManagers = useMemo(() => {
-    return getUniqueValues(talents, "Talent Manager");
+    const managers = getUniqueValues(talents, "Talent Manager");
+    console.log("DEBUG: talents count:", talents.length, "uniqueManagers:", managers);
+    if (talents.length > 0) {
+      console.log("Sample talent['Talent Manager']:", talents[0]["Talent Manager"]);
+      const rawManagers = talents.map(t => t["Talent Manager"]).filter(v => v);
+      console.log("All raw Talent Manager values:", rawManagers);
+    }
+    return managers;
   }, [talents]);
 
   const handleThemeChange = (t: Theme) => {
