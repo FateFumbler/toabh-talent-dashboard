@@ -91,7 +91,7 @@ interface ProfileSection {
 // ==========================================
 // STATUS OPTIONS & COLORS
 // ==========================================
-const STATUS_OPTIONS: StatusValue[] = [
+export const STATUS_OPTIONS: StatusValue[] = [
   "New",
   "Meeting Required",
   "KYC Required",
@@ -333,14 +333,27 @@ export function TalentProfileDialog({
   }, []);
 
   const handleStatusSelect = useCallback((status: StatusValue) => {
+    console.log(`[handleStatusSelect] rowIndex=${rowIndex}, status="${status}"`);
     const currentProfileManager = profile?.["Talent Manager"] as string | undefined;
     if (status === "Onboarded" && !currentProfileManager) {
       toast.error("Please assign a Talent Manager first");
       closeStatusDropdown();
       return;
     }
-    onStatusUpdate?.(rowIndex!, status);
-    toast.success(`Status updated to ${status}`);
+    // Ensure status is always one of the defined values
+    const normalizedStatus = STATUS_OPTIONS.includes(status) ? status : "New";
+    
+    // Validate rowIndex before calling update
+    if (typeof rowIndex !== 'number' || isNaN(rowIndex) || rowIndex < 1) {
+      console.error(`[handleStatusSelect] Invalid rowIndex: ${rowIndex}`);
+      toast.error("Cannot update: invalid row");
+      closeStatusDropdown();
+      return;
+    }
+    
+    // Only call update if we have a valid rowIndex
+    onStatusUpdate?.(rowIndex, status);
+    toast.success(`Status updated to ${normalizedStatus}`);
     closeStatusDropdown();
   }, [profile, onStatusUpdate, rowIndex, closeStatusDropdown]);
 

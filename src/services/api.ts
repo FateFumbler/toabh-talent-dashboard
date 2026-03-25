@@ -236,16 +236,24 @@ export async function fetchTalentDetails(): Promise<TalentDetails[]> {
 }
 
 export async function updateStatus(row: number, status: string): Promise<void> {
+  if (typeof row !== 'number' || isNaN(row) || row < 1) {
+    throw new Error(`Invalid row number: ${row}`);
+  }
+  
   const formData = new URLSearchParams();
   formData.append('action', 'update-status');
   formData.append('row', String(row));
   formData.append('status', status);
 
-  await fetch(API_URL, {
+  const response = await fetch(API_URL, {
     method: 'POST',
     redirect: 'follow',
     body: formData,
   });
+  
+  if (!response.ok) {
+    throw new Error(`API error: ${response.status} ${response.statusText}`);
+  }
 }
 
 export async function assignManager(row: number, manager: string): Promise<void> {

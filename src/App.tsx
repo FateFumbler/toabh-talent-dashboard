@@ -466,6 +466,11 @@ function App() {
   }, [loadTalents]);
 
   const handleStatusUpdate = async (row: number, status: string) => {
+    console.log(`[handleStatusUpdate] row=${row}, status="${status}"`);
+    if (typeof row !== 'number' || isNaN(row) || row < 1) {
+      toast.error(`Invalid row number: ${row}`);
+      return;
+    }
     setPendingUpdates((prev) => ({ ...prev, [row]: "status" }));
     // Optimistic update: update local state immediately
     setTalents((prev) =>
