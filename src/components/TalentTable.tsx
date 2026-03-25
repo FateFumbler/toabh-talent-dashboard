@@ -25,6 +25,27 @@ import { StatusDropdown } from "./StatusDropdown";
 import type { ColumnName } from "./ColumnVisibility";
 import { getInitialColumns } from "./ColumnVisibility";
 
+// Color palette for managers (matching ManagerDropdown)
+const MANAGER_COLORS = [
+  { bg: "#F3E8FF", text: "#7C3AED", border: "#DDD6FE" }, // Purple
+  { bg: "#DBEAFE", text: "#2563EB", border: "#BFDBFE" }, // Blue
+  { bg: "#D1FAE5", text: "#059669", border: "#A7F3D0" }, // Green
+  { bg: "#FEE2E2", text: "#DC2626", border: "#FECACA" }, // Red
+  { bg: "#FEF3C7", text: "#D97706", border: "#FDE68A" }, // Amber
+  { bg: "#FCE7F3", text: "#DB2777", border: "#FBCFE8" }, // Pink
+  { bg: "#CFFAFE", text: "#0891B2", border: "#A5F3FC" }, // Cyan
+  { bg: "#E0E7FF", text: "#4F46E5", border: "#C7D2FE" }, // Indigo
+  { bg: "#FFEDD5", text: "#EA580C", border: "#FED7AA" }, // Orange
+];
+
+function getManagerColor(name: string): { bg: string; text: string; border: string } {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return MANAGER_COLORS[Math.abs(hash) % MANAGER_COLORS.length];
+}
+
 // Height shown as raw value - no formatting
 
 interface TalentTableProps {
@@ -574,11 +595,26 @@ export function TalentTable({
                   )}
                   {visibleColumns.includes("Talent Manager") && (
                     <TableCell className="text-left py-3 px-4 align-middle">
-                      {talent["Talent Manager"] ? (
-                        <span className="text-sm text-foreground">
-                          {talent["Talent Manager"]}
-                        </span>
-                      ) : (
+                      {talent["Talent Manager"] ? (() => {
+                        const mColor = getManagerColor(talent["Talent Manager"]);
+                        return (
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 font-medium text-xs"
+                              style={{ 
+                                backgroundColor: mColor.bg, 
+                                color: mColor.text,
+                                border: `1px solid ${mColor.border}`
+                              }}
+                            >
+                              {talent["Talent Manager"].split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
+                            </div>
+                            <span className="text-sm text-foreground font-medium">
+                              {talent["Talent Manager"]}
+                            </span>
+                          </div>
+                        );
+                      })() : (
                         <button
                           onClick={(e) => handleManagerTriggerClick(talent.rowIndex!, e)}
                           disabled={!!pendingUpdates[talent.rowIndex]}
