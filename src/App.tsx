@@ -527,16 +527,20 @@ function App() {
       );
       // If a specific status filter is active and talent no longer matches, remove it
       if (activeTile && activeTile !== "all") {
+        // Get the new status value once to avoid multiple find calls and ensure consistency
+        const newTalentStatus = updated.find((t) => t.rowIndex === row)?.Status;
+        // For "New" filter: talent matches if Status is empty/undefined OR Status === "New"
+        // For other filters: talent matches if Status === filter value
         const matchesNewStatus =
           activeTile === "New"
-            ? !updated.find((t) => t.rowIndex === row)?.Status ||
-              updated.find((t) => t.rowIndex === row)?.Status === "New"
-            : updated.find((t) => t.rowIndex === row)?.Status === activeTile;
-        // If old status matched but new status doesn't, filter out
+            ? !newTalentStatus || newTalentStatus === "New"
+            : newTalentStatus === activeTile;
+        // Check if old status matched the filter
         const matchedOld =
           activeTile === "New"
             ? !oldStatus || oldStatus === "New"
             : oldStatus === activeTile;
+        // If old status matched but new status doesn't, filter out the talent immediately
         if (matchedOld && !matchesNewStatus) {
           return updated.filter((t) => t.rowIndex !== row);
         }
