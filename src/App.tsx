@@ -477,11 +477,11 @@ function App() {
         }
       }
 
-      // Preserve optimistically updated talents and recently-updated talents (30-sec lock)
+      // Preserve optimistically updated talents and recently-updated talents (10-sec lock)
       // Use refs to avoid adding to useCallback deps (which would cause refetch loops)
       const currentUpdatingIds = updatingIdsRef.current;
       const currentRecentlyUpdated = recentlyUpdatedRef.current;
-      const LOCK_DURATION = 30000;
+      const LOCK_DURATION = 10000;
       setTalents((prev) => {
         if (currentUpdatingIds.size === 0 && Object.keys(currentRecentlyUpdated).length === 0) {
           // No pending updates or recently locked, use fresh data directly
@@ -527,13 +527,9 @@ function App() {
       toast.error(`Invalid row number: ${row}`);
       return;
     }
-    // Track in both pendingUpdates (for components) and updatingIds (for loadTalents)
-    setPendingUpdates((prev) => ({ ...prev, [row]: "status" }));
-    setUpdatingIds((prev) => new Set(prev).add(row));
-    // Add 30-sec lock to prevent auto-refetch from overwriting optimistic update
-    setRecentlyUpdated((prev) => ({ ...prev, [String(row)]: Date.now() }));
     // Get old status before update for filter check
     const oldStatus = talents.find((t) => t.rowIndex === row)?.Status;
+    // STEP 1: Instant UI update - remove talent from filtered list immediately
     // Optimistic update: update local state AND filter out if no longer matches filter
     setTalents((prev) => {
       const updated = prev.map((t) =>
@@ -561,6 +557,12 @@ function App() {
       }
       return updated;
     });
+    // STEP 2: THEN apply lock AFTER UI update - prevents auto-refetch from restoring talent
+    // Track in both pendingUpdates (for components) and updatingIds (for loadTalents)
+    setPendingUpdates((prev) => ({ ...prev, [row]: "status" }));
+    setUpdatingIds((prev) => new Set(prev).add(row));
+    // Add 10-sec lock to prevent auto-refetch from overwriting optimistic update
+    setRecentlyUpdated((prev) => ({ ...prev, [String(row)]: Date.now() }));
     try {
       await updateStatus(row, status);
       toast.success(`Status updated to "${status}"`);
@@ -590,17 +592,18 @@ function App() {
   };
 
   const handleManagerAssign = async (row: number, manager: string) => {
-    // Track in both pendingUpdates (for components) and updatingIds (for loadTalents)
-    setPendingUpdates((prev) => ({ ...prev, [row]: "manager" }));
-    setUpdatingIds((prev) => new Set(prev).add(row));
-    // Add 30-sec lock to prevent auto-refetch from overwriting optimistic update
-    setRecentlyUpdated((prev) => ({ ...prev, [String(row)]: Date.now() }));
-    // Optimistic update: update local state immediately
+    // STEP 1: Instant UI update - update local state immediately
     setTalents((prev) =>
       prev.map((t) =>
         t.rowIndex === row ? { ...t, "Talent Manager": manager } : t
       )
     );
+    // STEP 2: THEN apply lock AFTER UI update - prevents auto-refetch from restoring talent
+    // Track in both pendingUpdates (for components) and updatingIds (for loadTalents)
+    setPendingUpdates((prev) => ({ ...prev, [row]: "manager" }));
+    setUpdatingIds((prev) => new Set(prev).add(row));
+    // Add 10-sec lock to prevent auto-refetch from overwriting optimistic update
+    setRecentlyUpdated((prev) => ({ ...prev, [String(row)]: Date.now() }));
     try {
       await assignManager(row, manager);
       toast.success(`Manager assigned: ${manager}`);
