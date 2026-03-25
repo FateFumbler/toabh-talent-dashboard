@@ -501,6 +501,7 @@ html, body {
   max-width: 90vw;
   max-height: 90vh;
   animation: scaleIn 0.2s ease-out;
+  pointer-events: auto;
 }
 
 .image-modal-image {
