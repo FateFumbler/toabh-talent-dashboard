@@ -518,10 +518,31 @@ function App() {
     // Track in both pendingUpdates (for components) and updatingIds (for loadTalents)
     setPendingUpdates((prev) => ({ ...prev, [row]: "status" }));
     setUpdatingIds((prev) => new Set(prev).add(row));
-    // Optimistic update: update local state immediately
-    setTalents((prev) =>
-      prev.map((t) => (t.rowIndex === row ? { ...t, Status: status } : t))
-    );
+    // Get old status before update for filter check
+    const oldStatus = talents.find((t) => t.rowIndex === row)?.Status;
+    // Optimistic update: update local state AND filter out if no longer matches filter
+    setTalents((prev) => {
+      const updated = prev.map((t) =>
+        t.rowIndex === row ? { ...t, Status: status } : t
+      );
+      // If a specific status filter is active and talent no longer matches, remove it
+      if (activeTile && activeTile !== "all") {
+        const matchesNewStatus =
+          activeTile === "New"
+            ? !updated.find((t) => t.rowIndex === row)?.Status ||
+              updated.find((t) => t.rowIndex === row)?.Status === "New"
+            : updated.find((t) => t.rowIndex === row)?.Status === activeTile;
+        // If old status matched but new status doesn't, filter out
+        const matchedOld =
+          activeTile === "New"
+            ? !oldStatus || oldStatus === "New"
+            : oldStatus === activeTile;
+        if (matchedOld && !matchesNewStatus) {
+          return updated.filter((t) => t.rowIndex !== row);
+        }
+      }
+      return updated;
+    });
     try {
       await updateStatus(row, status);
       toast.success(`Status updated to "${status}"`);
