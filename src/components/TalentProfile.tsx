@@ -435,6 +435,27 @@ export function TalentProfileDialog({
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isModalOpen, closeModal, goToPrevious, goToNext]);
 
+  // Prevent Dialog overlay from closing when clicking inside dropdowns
+  useEffect(() => {
+    const isDropdownOpen = isManagerOpen || isStatusOpen;
+    if (!isDropdownOpen || !open) return;
+
+    const handleOverlayMouseDown = (e: MouseEvent) => {
+      // Check if click is inside either dropdown
+      const isInsideManagerDropdown = managerDropdownRef.current?.contains(e.target as Node);
+      const isInsideStatusDropdown = statusDropdownRef.current?.contains(e.target as Node);
+      
+      if (isInsideManagerDropdown || isInsideStatusDropdown) {
+        e.stopPropagation();
+        e.preventDefault();
+      }
+    };
+
+    // Use capture phase to intercept before the Dialog's overlay handler
+    document.addEventListener("mousedown", handleOverlayMouseDown, true);
+    return () => document.removeEventListener("mousedown", handleOverlayMouseDown, true);
+  }, [isManagerOpen, isStatusOpen, open]);
+
   useEffect(() => {
     const trimmedName = name?.trim();
     if (trimmedName && open) {
@@ -972,6 +993,7 @@ export function TalentProfileDialog({
             <button
               onClick={(e) => {
                 e.stopPropagation();
+                e.preventDefault();
                 handleManagerSelect("");
               }}
               className={`w-full flex items-center gap-3 px-3 py-3 sm:py-2.5 text-sm transition-colors min-h-[48px] hover:bg-accent ${
@@ -1000,6 +1022,7 @@ export function TalentProfileDialog({
                   key={manager}
                   onClick={(e) => {
                     e.stopPropagation();
+                    e.preventDefault();
                     handleManagerSelect(manager);
                   }}
                   className={`w-full flex items-center gap-3 px-3 py-3 sm:py-2.5 text-sm transition-colors min-h-[48px] hover:bg-accent ${
@@ -1074,6 +1097,7 @@ export function TalentProfileDialog({
                   key={status}
                   onClick={(e) => {
                     e.stopPropagation();
+                    e.preventDefault();
                     handleStatusSelect(status);
                   }}
                   className={`w-full flex items-center gap-3 px-3 py-3 sm:py-2.5 text-sm transition-colors min-h-[44px] ${
