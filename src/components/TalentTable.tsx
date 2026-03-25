@@ -20,6 +20,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import type { Talent, StatusValue } from "@/types/talent";
+import { MANAGERS } from "@/types/talent";
 import { Search, RefreshCw, Loader2, X, SlidersHorizontal, ChevronDown } from "lucide-react";
 import { StatusDropdown } from "./StatusDropdown";
 import type { ColumnName } from "./ColumnVisibility";
@@ -139,6 +140,22 @@ const getUniqueValues = (talents: Talent[], key: keyof Talent): string[] => {
   return Array.from(new Set(managers)).sort();
 };
 
+// Get all available managers: merge hardcoded MANAGERS list with dynamic values from sheet
+// Normalizes case for deduplication to handle whitespace/case variations
+const getAllManagers = (talents: Talent[]): string[] => {
+  const dynamicManagers = talents
+    .map(t => (t["Talent Manager"] || "").toString().trim())
+    .filter(m => m.length > 0);
+
+  // Merge hardcoded + dynamic, normalize for deduplication
+  const all = [...MANAGERS, ...dynamicManagers].map(m => m.trim());
+  const normalized = all.map(m => m.toLowerCase());
+  const uniqueNormalized = Array.from(new Set(normalized));
+  return uniqueNormalized
+    .map(norm => all[normalized.indexOf(norm)])
+    .sort();
+};
+
 export function TalentTable({
   talents,
   onStatusUpdate,
@@ -176,7 +193,7 @@ export function TalentTable({
   const visibleColumns = externalVisibleColumns || getInitialColumns();
 
   const uniqueStatuses = getUniqueValues(talents, "Status");
-  const uniqueManagers = getUniqueValues(talents, "Talent Manager");
+  const uniqueManagers = getAllManagers(talents);
   const uniqueCities = getUniqueValues(talents, "City");
 
   const filteredTalents = useMemo(() => {

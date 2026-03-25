@@ -21,6 +21,7 @@ import {
   assignManager,
 } from "./services/api";
 import type { Talent, TalentDetails } from "@/types/talent";
+import { MANAGERS } from "@/types/talent";
 import { StatusDropdown } from "@/components/StatusDropdown";
 import { ManagerDropdown } from "@/components/ManagerDropdown";
 import {
@@ -330,6 +331,22 @@ function formatHeight(height: string | number | undefined | null): string {
   const trimmed = String(height).trim();
   return trimmed || "-";
 }
+
+// Get all available managers: merge hardcoded MANAGERS list with dynamic values from sheet
+// Normalizes case for deduplication to handle whitespace/case variations
+const getAllManagers = (talents: Talent[]): string[] => {
+  const dynamicManagers = talents
+    .map(t => (t["Talent Manager"] || "").toString().trim())
+    .filter(m => m.length > 0);
+
+  // Merge hardcoded + dynamic, normalize for deduplication
+  const all = [...MANAGERS, ...dynamicManagers].map(m => m.trim());
+  const normalized = all.map(m => m.toLowerCase());
+  const uniqueNormalized = Array.from(new Set(normalized));
+  return uniqueNormalized
+    .map(norm => all[normalized.indexOf(norm)])
+    .sort();
+};
 
 
 
@@ -1209,6 +1226,7 @@ function App() {
         rowIndex={selectedTalentRowIndex ?? undefined}
         onStatusUpdate={handleStatusUpdate}
         onManagerAssign={handleManagerAssign}
+        managers={getAllManagers(talents)}
       />
 
       {/* Toast notifications */}
@@ -1287,7 +1305,7 @@ function TalentGridView({
   };
 
   const uniqueStatuses = getUniqueValues(talents, "Status");
-  const uniqueManagers = getUniqueValues(talents, "Talent Manager");
+  const uniqueManagers = getAllManagers(talents);
   const uniqueCities = getUniqueValues(talents, "City");
 
   const filteredTalents = useMemo(() => {
