@@ -372,11 +372,18 @@ function App() {
   const [updatingIds, setUpdatingIds] = useState<Set<number>>(new Set());
   // Ref for loadTalents to access updatingIds without being a dependency
   const updatingIdsRef = useRef<Set<number>>(new Set());
+  // Track recently updated talents (key = rowIndex string, value = timestamp)
+  const [recentlyUpdated, setRecentlyUpdated] = useState<Record<string, number>>({});
+  // Ref for loadTalents to access recentlyUpdated without being a dependency
+  const recentlyUpdatedRef = useRef<Record<string, number>>({});
 
   // Keep ref in sync with state
   useEffect(() => {
     updatingIdsRef.current = updatingIds;
   }, [updatingIds]);
+  useEffect(() => {
+    recentlyUpdatedRef.current = recentlyUpdated;
+  }, [recentlyUpdated]);
   const [activeTab, setActiveTab] = useState<
     "talent-master" | "talent-profile" | "settings" | "contracts"
   >("talent-master");
@@ -470,22 +477,27 @@ function App() {
         }
       }
 
-      // Preserve optimistically updated talents - don't overwrite items with pending updates
-      // Use ref to avoid adding updatingIds to useCallback deps (which would cause refetch loops)
+      // Preserve optimistically updated talents and recently-updated talents (30-sec lock)
+      // Use refs to avoid adding to useCallback deps (which would cause refetch loops)
       const currentUpdatingIds = updatingIdsRef.current;
+      const currentRecentlyUpdated = recentlyUpdatedRef.current;
+      const LOCK_DURATION = 30000;
       setTalents((prev) => {
-        if (currentUpdatingIds.size === 0) {
-          // No pending updates, use fresh data directly
+        if (currentUpdatingIds.size === 0 && Object.keys(currentRecentlyUpdated).length === 0) {
+          // No pending updates or recently locked, use fresh data directly
           return sortedTalents;
         }
         // Create map of current talents for quick lookup
         const prevMap = new Map(prev.map((t) => [t.rowIndex, t]));
-        // Merge: use fresh data except for items being updated
+        // Merge: use fresh data except for items being updated or locked
         return sortedTalents.map((t) => {
           const pending = prevMap.get(t.rowIndex);
-          if (pending && currentUpdatingIds.has(t.rowIndex)) {
-            // Don't overwrite - preserve the optimistically updated version
-            return pending;
+          const rowId = String(t.rowIndex);
+          const isLocked = currentRecentlyUpdated[rowId] &&
+            (Date.now() - currentRecentlyUpdated[rowId] < LOCK_DURATION);
+          if ((pending && currentUpdatingIds.has(t.rowIndex)) || isLocked) {
+            // Don't overwrite - preserve the local version
+            return pending || t;
           }
           return t;
         });
@@ -518,6 +530,8 @@ function App() {
     // Track in both pendingUpdates (for components) and updatingIds (for loadTalents)
     setPendingUpdates((prev) => ({ ...prev, [row]: "status" }));
     setUpdatingIds((prev) => new Set(prev).add(row));
+    // Add 30-sec lock to prevent auto-refetch from overwriting optimistic update
+    setRecentlyUpdated((prev) => ({ ...prev, [String(row)]: Date.now() }));
     // Get old status before update for filter check
     const oldStatus = talents.find((t) => t.rowIndex === row)?.Status;
     // Optimistic update: update local state AND filter out if no longer matches filter
@@ -579,6 +593,8 @@ function App() {
     // Track in both pendingUpdates (for components) and updatingIds (for loadTalents)
     setPendingUpdates((prev) => ({ ...prev, [row]: "manager" }));
     setUpdatingIds((prev) => new Set(prev).add(row));
+    // Add 30-sec lock to prevent auto-refetch from overwriting optimistic update
+    setRecentlyUpdated((prev) => ({ ...prev, [String(row)]: Date.now() }));
     // Optimistic update: update local state immediately
     setTalents((prev) =>
       prev.map((t) =>
