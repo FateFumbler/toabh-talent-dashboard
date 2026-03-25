@@ -624,7 +624,11 @@ export function TalentTable({
                       {talent["Talent Manager"] ? (() => {
                         const mColor = getManagerColor(talent["Talent Manager"]);
                         return (
-                          <div className="flex items-center gap-2">
+                          <button
+                            onClick={(e) => handleManagerTriggerClick(talent.rowIndex!, e)}
+                            disabled={!!pendingUpdates[talent.rowIndex]}
+                            className="flex items-center gap-2 hover:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
                             <div 
                               className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 font-medium text-xs"
                               style={{ 
@@ -638,7 +642,7 @@ export function TalentTable({
                             <span className="text-sm text-foreground font-medium">
                               {talent["Talent Manager"]}
                             </span>
-                          </div>
+                          </button>
                         );
                       })() : (
                         <button
