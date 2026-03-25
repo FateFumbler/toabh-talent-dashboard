@@ -196,6 +196,10 @@ export function TalentTable({
   const visibleColumns = externalVisibleColumns || getInitialColumns();
 
   const uniqueStatuses = getUniqueValues(talents, "Status");
+  // Always include "New" as an option in the status filter
+  if (!uniqueStatuses.includes("New")) {
+    uniqueStatuses.unshift("New");
+  }
   const uniqueManagers = getAllManagers(talents, managers);
   const uniqueCities = getUniqueValues(talents, "City");
 
@@ -211,7 +215,9 @@ export function TalentTable({
       const matchesStatus =
         statusFilter === "all"
           ? talent["Status"] !== "Rejected" && talent["Status"] !== "Onboarded"
-          : talent["Status"] === statusFilter;
+          : statusFilter === "New"
+            ? !talent["Status"] || talent["Status"] === "New"
+            : talent["Status"] === statusFilter;
       const matchesManager =
         managerFilter === "all" || talent["Talent Manager"] === managerFilter;
       const matchesCity =
