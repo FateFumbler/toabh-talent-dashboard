@@ -1162,87 +1162,21 @@ export function TalentProfileDialog({
                   {profileName}
                 </h2>
                 <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-3 mt-3">
-                  {/* Manager Button - FIRST */}
-                  {typeof rowIndex === "number" && onManagerAssign ? (
-                    <button
-                      ref={managerButtonRef}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        isManagerOpen ? closeManagerDropdown() : openManagerDropdown();
-                      }}
-                      className={`inline-flex items-center gap-2 px-3 py-2 sm:px-2.5 sm:py-1 rounded-lg text-sm font-medium transition-all whitespace-nowrap min-h-[44px] sm:min-h-[auto] border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`}
-                      style={{
-                        minWidth: "150px",
-                        justifyContent: "center",
-                        backgroundColor: profileManager ? getManagerBadgeColor(profileManager).bg : "transparent",
-                        color: profileManager ? getManagerBadgeColor(profileManager).text : "var(--muted-foreground)",
-                        borderColor: profileManager ? getManagerBadgeColor(profileManager).border : "var(--border)",
-                      }}
-                    >
-                      {profileManager ? (
-                        <>
-                          <div
-                            className="w-5 h-5 rounded-full flex items-center justify-center font-medium text-[10px]"
-                            style={{
-                              backgroundColor: getManagerBadgeColor(profileManager).text,
-                              color: "#fff"
-                            }}
-                          >
-                            {profileManager.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-                          </div>
-                          <span className="hidden sm:inline">{profileManager}</span>
-                          <span className="sm:hidden">{profileManager.split(' ')[0]}</span>
-                        </>
-                      ) : (
-                        <span className="text-muted-foreground">
-                          <span className="sm:hidden">Assign</span>
-                          <span className="hidden sm:inline">Assign Manager</span>
-                        </span>
-                      )}
-                      <ChevronDown
-                        className="h-4 w-4 sm:h-3 sm:w-3 transition-transform duration-200"
-                        style={{ transform: isManagerOpen ? "rotate(180deg)" : "rotate(0deg)" }}
-                      />
-                    </button>
-                  ) : profileManager ? (
+                  {/* Static Manager Badge */}
+                  {profileManager ? (
                     <Badge variant="outline" className="text-xs sm:text-sm break-words">
                       Manager: {profileManager}
                     </Badge>
                   ) : (
-                    <Badge
-                      variant="outline"
-                      className="text-xs sm:text-sm text-muted-foreground"
-                    >
+                    <Badge variant="outline" className="text-xs sm:text-sm text-muted-foreground">
                       No Manager Assigned
                     </Badge>
                   )}
 
-                  {/* Status Button - SECOND */}
-                  {typeof rowIndex === "number" && onStatusUpdate ? (
-                    <button
-                      ref={statusButtonRef}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        isStatusOpen ? closeStatusDropdown() : openStatusDropdown();
-                      }}
-                      className={`inline-flex items-center gap-2 px-3 py-2 sm:px-2 sm:py-1 rounded-full text-sm sm:text-xs font-medium transition-all whitespace-nowrap min-h-[44px] sm:min-h-[auto] border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${currentStatusColor.bg} ${currentStatusColor.text} ${currentStatusColor.border}`}
-                      style={{ minWidth: "140px", justifyContent: "center" }}
-                    >
-                      <span className={`w-2 h-2 rounded-full shrink-0 ${currentStatusColor.dot}`} />
-                      <span>{profileStatus || "New"}</span>
-                      <ChevronDown
-                        className="h-4 w-4 sm:h-3 sm:w-3 transition-transform duration-200"
-                        style={{ transform: isStatusOpen ? "rotate(180deg)" : "rotate(0deg)" }}
-                      />
-                    </button>
-                  ) : (
-                    <Badge
-                      variant={getStatusVariant(profileStatus)}
-                      className="text-xs sm:text-sm"
-                    >
-                      {profileStatus}
-                    </Badge>
-                  )}
+                  {/* Static Status Badge */}
+                  <Badge variant={getStatusVariant(profileStatus)} className="text-xs sm:text-sm">
+                    {profileStatus}
+                  </Badge>
                 </div>
               </div>
 
