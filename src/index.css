@@ -493,6 +493,7 @@ html, body {
   align-items: center;
   justify-content: center;
   animation: fadeIn 0.2s ease-out;
+  pointer-events: none;
 }
 
 .image-modal-content {
