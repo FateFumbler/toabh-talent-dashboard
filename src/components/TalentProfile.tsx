@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef, Component } from "react";
 import type { ReactNode } from "react";
-import { createPortal } from "react-dom";
+import ReactDOM from "react-dom";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -89,118 +89,7 @@ interface ProfileSection {
 }
 
 // ==========================================
-// DROPDOWN HOOK - CLEAN PORTAL-BASED DROPDOWN
-// ==========================================
-interface UseDropdownOptions<T> {
-  onSelect: (item: T) => void;
-  flipUp?: boolean;
-  dropdownHeight?: number;
-}
-
-interface DropdownState {
-  isOpen: boolean;
-  position: { top: number; left: number; width: number } | null;
-}
-
-function useDropdown<T>({
-  onSelect,
-  flipUp = false,
-  dropdownHeight = 260,
-}: UseDropdownOptions<T>) {
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const [state, setState] = useState<DropdownState>({
-    isOpen: false,
-    position: null,
-  });
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    if (!state.isOpen) return;
-
-    function handleClickOutside(event: MouseEvent) {
-      const target = event.target as Node;
-      // Don't close if clicking inside trigger
-      if (triggerRef.current?.contains(target)) {
-        return;
-      }
-      // Don't close if clicking inside dropdown items container
-      const dropdownEl = document.getElementById("dropdown-portal");
-      if (dropdownEl?.contains(target)) {
-        return;
-      }
-      setState((prev) => ({ ...prev, isOpen: false }));
-    }
-
-    // Use mousedown to detect outside clicks (captured before click events)
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [state.isOpen]);
-
-  // Close on escape
-  useEffect(() => {
-    if (!state.isOpen) return;
-
-    function handleEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setState((prev) => ({ ...prev, isOpen: false }));
-      }
-    }
-
-    document.addEventListener("keydown", handleEscape);
-    return () => document.removeEventListener("keydown", handleEscape);
-  }, [state.isOpen]);
-
-  const open = useCallback(() => {
-    if (triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      const spaceBelow = window.innerHeight - rect.bottom;
-      const margin = 16;
-      const shouldFlipUp = flipUp || (spaceBelow < dropdownHeight + margin && rect.top > spaceBelow);
-      const top = shouldFlipUp ? rect.top - dropdownHeight - 8 : rect.bottom + 4;
-      const left = Math.max(
-        margin,
-        Math.min(rect.left, window.innerWidth - rect.width - margin)
-      );
-      setState({
-        isOpen: true,
-        position: { top, left, width: rect.width },
-      });
-    }
-  }, [flipUp, dropdownHeight]);
-
-  const close = useCallback(() => {
-    setState((prev) => ({ ...prev, isOpen: false }));
-  }, []);
-
-  const toggle = useCallback(() => {
-    if (state.isOpen) {
-      close();
-    } else {
-      open();
-    }
-  }, [state.isOpen, open, close]);
-
-  const handleSelect = useCallback(
-    (item: T) => {
-      onSelect(item);
-      close();
-    },
-    [onSelect, close]
-  );
-
-  return {
-    triggerRef,
-    isOpen: state.isOpen,
-    position: state.position,
-    open,
-    close,
-    toggle,
-    handleSelect,
-  };
-}
-
-// ==========================================
-// STATUS DROPDOWN COMPONENT
+// STATUS OPTIONS & COLORS
 // ==========================================
 const STATUS_OPTIONS: StatusValue[] = [
   "New",
@@ -217,183 +106,6 @@ const STATUS_COLORS: Record<StatusValue, { dot: string; bg: string; border: stri
   "Onboarded": { dot: "bg-green-400 dark:bg-green-300", bg: "bg-green-100/15 dark:bg-green-900/20", border: "border-green-500/40", text: "text-green-400 dark:text-green-300" },
   "Rejected": { dot: "bg-red-400 dark:bg-red-300", bg: "bg-red-100/15 dark:bg-red-900/20", border: "border-red-500/40", text: "text-red-400 dark:text-red-300" },
 };
-
-function StatusDropdownPortal({
-  isOpen,
-  position,
-  selectedValue,
-  onSelect,
-}: {
-  isOpen: boolean;
-  position: { top: number; left: number; width: number } | null;
-  selectedValue: string | null;
-  onSelect: (status: StatusValue) => void;
-}) {
-  if (!isOpen || !position || typeof document === "undefined") return null;
-
-  return createPortal(
-    <div
-      id="dropdown-portal"
-      className="fixed inset-0 z-[9999] pointer-events-auto"
-      style={{ pointerEvents: 'auto' }}
-    >
-      <div
-        className="dropdown-animate pointer-events-auto absolute bg-popover border border-border rounded-xl shadow-xl overflow-hidden"
-        style={{
-          top: `${position.top}px`,
-          left: `${Math.max(8, Math.min(position.left, window.innerWidth - position.width - 8))}px`,
-          minWidth: `${position.width}px`,
-          maxWidth: `${window.innerWidth - 16}px`,
-          zIndex: 9999,
-          pointerEvents: 'auto',
-        }}
-        onMouseDown={(e) => e.stopPropagation()}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="py-1">
-          {STATUS_OPTIONS.map((status) => {
-            const colors = STATUS_COLORS[status];
-            const isSelected = status === selectedValue;
-            return (
-              <button
-                key={status}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelect(status);
-                }}
-                className={`w-full flex items-center gap-3 px-3 py-3 sm:py-2.5 text-sm transition-colors min-h-[44px] ${
-                  isSelected
-                    ? "bg-accent/60 font-medium text-foreground"
-                    : "text-popover-foreground hover:bg-accent"
-                }`}
-              >
-                <span className={`w-2 h-2 rounded-full shrink-0 ${colors.dot}`} />
-                <span className="flex-1 text-left">{status}</span>
-                {isSelected && (
-                  <span className="text-xs text-muted-foreground shrink-0">Current</span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    </div>,
-    document.body
-  );
-}
-
-// ==========================================
-// MANAGER DROPDOWN COMPONENT
-// ==========================================
-function ManagerDropdownPortal({
-  isOpen,
-  position,
-  managers,
-  selectedValue,
-  onSelect,
-}: {
-  isOpen: boolean;
-  position: { top: number; left: number; width: number } | null;
-  managers: string[];
-  selectedValue: string | null;
-  onSelect: (manager: string) => void;
-}) {
-  if (!isOpen || !position || typeof document === "undefined") return null;
-
-  return createPortal(
-    <div
-      id="dropdown-portal"
-      className="fixed inset-0 z-[9999] pointer-events-auto"
-      style={{ pointerEvents: 'auto' }}
-    >
-      <div
-        className="dropdown-animate pointer-events-auto absolute bg-popover border border-border rounded-xl shadow-xl overflow-hidden"
-        style={{
-          top: `${position.top}px`,
-          left: `${Math.max(16, Math.min(position.left, window.innerWidth - 280 - 16))}px`,
-          width: "280px",
-          zIndex: 9999,
-          pointerEvents: 'auto',
-        }}
-        onMouseDown={(e) => e.stopPropagation()}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="py-1">
-          {/* Header */}
-          <div className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            Select Manager
-          </div>
-
-          {/* Unassigned option */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onSelect("");
-            }}
-            className={`w-full flex items-center gap-3 px-3 py-3 sm:py-2.5 text-sm transition-colors min-h-[48px] hover:bg-accent ${
-              !selectedValue
-                ? "bg-accent/80 font-medium text-foreground"
-                : "text-popover-foreground"
-            }`}
-          >
-            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
-              <User className="w-4 h-4 text-muted-foreground" />
-            </div>
-            <span className="flex-1 text-left">Unassigned</span>
-            {!selectedValue && (
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Current</Badge>
-            )}
-          </button>
-
-          <div className="h-px bg-border mx-3 my-1" />
-
-          {/* Managers list */}
-          {managers.map((manager) => {
-            const mColor = getManagerBadgeColor(manager);
-            const isSelected = manager === selectedValue;
-            return (
-              <button
-                key={manager}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelect(manager);
-                }}
-                className={`w-full flex items-center gap-3 px-3 py-3 sm:py-2.5 text-sm transition-colors min-h-[48px] hover:bg-accent ${
-                  isSelected ? "bg-accent/60" : "text-popover-foreground"
-                }`}
-              >
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-medium text-xs"
-                  style={{
-                    backgroundColor: mColor.bg,
-                    color: mColor.text,
-                    border: `1px solid ${mColor.border}`
-                  }}
-                >
-                  {manager.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-                </div>
-                <span className="flex-1 text-left font-medium">{manager}</span>
-                {isSelected && (
-                  <Badge
-                    className="text-[10px] px-1.5 py-0 font-normal"
-                    style={{
-                      backgroundColor: mColor.bg,
-                      color: mColor.text,
-                      borderColor: mColor.border
-                    }}
-                  >
-                    Selected
-                  </Badge>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    </div>,
-    document.body
-  );
-}
 
 // ==========================================
 // UTILITY FUNCTIONS
@@ -526,36 +238,148 @@ export function TalentProfileDialog({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const imageCountRef = useRef(0);
 
-  // Status dropdown
-  const statusDropdown = useDropdown<StatusValue>({
-    onSelect: (status) => {
-      const currentProfileManager = profile?.["Talent Manager"] as string | undefined;
-      if (status === "Onboarded" && !currentProfileManager) {
-        toast.error("Please assign a Talent Manager first");
-        return;
-      }
-      onStatusUpdate?.(rowIndex!, status);
-      toast.success(`Status updated to ${status}`);
-    },
-    flipUp: false,
-    dropdownHeight: 260,
-  });
+  // ==========================================
+  // FRESH DROPDOWN IMPLEMENTATION - MANAGER
+  // ==========================================
+  const managerButtonRef = useRef<HTMLButtonElement>(null);
+  const managerDropdownRef = useRef<HTMLDivElement>(null);
+  const [isManagerOpen, setIsManagerOpen] = useState(false);
+  const [managerPosition, setManagerPosition] = useState<{ top: number; left: number } | null>(null);
 
-  // Manager dropdown
-  const managerDropdown = useDropdown<string>({
-    onSelect: (manager) => {
-      const currentProfileManager = profile?.["Talent Manager"] as string | undefined;
-      if (manager === currentProfileManager) {
-        return;
-      }
-      onManagerAssign?.(rowIndex!, manager);
-      toast.success(`Manager updated to ${manager}`);
-    },
-    flipUp: false,
-    dropdownHeight: 320,
-  });
+  const openManagerDropdown = useCallback(() => {
+    if (managerButtonRef.current) {
+      const rect = managerButtonRef.current.getBoundingClientRect();
+      setManagerPosition({
+        top: rect.bottom + 6,
+        left: rect.left,
+      });
+      setIsManagerOpen(true);
+      // Close status if open
+      setIsStatusOpen(false);
+    }
+  }, []);
 
-  // Close dropdowns when dialog closes
+  const closeManagerDropdown = useCallback(() => {
+    setIsManagerOpen(false);
+  }, []);
+
+  const handleManagerSelect = useCallback((manager: string) => {
+    const currentProfileManager = profile?.["Talent Manager"] as string | undefined;
+    if (manager === currentProfileManager) {
+      closeManagerDropdown();
+      return;
+    }
+    onManagerAssign?.(rowIndex!, manager);
+    toast.success(`Manager updated to ${manager || "Unassigned"}`);
+    closeManagerDropdown();
+  }, [profile, onManagerAssign, rowIndex, closeManagerDropdown]);
+
+  // Outside click detection for Manager dropdown
+  useEffect(() => {
+    if (!isManagerOpen) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        managerDropdownRef.current &&
+        !managerDropdownRef.current.contains(e.target as Node) &&
+        managerButtonRef.current &&
+        !managerButtonRef.current.contains(e.target as Node)
+      ) {
+        closeManagerDropdown();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isManagerOpen, closeManagerDropdown]);
+
+  // Close manager dropdown on escape
+  useEffect(() => {
+    if (!isManagerOpen) return;
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        closeManagerDropdown();
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [isManagerOpen, closeManagerDropdown]);
+
+  // ==========================================
+  // FRESH DROPDOWN IMPLEMENTATION - STATUS
+  // ==========================================
+  const statusButtonRef = useRef<HTMLButtonElement>(null);
+  const statusDropdownRef = useRef<HTMLDivElement>(null);
+  const [isStatusOpen, setIsStatusOpen] = useState(false);
+  const [statusPosition, setStatusPosition] = useState<{ top: number; left: number } | null>(null);
+
+  const openStatusDropdown = useCallback(() => {
+    if (statusButtonRef.current) {
+      const rect = statusButtonRef.current.getBoundingClientRect();
+      setStatusPosition({
+        top: rect.bottom + 6,
+        left: rect.left,
+      });
+      setIsStatusOpen(true);
+      // Close manager if open
+      setIsManagerOpen(false);
+    }
+  }, []);
+
+  const closeStatusDropdown = useCallback(() => {
+    setIsStatusOpen(false);
+  }, []);
+
+  const handleStatusSelect = useCallback((status: StatusValue) => {
+    const currentProfileManager = profile?.["Talent Manager"] as string | undefined;
+    if (status === "Onboarded" && !currentProfileManager) {
+      toast.error("Please assign a Talent Manager first");
+      closeStatusDropdown();
+      return;
+    }
+    onStatusUpdate?.(rowIndex!, status);
+    toast.success(`Status updated to ${status}`);
+    closeStatusDropdown();
+  }, [profile, onStatusUpdate, rowIndex, closeStatusDropdown]);
+
+  // Outside click detection for Status dropdown
+  useEffect(() => {
+    if (!isStatusOpen) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        statusDropdownRef.current &&
+        !statusDropdownRef.current.contains(e.target as Node) &&
+        statusButtonRef.current &&
+        !statusButtonRef.current.contains(e.target as Node)
+      ) {
+        closeStatusDropdown();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isStatusOpen, closeStatusDropdown]);
+
+  // Close status dropdown on escape
+  useEffect(() => {
+    if (!isStatusOpen) return;
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        closeStatusDropdown();
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [isStatusOpen, closeStatusDropdown]);
+
+  // ==========================================
+  // CLOSE DROPDOWNS WHEN DIALOG CLOSES
+  // ==========================================
   useEffect(() => {
     if (!open) {
       setProfile(null);
@@ -564,25 +388,10 @@ export function TalentProfileDialog({
       setIsModalOpen(false);
       setCurrentImageIndex(0);
       imageCountRef.current = 0;
-      statusDropdown.close();
-      managerDropdown.close();
+      closeStatusDropdown();
+      closeManagerDropdown();
     }
-  }, [open, statusDropdown.close, managerDropdown.close]);
-
-  // Mutually exclusive dropdowns - close one when opening the other
-  const handleStatusTriggerClick = useCallback(() => {
-    if (managerDropdown.isOpen) {
-      managerDropdown.close();
-    }
-    statusDropdown.toggle();
-  }, [managerDropdown.isOpen, managerDropdown.close, statusDropdown.toggle]);
-
-  const handleManagerTriggerClick = useCallback(() => {
-    if (statusDropdown.isOpen) {
-      statusDropdown.close();
-    }
-    managerDropdown.toggle();
-  }, [statusDropdown.isOpen, statusDropdown.close, managerDropdown.toggle]);
+  }, [open, closeStatusDropdown, closeManagerDropdown]);
 
   const openModal = (index: number) => {
     setCurrentImageIndex(index);
@@ -1128,6 +937,166 @@ export function TalentProfileDialog({
     }
   }, [openModal]);
 
+  // ==========================================
+  // MANAGER DROPDOWN PORTAL
+  // ==========================================
+  const ManagerDropdownPortal = () => {
+    if (!isManagerOpen || !managerPosition || typeof document === "undefined") return null;
+
+    return ReactDOM.createPortal(
+      <div
+        ref={managerDropdownRef}
+        className="dropdown-container fixed inset-0 z-[99999] pointer-events-auto"
+        style={{ pointerEvents: 'auto' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div
+          className="dropdown-animate pointer-events-auto absolute bg-popover border border-border rounded-xl shadow-xl overflow-hidden"
+          style={{
+            top: `${managerPosition.top}px`,
+            left: `${Math.max(16, Math.min(managerPosition.left, window.innerWidth - 280 - 16))}px`,
+            width: "280px",
+            zIndex: 99999,
+            pointerEvents: 'auto',
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="py-1">
+            {/* Header */}
+            <div className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              Select Manager
+            </div>
+
+            {/* Unassigned option */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleManagerSelect("");
+              }}
+              className={`w-full flex items-center gap-3 px-3 py-3 sm:py-2.5 text-sm transition-colors min-h-[48px] hover:bg-accent ${
+                !profileManager
+                  ? "bg-accent/80 font-medium text-foreground"
+                  : "text-popover-foreground"
+              }`}
+            >
+              <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+                <User className="w-4 h-4 text-muted-foreground" />
+              </div>
+              <span className="flex-1 text-left">Unassigned</span>
+              {!profileManager && (
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Current</Badge>
+              )}
+            </button>
+
+            <div className="h-px bg-border mx-3 my-1" />
+
+            {/* Managers list */}
+            {(managers || []).map((manager) => {
+              const mColor = getManagerBadgeColor(manager);
+              const isSelected = manager === profileManager;
+              return (
+                <button
+                  key={manager}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleManagerSelect(manager);
+                  }}
+                  className={`w-full flex items-center gap-3 px-3 py-3 sm:py-2.5 text-sm transition-colors min-h-[48px] hover:bg-accent ${
+                    isSelected ? "bg-accent/60" : "text-popover-foreground"
+                  }`}
+                >
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-medium text-xs"
+                    style={{
+                      backgroundColor: mColor.bg,
+                      color: mColor.text,
+                      border: `1px solid ${mColor.border}`
+                    }}
+                  >
+                    {manager.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                  </div>
+                  <span className="flex-1 text-left font-medium">{manager}</span>
+                  {isSelected && (
+                    <Badge
+                      className="text-[10px] px-1.5 py-0 font-normal"
+                      style={{
+                        backgroundColor: mColor.bg,
+                        color: mColor.text,
+                        borderColor: mColor.border
+                      }}
+                    >
+                      Selected
+                    </Badge>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>,
+      document.body
+    );
+  };
+
+  // ==========================================
+  // STATUS DROPDOWN PORTAL
+  // ==========================================
+  const StatusDropdownPortal = () => {
+    if (!isStatusOpen || !statusPosition || typeof document === "undefined") return null;
+
+    return ReactDOM.createPortal(
+      <div
+        ref={statusDropdownRef}
+        className="dropdown-container fixed inset-0 z-[99999] pointer-events-auto"
+        style={{ pointerEvents: 'auto' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div
+          className="dropdown-animate pointer-events-auto absolute bg-popover border border-border rounded-xl shadow-xl overflow-hidden"
+          style={{
+            top: `${statusPosition.top}px`,
+            left: `${Math.max(8, Math.min(statusPosition.left, window.innerWidth - 200 - 8))}px`,
+            minWidth: "200px",
+            maxWidth: `${window.innerWidth - 16}px`,
+            zIndex: 99999,
+            pointerEvents: 'auto',
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="py-1">
+            {STATUS_OPTIONS.map((status) => {
+              const colors = STATUS_COLORS[status];
+              const isSelected = status === profileStatus;
+              return (
+                <button
+                  key={status}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleStatusSelect(status);
+                  }}
+                  className={`w-full flex items-center gap-3 px-3 py-3 sm:py-2.5 text-sm transition-colors min-h-[44px] ${
+                    isSelected
+                      ? "bg-accent/60 font-medium text-foreground"
+                      : "text-popover-foreground hover:bg-accent"
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${colors.dot}`} />
+                  <span className="flex-1 text-left">{status}</span>
+                  {isSelected && (
+                    <span className="text-xs text-muted-foreground shrink-0">Current</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>,
+      document.body
+    );
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
@@ -1156,40 +1125,13 @@ export function TalentProfileDialog({
                   {profileName}
                 </h2>
                 <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-3 mt-3">
-                  {/* Status Button */}
-                  {typeof rowIndex === "number" && onStatusUpdate ? (
-                    <button
-                      ref={statusDropdown.triggerRef}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleStatusTriggerClick();
-                      }}
-                      className={`inline-flex items-center gap-2 px-3 py-2 sm:px-2 sm:py-1 rounded-full text-sm sm:text-xs font-medium transition-all whitespace-nowrap min-h-[44px] sm:min-h-[auto] border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${currentStatusColor.bg} ${currentStatusColor.text} ${currentStatusColor.border}`}
-                      style={{ minWidth: "140px", justifyContent: "center" }}
-                    >
-                      <span className={`w-2 h-2 rounded-full shrink-0 ${currentStatusColor.dot}`} />
-                      <span>{profileStatus || "New"}</span>
-                      <ChevronDown
-                        className="h-4 w-4 sm:h-3 sm:w-3 transition-transform duration-200"
-                        style={{ transform: statusDropdown.isOpen ? "rotate(180deg)" : "rotate(0deg)" }}
-                      />
-                    </button>
-                  ) : (
-                    <Badge
-                      variant={getStatusVariant(profileStatus)}
-                      className="text-xs sm:text-sm"
-                    >
-                      {profileStatus}
-                    </Badge>
-                  )}
-
-                  {/* Manager Button */}
+                  {/* Manager Button - FIRST */}
                   {typeof rowIndex === "number" && onManagerAssign ? (
                     <button
-                      ref={managerDropdown.triggerRef}
+                      ref={managerButtonRef}
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleManagerTriggerClick();
+                        isManagerOpen ? closeManagerDropdown() : openManagerDropdown();
                       }}
                       className={`inline-flex items-center gap-2 px-3 py-2 sm:px-2.5 sm:py-1 rounded-lg text-sm font-medium transition-all whitespace-nowrap min-h-[44px] sm:min-h-[auto] border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`}
                       style={{
@@ -1222,7 +1164,7 @@ export function TalentProfileDialog({
                       )}
                       <ChevronDown
                         className="h-4 w-4 sm:h-3 sm:w-3 transition-transform duration-200"
-                        style={{ transform: managerDropdown.isOpen ? "rotate(180deg)" : "rotate(0deg)" }}
+                        style={{ transform: isManagerOpen ? "rotate(180deg)" : "rotate(0deg)" }}
                       />
                     </button>
                   ) : profileManager ? (
@@ -1235,6 +1177,33 @@ export function TalentProfileDialog({
                       className="text-xs sm:text-sm text-muted-foreground"
                     >
                       No Manager Assigned
+                    </Badge>
+                  )}
+
+                  {/* Status Button - SECOND */}
+                  {typeof rowIndex === "number" && onStatusUpdate ? (
+                    <button
+                      ref={statusButtonRef}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        isStatusOpen ? closeStatusDropdown() : openStatusDropdown();
+                      }}
+                      className={`inline-flex items-center gap-2 px-3 py-2 sm:px-2 sm:py-1 rounded-full text-sm sm:text-xs font-medium transition-all whitespace-nowrap min-h-[44px] sm:min-h-[auto] border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${currentStatusColor.bg} ${currentStatusColor.text} ${currentStatusColor.border}`}
+                      style={{ minWidth: "140px", justifyContent: "center" }}
+                    >
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${currentStatusColor.dot}`} />
+                      <span>{profileStatus || "New"}</span>
+                      <ChevronDown
+                        className="h-4 w-4 sm:h-3 sm:w-3 transition-transform duration-200"
+                        style={{ transform: isStatusOpen ? "rotate(180deg)" : "rotate(0deg)" }}
+                      />
+                    </button>
+                  ) : (
+                    <Badge
+                      variant={getStatusVariant(profileStatus)}
+                      className="text-xs sm:text-sm"
+                    >
+                      {profileStatus}
                     </Badge>
                   )}
                 </div>
@@ -1360,22 +1329,11 @@ export function TalentProfileDialog({
         )}
       </DialogContent>
 
-      {/* Status Dropdown Portal */}
-      <StatusDropdownPortal
-        isOpen={statusDropdown.isOpen}
-        position={statusDropdown.position}
-        selectedValue={profileStatus}
-        onSelect={(status) => statusDropdown.handleSelect(status)}
-      />
+      {/* Manager Dropdown Portal - FIRST */}
+      <ManagerDropdownPortal />
 
-      {/* Manager Dropdown Portal */}
-      <ManagerDropdownPortal
-        isOpen={managerDropdown.isOpen}
-        position={managerDropdown.position}
-        managers={managers || []}
-        selectedValue={profileManager || null}
-        onSelect={(manager) => managerDropdown.handleSelect(manager)}
-      />
+      {/* Status Dropdown Portal - SECOND */}
+      <StatusDropdownPortal />
     </Dialog>
   );
 }
