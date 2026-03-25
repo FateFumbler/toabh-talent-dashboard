@@ -420,12 +420,12 @@ function App() {
     setIsAuthenticated(true);
   };
 
-  const loadTalents = useCallback(async () => {
+  const loadTalents = useCallback(async (forceRefresh = false) => {
     try {
       setError(null);
       const [talentData, detailsData] = await Promise.all([
-        fetchTalentMaster(),
-        fetchTalentDetails(),
+        fetchTalentMaster(forceRefresh),
+        fetchTalentDetails(forceRefresh),
       ]);
 
       const validTalents = talentData.filter(
@@ -806,7 +806,7 @@ function App() {
               <div className="flex items-center justify-between mb-4 gap-3">
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={loadTalents}
+                    onClick={() => loadTalents(true)}
                     disabled={isLoading}
                     className="btn-premium bg-secondary hover:bg-secondary/80 text-secondary-foreground"
                   >

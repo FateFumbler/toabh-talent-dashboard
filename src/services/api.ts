@@ -150,21 +150,26 @@ function mapProfileData(row: any[]): Record<string, any> {
   };
 }
 
-export async function fetchTalentMaster(): Promise<Talent[]> {
+export async function fetchTalentMaster(forceRefresh = false): Promise<Talent[]> {
   const cacheKey = getCacheKey(`${API_URL}?action=talent-master`);
 
-  // Check cache first
-  const cached = getCachedData<Talent[]>(cacheKey);
-  if (cached) {
-    // Return cached data immediately, but refresh in background
-    fetch(`${API_URL}?action=talent-master`, { redirect: 'follow' })
-      .then(res => res.json())
-      .then(data => setCachedData(cacheKey, data as Talent[]))
-      .catch(() => {}); // Silent fail
-    return cached;
+  // Check cache first (unless forceRefresh)
+  if (!forceRefresh) {
+    const cached = getCachedData<Talent[]>(cacheKey);
+    if (cached) {
+      // Return cached data immediately, but refresh in background
+      fetch(`${API_URL}?action=talent-master`, { redirect: 'follow' })
+        .then(res => res.json())
+        .then(data => setCachedData(cacheKey, data as Talent[]))
+        .catch(() => {}); // Silent fail
+      return cached;
+    }
+  } else {
+    // Force refresh - clear cache and skip cache check
+    localStorage.removeItem(cacheKey);
   }
 
-  // No cache - fetch fresh
+  // No cache or force refresh - fetch fresh
   try {
     const response = await fetch(`${API_URL}?action=talent-master`, {
       redirect: 'follow',
@@ -198,12 +203,17 @@ export async function fetchTalentProfile(name: string): Promise<TalentProfile> {
   }
 }
 
-export async function fetchTalentDetails(): Promise<TalentDetails[]> {
+export async function fetchTalentDetails(forceRefresh = false): Promise<TalentDetails[]> {
   const cacheKey = getCacheKey(`${API_URL}?action=talent-details`);
 
-  // Check cache first
-  const cached = getCachedData<TalentDetails[]>(cacheKey);
-  if (cached) return cached;
+  // Check cache first (unless forceRefresh)
+  if (!forceRefresh) {
+    const cached = getCachedData<TalentDetails[]>(cacheKey);
+    if (cached) return cached;
+  } else {
+    // Force refresh - clear cache
+    localStorage.removeItem(cacheKey);
+  }
 
   try {
     const response = await fetch(`${API_URL}?action=talent-details`, {
