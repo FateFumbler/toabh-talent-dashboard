@@ -422,6 +422,7 @@ function App() {
 
   const loadTalents = useCallback(async (forceRefresh = false) => {
     try {
+      setIsLoading(true);
       setError(null);
       const [talentData, detailsData] = await Promise.all([
         fetchTalentMaster(forceRefresh),
