@@ -280,7 +280,16 @@ export function TalentTable({
     } else {
       if (e.currentTarget instanceof HTMLElement) {
         const rect = e.currentTarget.getBoundingClientRect();
-        setManagerDropdownPosition({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+        // Smart positioning: calculate available space and flip upward if needed
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const spaceAbove = rect.top;
+        const ITEM_HEIGHT = 56; // ~52px item + padding
+        const estimatedDropdownHeight = uniqueManagers.length * ITEM_HEIGHT + 8;
+        const margin = 8;
+        // Flip upward if not enough space below AND more space above
+        const openUpward = spaceBelow < estimatedDropdownHeight + margin && spaceAbove > spaceBelow;
+        const top = openUpward ? rect.top - estimatedDropdownHeight - margin : rect.bottom + margin;
+        setManagerDropdownPosition({ top, left: rect.left, width: rect.width });
       }
       setOpenManagerDropdown(rowIndex);
     }
@@ -706,13 +715,15 @@ export function TalentTable({
             }}
           >
             <div
-              className="bg-popover border border-border rounded-xl shadow-xl overflow-hidden animate-scale-in"
+              className="bg-popover border border-border rounded-xl shadow-xl animate-scale-in"
               style={{
                 position: "fixed",
                 top: `${managerDropdownPosition.top}px`,
                 left: `${Math.max(8, Math.min(managerDropdownPosition.left, window.innerWidth - 220))}px`,
                 width: "200px",
                 maxWidth: "calc(100vw - 16px)",
+                maxHeight: "300px",
+                overflowY: "auto",
               }}
               onMouseDown={(e) => e.stopPropagation()}
             >
