@@ -1110,9 +1110,26 @@ export function TalentProfileDialog({
 
   const currentStatusColor = STATUS_COLORS[profileStatus as StatusValue] || STATUS_COLORS["New"];
 
+  const handleImageClick = useCallback((e: React.MouseEvent) => {
+    // Only open image viewer when clicking directly on an image element
+    const target = e.target as HTMLElement;
+    if (!target.closest('.image-clickable')) return;
+    // Don't open if clicking inside dropdown containers
+    if (target.closest('.dropdown-container')) return;
+    // Find the index from the clicked element
+    const button = target.closest('.image-clickable') as HTMLElement;
+    const idxAttr = button?.dataset?.idx;
+    if (idxAttr !== undefined) {
+      openModal(parseInt(idxAttr, 10));
+    }
+  }, [openModal]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0 bg-background border-border animate-scale-in">
+      <DialogContent 
+        className="max-w-3xl max-h-[90vh] overflow-y-auto p-0 bg-background border-border animate-scale-in"
+        onClick={handleImageClick}
+      >
         {isLoading && (
           <div className="flex flex-col items-center justify-center py-16">
             <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
@@ -1232,8 +1249,8 @@ export function TalentProfileDialog({
                         return (
                           <button
                             key={idx}
-                            onClick={() => openModal(idx)}
-                            className="thumbnail-item"
+                            data-idx={idx}
+                            className="thumbnail-item image-clickable"
                             aria-label={`View photo ${idx + 1}`}
                           >
                             {thumbnailUrl ? (
