@@ -285,10 +285,9 @@ export function TalentTable({
         const spaceAbove = rect.top;
         const ITEM_HEIGHT = 56; // ~52px item + padding
         const estimatedDropdownHeight = uniqueManagers.length * ITEM_HEIGHT + 8;
-        const margin = 4;
         // Flip upward if not enough space below AND more space above
-        const openUpward = spaceBelow < estimatedDropdownHeight + margin && spaceAbove > spaceBelow;
-        const top = openUpward ? rect.top - estimatedDropdownHeight - margin : rect.bottom + margin;
+        const openUpward = spaceBelow < estimatedDropdownHeight && spaceAbove > spaceBelow;
+        const top = openUpward ? rect.top - estimatedDropdownHeight : rect.bottom;
         setManagerDropdownPosition({ top, left: rect.left, width: rect.width });
       }
       setOpenManagerDropdown(rowIndex);
