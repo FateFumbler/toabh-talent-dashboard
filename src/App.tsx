@@ -44,6 +44,7 @@ import {
   getStoredTheme,
   useTheme,
 } from "./components/Settings";
+import { LoginScreen, checkIsAuthenticated } from "./components/LoginScreen";
 
 const REFRESH_INTERVAL = 30000;
 
@@ -351,6 +352,7 @@ const getAllManagers = (talents: Talent[]): string[] => {
 
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [talents, setTalents] = useState<Talent[]>([]);
   const [talentDetailsMap, setTalentDetailsMap] = useState<
     Map<string, TalentDetails>
@@ -408,6 +410,16 @@ function App() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  // Check auth on mount
+  useEffect(() => {
+    setIsAuthenticated(checkIsAuthenticated());
+  }, []);
+
+  const handleLogin = () => {
+    setIsAuthenticated(true);
+  };
+
 
   const loadTalents = useCallback(async () => {
     try {
@@ -673,6 +685,11 @@ function App() {
       </div>
     );
   };
+
+  // Show login screen if not authenticated
+  if (!isAuthenticated) {
+    return <LoginScreen onLogin={handleLogin} />;
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">

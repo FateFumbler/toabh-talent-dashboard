@@ -287,7 +287,8 @@ export function TalentTable({
         const estimatedDropdownHeight = uniqueManagers.length * ITEM_HEIGHT + 8;
         // Flip upward if not enough space below AND more space above
         const openUpward = spaceBelow < estimatedDropdownHeight && spaceAbove > spaceBelow;
-        const top = openUpward ? rect.top - estimatedDropdownHeight : rect.bottom;
+        // Subtract 1px to close any subpixel gap between button bottom and dropdown top
+        const top = openUpward ? rect.top - estimatedDropdownHeight : rect.bottom - 1;
         setManagerDropdownPosition({ top, left: rect.left, width: rect.width });
       }
       setOpenManagerDropdown(rowIndex);
@@ -712,6 +713,7 @@ export function TalentTable({
         createPortal(
           <div
             className="fixed inset-0 z-50"
+            style={{ top: 0 }}
             onClick={(e) => {
               const dropdown = document.getElementById("manager-dropdown-panel");
               if (dropdown && !dropdown.contains(e.target as Node)) {
@@ -729,6 +731,8 @@ export function TalentTable({
                 left: `${Math.max(8, Math.min(managerDropdownPosition.left, window.innerWidth - 220))}px`,
                 width: "200px",
                 maxWidth: "calc(100vw - 16px)",
+                marginTop: 0,
+                transformOrigin: 'top left',
               }}
               onClick={(e) => e.stopPropagation()}
             >
