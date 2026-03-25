@@ -490,17 +490,24 @@ function App() {
         // Create map of current talents for quick lookup
         const prevMap = new Map(prev.map((t) => [t.rowIndex, t]));
         // Merge: use fresh data except for items being updated or locked
-        return sortedTalents.map((t) => {
+        const merged: Talent[] = [];
+        for (const t of sortedTalents) {
           const pending = prevMap.get(t.rowIndex);
           const rowId = String(t.rowIndex);
           const isLocked = currentRecentlyUpdated[rowId] &&
             (Date.now() - currentRecentlyUpdated[rowId] < LOCK_DURATION);
+          // If talent is locked but not in prev, it was filtered out - skip it
+          if (isLocked && !prevMap.has(t.rowIndex)) {
+            continue;
+          }
           if ((pending && currentUpdatingIds.has(t.rowIndex)) || isLocked) {
             // Don't overwrite - preserve the local version
-            return pending || t;
+            merged.push(pending || t);
+          } else {
+            merged.push(t);
           }
-          return t;
-        });
+        }
+        return merged;
       });
       setTalentDetailsMap(detailsMap);
       setLastUpdated(new Date());
