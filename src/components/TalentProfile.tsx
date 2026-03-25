@@ -234,7 +234,8 @@ function StatusDropdownPortal({
   return createPortal(
     <div
       id="dropdown-portal"
-      className="fixed inset-0 z-[9999] pointer-events-none"
+      className="fixed inset-0 z-[9999] pointer-events-auto"
+      style={{ pointerEvents: 'auto' }}
     >
       <div
         className="dropdown-animate pointer-events-auto absolute bg-popover border border-border rounded-xl shadow-xl overflow-hidden"
@@ -244,6 +245,7 @@ function StatusDropdownPortal({
           minWidth: `${position.width}px`,
           maxWidth: `${window.innerWidth - 16}px`,
           zIndex: 9999,
+          pointerEvents: 'auto',
         }}
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
@@ -301,7 +303,8 @@ function ManagerDropdownPortal({
   return createPortal(
     <div
       id="dropdown-portal"
-      className="fixed inset-0 z-[9999] pointer-events-none"
+      className="fixed inset-0 z-[9999] pointer-events-auto"
+      style={{ pointerEvents: 'auto' }}
     >
       <div
         className="dropdown-animate pointer-events-auto absolute bg-popover border border-border rounded-xl shadow-xl overflow-hidden"
@@ -310,6 +313,7 @@ function ManagerDropdownPortal({
           left: `${Math.max(16, Math.min(position.left, window.innerWidth - 280 - 16))}px`,
           width: "280px",
           zIndex: 9999,
+          pointerEvents: 'auto',
         }}
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
