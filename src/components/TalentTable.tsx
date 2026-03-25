@@ -693,22 +693,35 @@ export function TalentTable({
               style={{
                 position: "fixed",
                 top: `${managerDropdownPosition.top}px`,
-                left: `${Math.max(8, Math.min(managerDropdownPosition.left, window.innerWidth - 182))}px`,
-                width: "174px",
+                left: `${Math.max(8, Math.min(managerDropdownPosition.left, window.innerWidth - 220))}px`,
+                width: "200px",
                 maxWidth: "calc(100vw - 16px)",
               }}
               onMouseDown={(e) => e.stopPropagation()}
             >
               <div className="py-1">
-                {uniqueManagers.map((manager) => (
-                  <button
-                    key={manager}
-                    onClick={() => handleManagerItemSelect(manager)}
-                    className="w-full flex items-center px-3 py-3 sm:py-2.5 text-sm text-popover-foreground hover:bg-accent transition-colors min-h-[44px] text-left"
-                  >
-                    {manager}
-                  </button>
-                ))}
+                {uniqueManagers.map((manager) => {
+                  const mColor = getManagerColor(manager);
+                  return (
+                    <button
+                      key={manager}
+                      onClick={() => handleManagerItemSelect(manager)}
+                      className="w-full flex items-center gap-2 px-3 py-3 sm:py-2.5 text-sm text-popover-foreground hover:bg-accent transition-colors min-h-[44px] text-left"
+                    >
+                      <div 
+                        className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 font-medium text-xs"
+                        style={{ 
+                          backgroundColor: mColor.bg, 
+                          color: mColor.text,
+                          border: `1px solid ${mColor.border}`
+                        }}
+                      >
+                        {manager.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
+                      </div>
+                      <span className="font-medium">{manager}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>,
