@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef, Component } from "react";
 import type { ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,11 +16,11 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   ExternalLink,
 } from "lucide-react";
+import { toast } from "sonner";
 import type { Contract } from "@/types/contract";
-import { StatusDropdown } from "./StatusDropdown";
-import { ManagerDropdown } from "./ManagerDropdown";
 
 interface TalentProfileProps {
   name: string | null;
@@ -122,6 +123,27 @@ function parsePolaroidLinks(polaroidField: unknown): string[] {
   return str.split(/[,\n]/).map((s) => s.trim()).filter(Boolean);
 }
 
+// Manager badge colors (matching ManagerDropdown.tsx)
+const MANAGER_COLORS = [
+  { bg: "#F3E8FF", text: "#7C3AED", border: "#DDD6FE" },
+  { bg: "#DBEAFE", text: "#2563EB", border: "#BFDBFE" },
+  { bg: "#D1FAE5", text: "#059669", border: "#A7F3D0" },
+  { bg: "#FEE2E2", text: "#DC2626", border: "#FECACA" },
+  { bg: "#FEF3C7", text: "#D97706", border: "#FDE68A" },
+  { bg: "#FCE7F3", text: "#DB2777", border: "#FBCFE8" },
+  { bg: "#CFFAFE", text: "#0891B2", border: "#A5F3FC" },
+  { bg: "#E0E7FF", text: "#4F46E5", border: "#C7D2FE" },
+  { bg: "#FFEDD5", text: "#EA580C", border: "#FED7AA" },
+];
+
+function getManagerBadgeColor(name: string): { bg: string; text: string; border: string } {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return MANAGER_COLORS[Math.abs(hash) % MANAGER_COLORS.length];
+}
+
 function parseInstagram(value: string): string {
   if (!value) return "";
   const trimmed = value.trim();
@@ -191,6 +213,19 @@ export function TalentProfileDialog({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const imageCountRef = useRef(0);
 
+  // Dropdown refs and state - managed at TalentProfileDialog level to avoid Dialog stacking context issues
+  const statusTriggerRef = useRef<HTMLButtonElement>(null);
+  const managerTriggerRef = useRef<HTMLButtonElement>(null);
+  const [statusDropdown, setStatusDropdown] = useState<{
+    open: boolean;
+    position: { top: number; left: number; width: number } | null;
+  }>({ open: false, position: null });
+  const [managerDropdown, setManagerDropdown] = useState<{
+    open: boolean;
+    position: { top: number; left: number; width: number } | null;
+  }>({ open: false, position: null });
+
+  // Close dropdowns when dialog closes
   useEffect(() => {
     if (!open) {
       setProfile(null);
@@ -199,8 +234,47 @@ export function TalentProfileDialog({
       setIsModalOpen(false);
       setCurrentImageIndex(0);
       imageCountRef.current = 0;
+      setStatusDropdown({ open: false, position: null });
+      setManagerDropdown({ open: false, position: null });
     }
   }, [open]);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      const target = event.target as Node;
+      // Don't close if clicking inside a trigger
+      if (statusTriggerRef.current?.contains(target) || managerTriggerRef.current?.contains(target)) {
+        return;
+      }
+      // Don't close if clicking inside the dialog content (portals are outside)
+      const dialogContent = document.querySelector('[role="dialog"]');
+      if (dialogContent?.contains(target)) {
+        return;
+      }
+      setStatusDropdown({ open: false, position: null });
+      setManagerDropdown({ open: false, position: null });
+    }
+
+    if (statusDropdown.open || managerDropdown.open) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [statusDropdown.open, managerDropdown.open]);
+
+  // Close dropdowns on escape
+  useEffect(() => {
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setStatusDropdown({ open: false, position: null });
+        setManagerDropdown({ open: false, position: null });
+      }
+    }
+    if (statusDropdown.open || managerDropdown.open) {
+      document.addEventListener("keydown", handleEscape);
+      return () => document.removeEventListener("keydown", handleEscape);
+    }
+  }, [statusDropdown.open, managerDropdown.open]);
 
   const openModal = (index: number) => {
     setCurrentImageIndex(index);
@@ -210,6 +284,73 @@ export function TalentProfileDialog({
   const closeModal = useCallback(() => {
     setIsModalOpen(false);
   }, []);
+
+  // Status dropdown handlers
+  const handleStatusTriggerClick = useCallback(() => {
+    if (statusTriggerRef.current) {
+      const rect = statusTriggerRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      const margin = 16;
+      const dropdownHeight = 260;
+      const flipUp = spaceBelow < dropdownHeight + margin && spaceAbove > spaceBelow;
+      const top = flipUp ? rect.top - dropdownHeight - 8 : rect.bottom + 4;
+      const left = Math.max(margin, Math.min(rect.left, window.innerWidth - rect.width - margin));
+      setStatusDropdown({
+        open: !statusDropdown.open,
+        position: { top, left, width: rect.width }
+      });
+    }
+    // Close manager dropdown if open
+    if (managerDropdown.open) {
+      setManagerDropdown({ open: false, position: null });
+    }
+  }, [statusDropdown.open, managerDropdown.open]);
+
+  const handleStatusSelect = useCallback((status: StatusValue) => {
+    const currentProfileManager = profile?.["Talent Manager"] as string | undefined;
+    if (status === "Onboarded" && !currentProfileManager) {
+      toast.error("Please assign a Talent Manager first");
+      setStatusDropdown({ open: false, position: null });
+      return;
+    }
+    onStatusUpdate?.(rowIndex!, status);
+    toast.success(`Status updated to ${status}`);
+    setStatusDropdown({ open: false, position: null });
+  }, [rowIndex, onStatusUpdate, profile]);
+
+  // Manager dropdown handlers
+  const handleManagerTriggerClick = useCallback(() => {
+    if (managerTriggerRef.current) {
+      const rect = managerTriggerRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      const margin = 16;
+      const dropdownHeight = 320;
+      const flipUp = spaceBelow < dropdownHeight + margin && spaceAbove > spaceBelow;
+      const top = flipUp ? rect.top - dropdownHeight - 8 : rect.bottom + 4;
+      const left = Math.max(margin, Math.min(rect.left, window.innerWidth - 280 - margin));
+      setManagerDropdown({
+        open: !managerDropdown.open,
+        position: { top, left, width: rect.width }
+      });
+    }
+    // Close status dropdown if open
+    if (statusDropdown.open) {
+      setStatusDropdown({ open: false, position: null });
+    }
+  }, [managerDropdown.open, statusDropdown.open]);
+
+  const handleManagerSelect = useCallback((manager: string) => {
+    const currentProfileManager = profile?.["Talent Manager"] as string | undefined;
+    if (manager === currentProfileManager) {
+      setManagerDropdown({ open: false, position: null });
+      return;
+    }
+    onManagerAssign?.(rowIndex!, manager);
+    toast.success(`Manager updated to ${manager}`);
+    setManagerDropdown({ open: false, position: null });
+  }, [rowIndex, onManagerAssign, profile]);
 
   const goToPrevious = useCallback(() => {
     setCurrentImageIndex((prev) =>
@@ -756,12 +897,39 @@ export function TalentProfileDialog({
                 </h2>
                 <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-3 mt-3">
                   {typeof rowIndex === "number" && onStatusUpdate ? (
-                    <StatusDropdown
-                      currentStatus={profileStatus as StatusValue}
-                      rowIndex={rowIndex}
-                      onStatusChange={onStatusUpdate}
-                      hasManager={!!profileManager}
-                    />
+                    <button
+                      ref={statusTriggerRef}
+                      onClick={handleStatusTriggerClick}
+                      className={`inline-flex items-center gap-2 px-3 py-2 sm:px-2 sm:py-1 rounded-full text-sm sm:text-xs font-medium transition-all whitespace-nowrap min-h-[44px] sm:min-h-[auto] border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                        profileStatus === "Onboarded"
+                          ? "bg-green-100/15 text-green-400 border-green-500/40 dark:bg-green-900/20 dark:text-green-300 dark:border-green-500/30"
+                          : profileStatus === "Meeting Required"
+                          ? "bg-orange-100/15 text-orange-400 border-orange-500/40 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-500/30"
+                          : profileStatus === "KYC Required"
+                          ? "bg-blue-100/15 text-blue-400 border-blue-500/40 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-500/30"
+                          : profileStatus === "Rejected"
+                          ? "bg-red-100/15 text-red-400 border-red-500/40 dark:bg-red-900/20 dark:text-red-300 dark:border-red-500/30"
+                          : "bg-muted text-muted-foreground border-muted"
+                      }`}
+                      style={{ minWidth: "140px", justifyContent: "center" }}
+                    >
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${
+                        profileStatus === "Onboarded"
+                          ? "bg-green-400 dark:bg-green-300"
+                          : profileStatus === "Meeting Required"
+                          ? "bg-orange-400 dark:bg-orange-300"
+                          : profileStatus === "KYC Required"
+                          ? "bg-blue-400 dark:bg-blue-300"
+                          : profileStatus === "Rejected"
+                          ? "bg-red-400 dark:bg-red-300"
+                          : "bg-muted-foreground"
+                      }`} />
+                      <span>{profileStatus || "New"}</span>
+                      <ChevronDown
+                        className="h-4 w-4 sm:h-3 sm:w-3 transition-transform duration-200"
+                        style={{ transform: statusDropdown.open ? "rotate(180deg)" : "rotate(0deg)" }}
+                      />
+                    </button>
                   ) : (
                     <Badge
                       variant={getStatusVariant(profileStatus)}
@@ -773,12 +941,43 @@ export function TalentProfileDialog({
 
                   {/* Manager */}
                   {typeof rowIndex === "number" && onManagerAssign ? (
-                    <ManagerDropdown
-                      currentManager={profileManager}
-                      managers={managers || []}
-                      rowIndex={rowIndex}
-                      onManagerChange={onManagerAssign}
-                    />
+                    <button
+                      ref={managerTriggerRef}
+                      onClick={handleManagerTriggerClick}
+                      className={`inline-flex items-center gap-2 px-3 py-2 sm:px-2.5 sm:py-1 rounded-lg text-sm font-medium transition-all whitespace-nowrap min-h-[44px] sm:min-h-[auto] border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`}
+                      style={{
+                        minWidth: "150px",
+                        justifyContent: "center",
+                        backgroundColor: profileManager ? getManagerBadgeColor(profileManager).bg : "transparent",
+                        color: profileManager ? getManagerBadgeColor(profileManager).text : "var(--muted-foreground)",
+                        borderColor: profileManager ? getManagerBadgeColor(profileManager).border : "var(--border)",
+                      }}
+                    >
+                      {profileManager ? (
+                        <>
+                          <div
+                            className="w-5 h-5 rounded-full flex items-center justify-center font-medium text-[10px]"
+                            style={{
+                              backgroundColor: getManagerBadgeColor(profileManager).text,
+                              color: "#fff"
+                            }}
+                          >
+                            {profileManager.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                          </div>
+                          <span className="hidden sm:inline">{profileManager}</span>
+                          <span className="sm:hidden">{profileManager.split(' ')[0]}</span>
+                        </>
+                      ) : (
+                        <span className="text-muted-foreground">
+                          <span className="sm:hidden">Assign</span>
+                          <span className="hidden sm:inline">Assign Manager</span>
+                        </span>
+                      )}
+                      <ChevronDown
+                        className="h-4 w-4 sm:h-3 sm:w-3 transition-transform duration-200"
+                        style={{ transform: managerDropdown.open ? "rotate(180deg)" : "rotate(0deg)" }}
+                      />
+                    </button>
                   ) : profileManager ? (
                     <Badge variant="outline" className="text-xs sm:text-sm break-words">
                       Manager: {profileManager}
@@ -913,6 +1112,145 @@ export function TalentProfileDialog({
           </ProfileErrorBoundary>
         )}
       </DialogContent>
+
+      {/* Status Dropdown - rendered outside Dialog to avoid z-index stacking issues */}
+      {typeof document !== "undefined" && statusDropdown.open && statusDropdown.position && (
+        createPortal(
+          <div
+            className="fixed inset-0 z-[9999]"
+            onMouseDown={() => setStatusDropdown({ open: false, position: null })}
+          >
+            <div
+              className="dropdown-animate fixed bg-popover border border-border rounded-xl shadow-xl overflow-hidden"
+              style={{
+                top: `${statusDropdown.position.top}px`,
+                left: `${Math.max(8, Math.min(statusDropdown.position.left, window.innerWidth - statusDropdown.position.width - 8))}px`,
+                maxWidth: `${window.innerWidth - 16}px`,
+                minWidth: `${statusDropdown.position.width}px`,
+              }}
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              <div className="py-1">
+                {(["New", "Meeting Required", "KYC Required", "Onboarded", "Rejected"] as StatusValue[]).map((status) => {
+                  const isSelected = status === profileStatus;
+                  const statusColors = {
+                    New: { dot: "bg-muted-foreground" },
+                    "Meeting Required": { dot: "bg-orange-400 dark:bg-orange-300" },
+                    "KYC Required": { dot: "bg-blue-400 dark:bg-blue-300" },
+                    Onboarded: { dot: "bg-green-400 dark:bg-green-300" },
+                    Rejected: { dot: "bg-red-400 dark:bg-red-300" },
+                  };
+                  return (
+                    <button
+                      key={status}
+                      onClick={() => handleStatusSelect(status)}
+                      className={`w-full flex items-center gap-3 px-3 py-3 sm:py-2.5 text-sm transition-colors min-h-[44px] ${
+                        isSelected
+                          ? "bg-accent/60 font-medium text-foreground"
+                          : "text-popover-foreground hover:bg-accent"
+                      }`}
+                    >
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${statusColors[status].dot}`} />
+                      <span className="flex-1 text-left">{status}</span>
+                      {isSelected && (
+                        <span className="text-xs text-muted-foreground shrink-0">Current</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>,
+          document.body
+        )
+      )}
+
+      {/* Manager Dropdown - rendered outside Dialog to avoid z-index stacking issues */}
+      {typeof document !== "undefined" && managerDropdown.open && managerDropdown.position && (
+        createPortal(
+          <div
+            className="fixed inset-0 z-[9999]"
+            onMouseDown={() => setManagerDropdown({ open: false, position: null })}
+          >
+            <div
+              className="fixed bg-popover border border-border rounded-xl shadow-xl overflow-hidden"
+              style={{
+                top: `${managerDropdown.position.top}px`,
+                left: `${Math.max(16, Math.min(managerDropdown.position.left, window.innerWidth - 280 - 16))}px`,
+                width: "280px",
+              }}
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              <div className="py-1">
+                {/* Header */}
+                <div className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Select Manager
+                </div>
+
+                {/* Unassigned option */}
+                <button
+                  onClick={() => handleManagerSelect("")}
+                  className={`w-full flex items-center gap-3 px-3 py-3 sm:py-2.5 text-sm transition-colors min-h-[48px] hover:bg-accent ${
+                    !profileManager
+                      ? "bg-accent/80 font-medium text-foreground"
+                      : "text-popover-foreground"
+                  }`}
+                >
+                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+                    <User className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                  <span className="flex-1 text-left">Unassigned</span>
+                  {!profileManager && (
+                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Current</Badge>
+                  )}
+                </button>
+
+                <div className="h-px bg-border mx-3 my-1" />
+
+                {/* Managers list */}
+                {(managers || []).map((manager) => {
+                  const mColor = getManagerBadgeColor(manager);
+                  const isSelected = manager === profileManager;
+                  return (
+                    <button
+                      key={manager}
+                      onClick={() => handleManagerSelect(manager)}
+                      className={`w-full flex items-center gap-3 px-3 py-3 sm:py-2.5 text-sm transition-colors min-h-[48px] hover:bg-accent ${
+                        isSelected ? "bg-accent/60" : "text-popover-foreground"
+                      }`}
+                    >
+                      <div
+                        className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-medium text-xs"
+                        style={{
+                          backgroundColor: mColor.bg,
+                          color: mColor.text,
+                          border: `1px solid ${mColor.border}`
+                        }}
+                      >
+                        {manager.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                      </div>
+                      <span className="flex-1 text-left font-medium">{manager}</span>
+                      {isSelected && (
+                        <Badge
+                          className="text-[10px] px-1.5 py-0 font-normal"
+                          style={{
+                            backgroundColor: mColor.bg,
+                            color: mColor.text,
+                            borderColor: mColor.border
+                          }}
+                        >
+                          Selected
+                        </Badge>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>,
+          document.body
+        )
+      )}
     </Dialog>
   );
 }
