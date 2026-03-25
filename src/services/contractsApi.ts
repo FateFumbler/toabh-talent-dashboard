@@ -1,6 +1,6 @@
 import type { Contract } from '../types/contract';
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbxZlFw4rsk8ZYPIcKTMJq4U0Amls-lzpG07LxafUPsyvATKYT8jfIhlC0JgInHby6yRNg/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbx6WHG6jE3ZqQoa-1V4PoeWcwsDnv22ZXlEnIWB4F84ujg4lojZUretZ0gOYsdJGDF5EA/exec';
 
 export async function fetchContracts(): Promise<Contract[]> {
   try {
