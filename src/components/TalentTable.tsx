@@ -713,12 +713,16 @@ export function TalentTable({
         createPortal(
           <div
             className="fixed inset-0 z-50"
-            onMouseDown={() => {
-              setOpenManagerDropdown(null);
-              setManagerDropdownPosition(null);
+            onClick={(e) => {
+              const dropdown = document.getElementById("manager-dropdown-panel");
+              if (dropdown && !dropdown.contains(e.target as Node)) {
+                setOpenManagerDropdown(null);
+                setManagerDropdownPosition(null);
+              }
             }}
           >
             <div
+              id="manager-dropdown-panel"
               className="bg-popover border border-border rounded-xl shadow-xl animate-scale-in"
               style={{
                 position: "fixed",
@@ -726,10 +730,8 @@ export function TalentTable({
                 left: `${Math.max(8, Math.min(managerDropdownPosition.left, window.innerWidth - 220))}px`,
                 width: "200px",
                 maxWidth: "calc(100vw - 16px)",
-                maxHeight: "300px",
-                overflowY: "auto",
               }}
-              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
             >
               <div className="py-1">
                 {uniqueManagers.map((manager) => {
