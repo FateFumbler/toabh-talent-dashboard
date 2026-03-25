@@ -456,11 +456,22 @@ function App() {
 
   const handleStatusUpdate = async (row: number, status: string) => {
     setPendingUpdates((prev) => ({ ...prev, [row]: "status" }));
+    // Optimistic update: update local state immediately
+    setTalents((prev) =>
+      prev.map((t) => (t.rowIndex === row ? { ...t, Status: status } : t))
+    );
     try {
       await updateStatus(row, status);
       toast.success(`Status updated to "${status}"`);
-      await loadTalents();
     } catch (err) {
+      // Revert on failure
+      setTalents((prev) => {
+        const original = prev.find((t) => t.rowIndex === row);
+        if (!original) return prev;
+        return prev.map((t) =>
+          t.rowIndex === row ? { ...t, Status: original.Status } : t
+        );
+      });
       toast.error("Failed to update status. Please try again.");
       console.error(err);
     } finally {
@@ -474,11 +485,24 @@ function App() {
 
   const handleManagerAssign = async (row: number, manager: string) => {
     setPendingUpdates((prev) => ({ ...prev, [row]: "manager" }));
+    // Optimistic update: update local state immediately
+    setTalents((prev) =>
+      prev.map((t) =>
+        t.rowIndex === row ? { ...t, "Talent Manager": manager } : t
+      )
+    );
     try {
       await assignManager(row, manager);
       toast.success(`Manager assigned: ${manager}`);
-      await loadTalents();
     } catch (err) {
+      // Revert on failure
+      setTalents((prev) => {
+        const original = prev.find((t) => t.rowIndex === row);
+        if (!original) return prev;
+        return prev.map((t) =>
+          t.rowIndex === row ? { ...t, "Talent Manager": original["Talent Manager"] } : t
+        );
+      });
       toast.error("Failed to assign manager. Please try again.");
       console.error(err);
     } finally {
