@@ -420,7 +420,6 @@ function App() {
     setIsAuthenticated(true);
   };
 
-
   const loadTalents = useCallback(async () => {
     try {
       setError(null);

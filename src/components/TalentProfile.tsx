@@ -1069,6 +1069,7 @@ export function TalentProfileDialog({
                             )}
                             alt={`Photo ${currentImageIndex + 1}`}
                             className="image-modal-image"
+                            style={{ pointerEvents: 'none' }}
                           />
 
                           {polaroidLinks.length > 1 && (
@@ -1133,8 +1134,10 @@ export function TalentProfileDialog({
                 left: `${Math.max(8, Math.min(statusDropdown.position.left, window.innerWidth - statusDropdown.position.width - 8))}px`,
                 maxWidth: `${window.innerWidth - 16}px`,
                 minWidth: `${statusDropdown.position.width}px`,
+                zIndex: 9999,
               }}
               onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
             >
               <div className="py-1">
                 {(["New", "Meeting Required", "KYC Required", "Onboarded", "Rejected"] as StatusValue[]).map((status) => {
@@ -1149,7 +1152,10 @@ export function TalentProfileDialog({
                   return (
                     <button
                       key={status}
-                      onClick={() => handleStatusSelect(status)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleStatusSelect(status);
+                      }}
                       className={`w-full flex items-center gap-3 px-3 py-3 sm:py-2.5 text-sm transition-colors min-h-[44px] ${
                         isSelected
                           ? "bg-accent/60 font-medium text-foreground"
@@ -1184,8 +1190,10 @@ export function TalentProfileDialog({
                 top: `${managerDropdown.position.top}px`,
                 left: `${Math.max(16, Math.min(managerDropdown.position.left, window.innerWidth - 280 - 16))}px`,
                 width: "280px",
+                zIndex: 9999,
               }}
               onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
             >
               <div className="py-1">
                 {/* Header */}
@@ -1195,7 +1203,10 @@ export function TalentProfileDialog({
 
                 {/* Unassigned option */}
                 <button
-                  onClick={() => handleManagerSelect("")}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleManagerSelect("");
+                  }}
                   className={`w-full flex items-center gap-3 px-3 py-3 sm:py-2.5 text-sm transition-colors min-h-[48px] hover:bg-accent ${
                     !profileManager
                       ? "bg-accent/80 font-medium text-foreground"
@@ -1220,7 +1231,10 @@ export function TalentProfileDialog({
                   return (
                     <button
                       key={manager}
-                      onClick={() => handleManagerSelect(manager)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleManagerSelect(manager);
+                      }}
                       className={`w-full flex items-center gap-3 px-3 py-3 sm:py-2.5 text-sm transition-colors min-h-[48px] hover:bg-accent ${
                         isSelected ? "bg-accent/60" : "text-popover-foreground"
                       }`}
