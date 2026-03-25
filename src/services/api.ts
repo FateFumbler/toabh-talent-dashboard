@@ -1,6 +1,6 @@
 import type { Talent, TalentProfile, TalentDetails } from "../types/talent";
 
-const API_URL = "https://script.google.com/macros/s/AKfycbxZlFw4rsk8ZYPIcKTMJq4U0Amls-lzpG07LxafUPsyvATKYT8jfIhlC0JgInHby6yRNg/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwXYCqhFPlsyqaKD-qj824vsGZ551kigvEfcGv6JPi-iWwWa8iaT8mGhD8-4E3FA5pykw/exec";
 
 // Cache config
 const CACHE_PREFIX = `toabh_cache_`;
