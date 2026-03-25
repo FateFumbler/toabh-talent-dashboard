@@ -5,27 +5,28 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { ChevronDown, UserCircle } from "lucide-react";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 
-// Color palette
-const colors = [
-  "#6D28D9", "#9333EA", "#7C3AED",
-  "#2563EB", "#0891B2", "#059669",
-  "#CA8A04", "#DC2626", "#DB2777"
+// Color palette for managers
+const MANAGER_COLORS = [
+  { bg: "#F3E8FF", text: "#7C3AED", border: "#DDD6FE" }, // Purple
+  { bg: "#DBEAFE", text: "#2563EB", border: "#BFDBFE" }, // Blue
+  { bg: "#D1FAE5", text: "#059669", border: "#A7F3D0" }, // Green
+  { bg: "#FEE2E2", text: "#DC2626", border: "#FECACA" }, // Red
+  { bg: "#FEF3C7", text: "#D97706", border: "#FDE68A" }, // Amber
+  { bg: "#FCE7F3", text: "#DB2777", border: "#FBCFE8" }, // Pink
+  { bg: "#CFFAFE", text: "#0891B2", border: "#A5F3FC" }, // Cyan
+  { bg: "#E0E7FF", text: "#4F46E5", border: "#C7D2FE" }, // Indigo
+  { bg: "#FFEDD5", text: "#EA580C", border: "#FED7AA" }, // Orange
 ];
 
 // Consistent color generator based on name hash
-function getManagerColor(name: string): { border: string; bg: string; text: string; dot: string } {
+function getManagerColor(name: string): { bg: string; text: string; border: string } {
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
-  const color = colors[Math.abs(hash) % colors.length];
-  return {
-    border: `border-[${color}]/50`,
-    bg: `bg-[${color}]/15`,
-    text: `text-[${color}]`,
-    dot: `bg-[${color}]`
-  };
+  return MANAGER_COLORS[Math.abs(hash) % MANAGER_COLORS.length];
 }
 
 interface ManagerDropdownProps {
@@ -91,7 +92,7 @@ export function ManagerDropdown({
       const handleScroll = () => {
         if (triggerRef.current) {
           const rect = triggerRef.current.getBoundingClientRect();
-          const pos = getSmartPosition(rect, 220);
+          const pos = getSmartPosition(rect, 280);
           setDropdownPosition({ top: pos.top, left: pos.left, width: rect.width, flipUp: pos.flipUp });
         }
       };
@@ -108,7 +109,7 @@ export function ManagerDropdown({
   useEffect(() => {
     if (!isOpen || !triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
-    const pos = getSmartPosition(rect, 220);
+    const pos = getSmartPosition(rect, 280);
     setDropdownPosition({ top: pos.top, left: pos.left, width: rect.width, flipUp: pos.flipUp });
   }, [isOpen]);
 
@@ -118,7 +119,7 @@ export function ManagerDropdown({
     if (!isOpen) {
       if (triggerRef.current) {
         const rect = triggerRef.current.getBoundingClientRect();
-        const pos = getSmartPosition(rect, 220);
+        const pos = getSmartPosition(rect, 280);
         setDropdownPosition({ top: pos.top, left: pos.left, width: rect.width, flipUp: pos.flipUp });
       }
       setIsOpen(true);
@@ -137,7 +138,7 @@ export function ManagerDropdown({
     setIsOpen(false);
   };
 
-  const colors = getManagerColor(currentManager || "");
+  const selectedColor = getManagerColor(currentManager || "");
 
   const dropdownContent = isOpen && dropdownPosition ? (
     <motion.div
@@ -149,24 +150,40 @@ export function ManagerDropdown({
       style={{
         top: `${dropdownPosition.top}px`,
         left: `${dropdownPosition.left}px`,
-        width: "220px",
+        width: "280px",
       }}
     >
       <div className="py-1">
+        {/* Header */}
+        <div className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+          Select Manager
+        </div>
+
         {/* Unassigned */}
         <button
           onClick={() => handleSelect("")}
-          className={`w-full flex items-center gap-3 px-3 py-3 sm:py-2.5 text-sm transition-colors min-h-[44px] hover:bg-accent ${
-            !currentManager ? "bg-accent/60 font-medium text-foreground" : "text-popover-foreground"
+          className={`w-full flex items-center gap-3 px-3 py-3 sm:py-2.5 text-sm transition-colors min-h-[48px] hover:bg-accent ${
+            !currentManager 
+              ? "bg-accent/80 font-medium text-foreground" 
+              : "text-popover-foreground"
           }`}
         >
-          <UserCircle className="w-4 h-4 shrink-0 text-muted-foreground" />
+          <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+            <UserCircle className="w-4 h-4 text-muted-foreground" />
+          </div>
           <span className="flex-1 text-left">Unassigned</span>
-          {!currentManager && <span className="text-xs text-muted-foreground">Current</span>}
+          {!currentManager && (
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+              Current
+            </Badge>
+          )}
         </button>
 
+        <div className="h-px bg-border mx-3 my-1" />
+
+        {/* Managers list */}
         {managers.map((manager, idx) => {
-          const mColors = getManagerColor(manager);
+          const mColor = getManagerColor(manager);
           const isSelected = manager === currentManager;
           return (
             <motion.button
@@ -175,13 +192,38 @@ export function ManagerDropdown({
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: idx * 0.03, duration: 0.15 }}
-              className={`w-full flex items-center gap-3 px-3 py-3 sm:py-2.5 text-sm transition-colors min-h-[44px] hover:bg-accent ${
-                isSelected ? `${mColors.bg} font-medium` : "text-popover-foreground"
+              className={`w-full flex items-center gap-3 px-3 py-3 sm:py-2.5 text-sm transition-colors min-h-[48px] hover:bg-accent ${
+                isSelected ? "bg-accent/60" : "text-popover-foreground"
               }`}
             >
-              <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${mColors.dot}`} />
-              <span className={`flex-1 text-left ${isSelected ? mColors.text : ""}`}>{manager}</span>
-              {isSelected && <span className="text-xs text-muted-foreground">Current</span>}
+              {/* Colored avatar/badge */}
+              <div 
+                className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-medium text-xs"
+                style={{ 
+                  backgroundColor: mColor.bg, 
+                  color: mColor.text,
+                  border: `1px solid ${mColor.border}`
+                }}
+              >
+                {manager.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+              </div>
+              
+              <span className="flex-1 text-left font-medium">{manager}</span>
+              
+              {isSelected && (
+                <div className="flex items-center gap-1">
+                  <Badge 
+                    className="text-[10px] px-1.5 py-0 font-normal"
+                    style={{ 
+                      backgroundColor: mColor.bg, 
+                      color: mColor.text,
+                      borderColor: mColor.border
+                    }}
+                  >
+                    Selected
+                  </Badge>
+                </div>
+              )}
             </motion.button>
           );
         })}
@@ -195,16 +237,34 @@ export function ManagerDropdown({
         ref={triggerRef}
         onClick={handleTriggerClick}
         disabled={disabled}
-        className={`inline-flex items-center gap-2 px-3 py-2 sm:px-2 sm:py-1 rounded-full text-sm sm:text-xs font-medium transition-all whitespace-nowrap min-h-[44px] sm:min-h-[auto] border ${colors.border} ${colors.bg} ${colors.text} hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`}
-        style={{ minWidth: "140px", justifyContent: "center" }}
+        className={`inline-flex items-center gap-2 px-3 py-2 sm:px-2.5 sm:py-1 rounded-lg text-sm font-medium transition-all whitespace-nowrap min-h-[44px] sm:min-h-[auto] border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed`}
+        style={{ 
+          minWidth: "150px", 
+          justifyContent: "center",
+          backgroundColor: currentManager ? selectedColor.bg : "transparent",
+          color: currentManager ? selectedColor.text : "var(--muted-foreground)",
+          borderColor: currentManager ? selectedColor.border : "var(--border)",
+        }}
       >
         {currentManager ? (
           <>
-            <span className={`w-2 h-2 rounded-full shrink-0 ${colors.dot}`} />
-            <span>{currentManager}</span>
+            <div 
+              className="w-5 h-5 rounded-full flex items-center justify-center font-medium text-[10px]"
+              style={{ 
+                backgroundColor: selectedColor.text,
+                color: "#fff"
+              }}
+            >
+              {currentManager.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+            </div>
+            <span className="hidden sm:inline">{currentManager}</span>
+            <span className="sm:hidden">{currentManager.split(' ')[0]}</span>
           </>
         ) : (
-          <span className="text-muted-foreground"><span className="sm:hidden">Assign Manager</span><span className="hidden sm:inline">Manager</span></span>
+          <span className="text-muted-foreground">
+            <span className="sm:hidden">Assign</span>
+            <span className="hidden sm:inline">Assign Manager</span>
+          </span>
         )}
         <ChevronDown
           className="h-4 w-4 sm:h-3 sm:w-3 transition-transform duration-200"
