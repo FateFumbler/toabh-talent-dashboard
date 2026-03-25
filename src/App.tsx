@@ -446,7 +446,24 @@ function App() {
         }
       }
 
-      setTalents(sortedTalents);
+      // Preserve optimistically updated talents - don't overwrite items with pending updates
+      setTalents((prev) => {
+        if (Object.keys(pendingUpdates).length === 0) {
+          // No pending updates, use fresh data directly
+          return sortedTalents;
+        }
+        // Create map of current talents for quick lookup
+        const prevMap = new Map(prev.map((t) => [t.rowIndex, t]));
+        // Merge: use fresh data except for items being updated
+        return sortedTalents.map((t) => {
+          const pending = prevMap.get(t.rowIndex);
+          if (pending && pendingUpdates[t.rowIndex]) {
+            // Don't overwrite - preserve the optimistically updated version
+            return pending;
+          }
+          return t;
+        });
+      });
       setTalentDetailsMap(detailsMap);
       setLastUpdated(new Date());
     } catch (err) {
