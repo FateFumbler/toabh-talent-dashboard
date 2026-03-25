@@ -899,7 +899,10 @@ export function TalentProfileDialog({
                   {typeof rowIndex === "number" && onStatusUpdate ? (
                     <button
                       ref={statusTriggerRef}
-                      onClick={handleStatusTriggerClick}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleStatusTriggerClick();
+                      }}
                       className={`inline-flex items-center gap-2 px-3 py-2 sm:px-2 sm:py-1 rounded-full text-sm sm:text-xs font-medium transition-all whitespace-nowrap min-h-[44px] sm:min-h-[auto] border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                         profileStatus === "Onboarded"
                           ? "bg-green-100/15 text-green-400 border-green-500/40 dark:bg-green-900/20 dark:text-green-300 dark:border-green-500/30"
@@ -943,7 +946,10 @@ export function TalentProfileDialog({
                   {typeof rowIndex === "number" && onManagerAssign ? (
                     <button
                       ref={managerTriggerRef}
-                      onClick={handleManagerTriggerClick}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleManagerTriggerClick();
+                      }}
                       className={`inline-flex items-center gap-2 px-3 py-2 sm:px-2.5 sm:py-1 rounded-lg text-sm font-medium transition-all whitespace-nowrap min-h-[44px] sm:min-h-[auto] border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`}
                       style={{
                         minWidth: "150px",
