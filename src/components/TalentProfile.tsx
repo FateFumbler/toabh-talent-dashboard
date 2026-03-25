@@ -1069,7 +1069,6 @@ export function TalentProfileDialog({
                             )}
                             alt={`Photo ${currentImageIndex + 1}`}
                             className="image-modal-image"
-                            style={{ pointerEvents: 'none' }}
                           />
 
                           {polaroidLinks.length > 1 && (
