@@ -305,6 +305,7 @@ function StatCard({
     blue: { shadow: "inset 4px 0 0 0 #3b82f6", glow: "rgba(59, 130, 246, 0.25)" },
     orange: { shadow: "inset 4px 0 0 0 #f97316", glow: "rgba(249, 115, 22, 0.25)" },
     green: { shadow: "inset 4px 0 0 0 #22c55e", glow: "rgba(34, 197, 94, 0.25)" },
+    pink: { shadow: "inset 4px 0 0 0 #ec4899", glow: "rgba(236, 72, 153, 0.25)" },
   };
   const c = colorMap[color] || colorMap.purple;
 
@@ -624,14 +625,17 @@ function App() {
   );
 
   const totalTalents = talents.length;
-  const onboardedCount = talents.filter(
-    (t) => t["Status"] === "Onboarded"
+  const newCount = talents.filter(
+    (t) => t["Status"] === "New"
   ).length;
   const meetingRequiredCount = talents.filter(
     (t) => t["Status"] === "Meeting Required"
   ).length;
   const kycRequiredCount = talents.filter(
     (t) => t["Status"] === "KYC Required"
+  ).length;
+  const onboardedCount = talents.filter(
+    (t) => t["Status"] === "Onboarded"
   ).length;
 
   const profileSearchResults = useMemo(() => {
@@ -820,6 +824,14 @@ function App() {
             color="purple"
             isActive={activeTile === null}
             onClick={() => handleTileClick("Total")}
+            icon={<User className="h-4 w-4" />}
+          />
+          <StatCard
+            label="New"
+            value={newCount}
+            color="pink"
+            isActive={activeTile === "New"}
+            onClick={() => handleTileClick("New")}
             icon={<User className="h-4 w-4" />}
           />
           <StatCard
