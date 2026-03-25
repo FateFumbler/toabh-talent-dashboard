@@ -1417,6 +1417,10 @@ function TalentGridView({
   };
 
   const uniqueStatuses = getUniqueValues(talents, "Status");
+  // Always include "New" as an option in the status filter
+  if (!uniqueStatuses.includes("New")) {
+    uniqueStatuses.unshift("New");
+  }
   const uniqueManagers = getAllManagers(talents, managers);
   const uniqueCities = getUniqueValues(talents, "City");
 
