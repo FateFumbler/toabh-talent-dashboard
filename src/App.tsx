@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { TalentTable } from "./components/TalentTable";
 import { TalentProfileDialog } from "./components/TalentProfile";
 import { ContractsTab } from "./components/ContractsTab";
@@ -19,9 +19,9 @@ import {
   fetchTalentDetails,
   updateStatus,
   assignManager,
+  fetchManagers,
 } from "./services/api";
 import type { Talent, TalentDetails } from "@/types/talent";
-import { MANAGERS } from "@/types/talent";
 import { StatusDropdown } from "@/components/StatusDropdown";
 import { ManagerDropdown } from "@/components/ManagerDropdown";
 import {
@@ -333,15 +333,15 @@ function formatHeight(height: string | number | undefined | null): string {
   return trimmed || "-";
 }
 
-// Get all available managers: merge hardcoded MANAGERS list with dynamic values from sheet
+// Get all available managers: merge API-provided managers with dynamic values from sheet
 // Normalizes case for deduplication to handle whitespace/case variations
-const getAllManagers = (talents: Talent[]): string[] => {
+const getAllManagers = (talents: Talent[], apiManagers: string[] = []): string[] => {
   const dynamicManagers = talents
     .map(t => (t["Talent Manager"] || "").toString().trim())
     .filter(m => m.length > 0);
 
-  // Merge hardcoded + dynamic, normalize for deduplication
-  const all = [...MANAGERS, ...dynamicManagers].map(m => m.trim());
+  // Merge API + dynamic, normalize for deduplication
+  const all = [...apiManagers, ...dynamicManagers].map(m => m.trim());
   const normalized = all.map(m => m.toLowerCase());
   const uniqueNormalized = Array.from(new Set(normalized));
   return uniqueNormalized
@@ -368,6 +368,15 @@ function App() {
   const [pendingUpdates, setPendingUpdates] = useState<
     Record<number, "status" | "manager">
   >({});
+  // Separate Set for tracking updating rows - used to prevent loadTalents deps changes
+  const [updatingIds, setUpdatingIds] = useState<Set<number>>(new Set());
+  // Ref for loadTalents to access updatingIds without being a dependency
+  const updatingIdsRef = useRef<Set<number>>(new Set());
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    updatingIdsRef.current = updatingIds;
+  }, [updatingIds]);
   const [activeTab, setActiveTab] = useState<
     "talent-master" | "talent-profile" | "settings" | "contracts"
   >("talent-master");
@@ -397,6 +406,7 @@ function App() {
     typeof window !== "undefined" ? window.innerWidth : 1200
   );
   const [activeTile, setActiveTile] = useState<string | null>(null);
+  const [managers, setManagers] = useState<string[]>([]);
 
 
 
@@ -419,6 +429,20 @@ function App() {
   const handleLogin = () => {
     setIsAuthenticated(true);
   };
+
+  const fetchManagersList = async () => {
+    try {
+      const data = await fetchManagers();
+      const sorted = [...data].sort();
+      setManagers(sorted);
+    } catch (err) {
+      console.log("Failed to fetch managers:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchManagersList();
+  }, []);
 
   const loadTalents = useCallback(async (forceRefresh = false) => {
     try {
@@ -447,8 +471,10 @@ function App() {
       }
 
       // Preserve optimistically updated talents - don't overwrite items with pending updates
+      // Use ref to avoid adding updatingIds to useCallback deps (which would cause refetch loops)
+      const currentUpdatingIds = updatingIdsRef.current;
       setTalents((prev) => {
-        if (Object.keys(pendingUpdates).length === 0) {
+        if (currentUpdatingIds.size === 0) {
           // No pending updates, use fresh data directly
           return sortedTalents;
         }
@@ -457,7 +483,7 @@ function App() {
         // Merge: use fresh data except for items being updated
         return sortedTalents.map((t) => {
           const pending = prevMap.get(t.rowIndex);
-          if (pending && pendingUpdates[t.rowIndex]) {
+          if (pending && currentUpdatingIds.has(t.rowIndex)) {
             // Don't overwrite - preserve the optimistically updated version
             return pending;
           }
@@ -489,7 +515,9 @@ function App() {
       toast.error(`Invalid row number: ${row}`);
       return;
     }
+    // Track in both pendingUpdates (for components) and updatingIds (for loadTalents)
     setPendingUpdates((prev) => ({ ...prev, [row]: "status" }));
+    setUpdatingIds((prev) => new Set(prev).add(row));
     // Optimistic update: update local state immediately
     setTalents((prev) =>
       prev.map((t) => (t.rowIndex === row ? { ...t, Status: status } : t))
@@ -514,11 +542,18 @@ function App() {
         delete next[row];
         return next;
       });
+      setUpdatingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(row);
+        return next;
+      });
     }
   };
 
   const handleManagerAssign = async (row: number, manager: string) => {
+    // Track in both pendingUpdates (for components) and updatingIds (for loadTalents)
     setPendingUpdates((prev) => ({ ...prev, [row]: "manager" }));
+    setUpdatingIds((prev) => new Set(prev).add(row));
     // Optimistic update: update local state immediately
     setTalents((prev) =>
       prev.map((t) =>
@@ -528,6 +563,7 @@ function App() {
     try {
       await assignManager(row, manager);
       toast.success(`Manager assigned: ${manager}`);
+      fetchManagersList();
     } catch (err) {
       // Revert on failure
       setTalents((prev) => {
@@ -543,6 +579,11 @@ function App() {
       setPendingUpdates((prev) => {
         const next = { ...prev };
         delete next[row];
+        return next;
+      });
+      setUpdatingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(row);
         return next;
       });
     }
@@ -881,8 +922,10 @@ function App() {
                   onRefresh={loadTalents}
                   lastUpdated={lastUpdated}
                   pendingUpdates={pendingUpdates}
+                  updatingIds={updatingIds}
                   statusFilter={activeTile || "all"}
                   onStatusFilterChange={handleStatusFilterChange}
+                  managers={managers}
                 />
               )}
 
@@ -894,12 +937,14 @@ function App() {
                   isLoading={isLoading}
                   onTalentClick={handleTalentClick}
                   pendingUpdates={pendingUpdates}
+                  updatingIds={updatingIds}
                   onStatusUpdate={handleStatusUpdate}
                   onManagerAssign={handleManagerAssign}
                   filtersOpen={filtersOpen}
                   onFiltersToggle={() => setFiltersOpen(!filtersOpen)}
                   statusFilter={activeTile || "all"}
                   onStatusFilterChange={handleStatusFilterChange}
+                  managers={managers}
                 />
               ) : null}
             </>
@@ -1289,7 +1334,7 @@ function App() {
         rowIndex={selectedTalentRowIndex ?? undefined}
         onStatusUpdate={handleStatusUpdate}
         onManagerAssign={handleManagerAssign}
-        managers={getAllManagers(talents)}
+        managers={managers}
       />
 
       {/* Toast notifications */}
@@ -1322,12 +1367,14 @@ interface TalentGridViewProps {
   isLoading: boolean;
   onTalentClick: (name: string, rowIndex: number) => void;
   pendingUpdates: Record<number, "status" | "manager">;
+  updatingIds?: Set<number>;
   onStatusUpdate: (row: number, status: string) => void;
   onManagerAssign: (row: number, manager: string) => void;
   filtersOpen?: boolean;
   onFiltersToggle?: () => void;
   statusFilter?: string;
   onStatusFilterChange?: (status: string) => void;
+  managers?: string[];
 }
 
 function TalentGridView({
@@ -1336,12 +1383,14 @@ function TalentGridView({
   isLoading,
   onTalentClick,
   pendingUpdates,
+  updatingIds = new Set(),
   onStatusUpdate,
   onManagerAssign,
   filtersOpen = true,
   onFiltersToggle,
   statusFilter: externalStatusFilter,
   onStatusFilterChange: externalOnStatusFilterChange,
+  managers = [],
 }: TalentGridViewProps) {
   const [search, setSearch] = useState("");
   const [internalStatusFilter, setInternalStatusFilter] = useState<string>("all");
@@ -1368,7 +1417,7 @@ function TalentGridView({
   };
 
   const uniqueStatuses = getUniqueValues(talents, "Status");
-  const uniqueManagers = getAllManagers(talents);
+  const uniqueManagers = getAllManagers(talents, managers);
   const uniqueCities = getUniqueValues(talents, "City");
 
   const filteredTalents = useMemo(() => {
@@ -1619,15 +1668,15 @@ function TalentGridView({
                       managers={uniqueManagers}
                       rowIndex={talent.rowIndex!}
                       onManagerChange={handleManagerSelect}
-                      disabled={!!pendingUpdates[talent.rowIndex]}
+                      disabled={updatingIds.has(talent.rowIndex!)}
                     />
 
                     <StatusDropdown
                       currentStatus={(talent["Status"] as any) || "New"}
                       rowIndex={talent.rowIndex}
                       onStatusChange={onStatusUpdate}
-                      disabled={!!pendingUpdates[talent.rowIndex]}
-                      isLoading={pendingUpdates[talent.rowIndex] === "status"}
+                      disabled={updatingIds.has(talent.rowIndex!)}
+                      isLoading={updatingIds.has(talent.rowIndex!)}
                       hasManager={!!talent["Talent Manager"]}
                     />
                   </div>

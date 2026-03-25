@@ -278,3 +278,16 @@ export async function assignManager(row: number, manager: string): Promise<void>
     body: formData,
   });
 }
+
+export async function fetchManagers(): Promise<string[]> {
+  try {
+    const response = await fetch(`${API_URL}?action=getManagers`, {
+      redirect: 'follow',
+    });
+    const data = await response.json();
+    return data.managers || [];
+  } catch (error) {
+    console.log("Failed to fetch managers from API:", error);
+    return [];
+  }
+}

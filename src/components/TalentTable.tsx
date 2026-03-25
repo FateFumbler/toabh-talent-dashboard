@@ -20,7 +20,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import type { Talent, StatusValue } from "@/types/talent";
-import { MANAGERS } from "@/types/talent";
 import { Search, RefreshCw, Loader2, X, SlidersHorizontal, ChevronDown } from "lucide-react";
 import { StatusDropdown } from "./StatusDropdown";
 import type { ColumnName } from "./ColumnVisibility";
@@ -58,9 +57,11 @@ interface TalentTableProps {
   onRefresh: () => void;
   lastUpdated: Date | null;
   pendingUpdates?: Record<number, "status" | "manager">;
+  updatingIds?: Set<number>;
   visibleColumns?: ColumnName[];
   statusFilter?: string;
   onStatusFilterChange?: (status: string) => void;
+  managers?: string[];
 }
 
 function parseInstagram(value: string): string {
@@ -140,15 +141,15 @@ const getUniqueValues = (talents: Talent[], key: keyof Talent): string[] => {
   return Array.from(new Set(managers)).sort();
 };
 
-// Get all available managers: merge hardcoded MANAGERS list with dynamic values from sheet
+// Get all available managers: merge API-provided managers with dynamic values from sheet
 // Normalizes case for deduplication to handle whitespace/case variations
-const getAllManagers = (talents: Talent[]): string[] => {
+const getAllManagers = (talents: Talent[], apiManagers: string[] = []): string[] => {
   const dynamicManagers = talents
     .map(t => (t["Talent Manager"] || "").toString().trim())
     .filter(m => m.length > 0);
 
-  // Merge hardcoded + dynamic, normalize for deduplication
-  const all = [...MANAGERS, ...dynamicManagers].map(m => m.trim());
+  // Merge API + dynamic, normalize for deduplication
+  const all = [...apiManagers, ...dynamicManagers].map(m => m.trim());
   const normalized = all.map(m => m.toLowerCase());
   const uniqueNormalized = Array.from(new Set(normalized));
   return uniqueNormalized
@@ -165,9 +166,11 @@ export function TalentTable({
   onRefresh,
   lastUpdated,
   pendingUpdates = {},
+  updatingIds = new Set(),
   visibleColumns: externalVisibleColumns,
   statusFilter: externalStatusFilter,
   onStatusFilterChange: externalOnStatusFilterChange,
+  managers = [],
 }: TalentTableProps) {
   const [search, setSearch] = useState("");
   const [internalStatusFilter, setInternalStatusFilter] = useState<string>("all");
@@ -193,7 +196,7 @@ export function TalentTable({
   const visibleColumns = externalVisibleColumns || getInitialColumns();
 
   const uniqueStatuses = getUniqueValues(talents, "Status");
-  const uniqueManagers = getAllManagers(talents);
+  const uniqueManagers = getAllManagers(talents, managers);
   const uniqueCities = getUniqueValues(talents, "City");
 
   const filteredTalents = useMemo(() => {
@@ -273,7 +276,7 @@ export function TalentTable({
 
   const handleManagerTriggerClick = (rowIndex: number, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (pendingUpdates[rowIndex]) return;
+    if (pendingUpdates[rowIndex] || updatingIds.has(rowIndex)) return;
     if (openManagerDropdown === rowIndex) {
       setOpenManagerDropdown(null);
       setManagerDropdownPosition(null);
@@ -626,7 +629,7 @@ export function TalentTable({
                         return (
                           <button
                             onClick={(e) => handleManagerTriggerClick(talent.rowIndex!, e)}
-                            disabled={!!pendingUpdates[talent.rowIndex]}
+                            disabled={!!pendingUpdates[talent.rowIndex] || updatingIds.has(talent.rowIndex!)}
                             className="flex items-center gap-2 hover:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <div 
@@ -647,10 +650,10 @@ export function TalentTable({
                       })() : (
                         <button
                           onClick={(e) => handleManagerTriggerClick(talent.rowIndex!, e)}
-                          disabled={!!pendingUpdates[talent.rowIndex]}
+                          disabled={!!pendingUpdates[talent.rowIndex] || updatingIds.has(talent.rowIndex!)}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:py-1.5 bg-secondary text-secondary-foreground sm:rounded-full rounded-lg text-sm sm:text-sm font-medium hover:bg-secondary/80 transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-border/50 whitespace-nowrap sm:min-w-[140px] justify-center"
                         >
-                          {pendingUpdates[talent.rowIndex] === "manager" ? (
+                          {(pendingUpdates[talent.rowIndex] === "manager" || updatingIds.has(talent.rowIndex!)) ? (
                             <Loader2 className="h-3 w-3 animate-spin" />
                           ) : (
                             <>
@@ -695,8 +698,8 @@ export function TalentTable({
                       }
                       rowIndex={talent.rowIndex}
                       onStatusChange={onStatusUpdate}
-                      disabled={!!pendingUpdates[talent.rowIndex]}
-                      isLoading={pendingUpdates[talent.rowIndex] === "status"}
+                      disabled={!!pendingUpdates[talent.rowIndex] || updatingIds.has(talent.rowIndex!)}
+                      isLoading={pendingUpdates[talent.rowIndex] === "status" || updatingIds.has(talent.rowIndex!)}
                       hasManager={!!talent["Talent Manager"]}
                     />
                     </div>
