@@ -477,11 +477,11 @@ function App() {
         }
       }
 
-      // Preserve optimistically updated talents and recently-updated talents (10-sec lock)
+      // Preserve optimistically updated talents and recently-updated talents (30-sec lock)
       // Use refs to avoid adding to useCallback deps (which would cause refetch loops)
       const currentUpdatingIds = updatingIdsRef.current;
       const currentRecentlyUpdated = recentlyUpdatedRef.current;
-      const LOCK_DURATION = 10000;
+      const LOCK_DURATION = 30000;
       setTalents((prev) => {
         if (currentUpdatingIds.size === 0 && Object.keys(currentRecentlyUpdated).length === 0) {
           // No pending updates or recently locked, use fresh data directly
@@ -561,7 +561,7 @@ function App() {
     // Track in both pendingUpdates (for components) and updatingIds (for loadTalents)
     setPendingUpdates((prev) => ({ ...prev, [row]: "status" }));
     setUpdatingIds((prev) => new Set(prev).add(row));
-    // Add 10-sec lock to prevent auto-refetch from overwriting optimistic update
+    // Add 30-sec lock to prevent auto-refetch from overwriting optimistic update
     setRecentlyUpdated((prev) => ({ ...prev, [String(row)]: Date.now() }));
     try {
       await updateStatus(row, status);
@@ -602,7 +602,7 @@ function App() {
     // Track in both pendingUpdates (for components) and updatingIds (for loadTalents)
     setPendingUpdates((prev) => ({ ...prev, [row]: "manager" }));
     setUpdatingIds((prev) => new Set(prev).add(row));
-    // Add 10-sec lock to prevent auto-refetch from overwriting optimistic update
+    // Add 30-sec lock to prevent auto-refetch from overwriting optimistic update
     setRecentlyUpdated((prev) => ({ ...prev, [String(row)]: Date.now() }));
     try {
       await assignManager(row, manager);
