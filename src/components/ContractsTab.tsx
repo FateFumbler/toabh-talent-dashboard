@@ -398,7 +398,8 @@ export function ContractsTab() {
               <span className="hidden sm:inline">Sync</span>
             </Button>
             {/* Sort dropdown - icon only */}
-            <div className="relative">
+            {/* overflow-hidden prevents parent's overflow-x-auto from causing scroll issues */}
+            <div className="relative overflow-hidden">
               <button
                 onClick={() => setSortDropdownOpen(!sortDropdownOpen)}
                 className="p-2 bg-input border border-border rounded-lg hover:bg-accent transition-colors"
@@ -407,7 +408,7 @@ export function ContractsTab() {
                 <ArrowUpDown className="h-4 w-4 text-foreground" />
               </button>
               {sortDropdownOpen && (
-                <div className="absolute left-0 sm:right-0 mt-1 z-50 bg-popover border border-border rounded-xl shadow-xl overflow-hidden dropdown-animate">
+                <div className="absolute right-0 mt-1 z-50 bg-popover border border-border rounded-xl shadow-xl max-h-[50vh] overflow-y-auto dropdown-animate">
                   <button
                     onClick={() => { setSortBy('newest'); setSortDropdownOpen(false); }}
                     className={`w-full text-left px-4 py-2 text-sm hover:bg-accent transition-colors ${sortBy === 'newest' ? 'text-primary font-medium' : 'text-foreground'}`}
