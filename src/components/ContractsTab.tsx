@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card } from './ui/card';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { Search, FileText, ExternalLink, RefreshCw, Plus, Trash2, ChevronDown, Pencil, LayoutGrid, List } from 'lucide-react';
+import { Search, FileText, ExternalLink, RefreshCw, Plus, Trash2, ChevronDown, Pencil, LayoutGrid, List, ArrowUpDown } from 'lucide-react';
 import type { Contract } from '../types/contract';
 import { fetchContracts } from '../services/contractsApi';
 import { fetchTalentMaster } from '../services/api';
@@ -14,6 +14,7 @@ export function ContractsTab() {
   const [search, setSearch] = useState('');
   const [view, setView] = useState<'list' | 'grid'>('grid');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'name-az' | 'name-za'>('newest');
+  const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
 
   // Settings state (from existing Settings component)
   const [showDeleteButtons, setShowDeleteButtons] = useState(false);
@@ -377,7 +378,7 @@ export function ContractsTab() {
   return (
     <div className="space-y-4">
       {/* Header - title and buttons on same row */}
-      <div className="flex items-center justify-between px-4 py-3">
+      <div className="flex items-center justify-between px-4 py-3 overflow-hidden">
         {/* Left side: Title and metadata */}
         <div>
           <h2 className="text-lg font-bold text-foreground">Contracts</h2>
@@ -413,17 +414,44 @@ export function ContractsTab() {
               <LayoutGrid className="h-4 w-4" />
             </button>
           </div>
-          {/* Sort dropdown */}
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-            className="bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground cursor-pointer hover:bg-accent transition-colors"
-          >
-            <option value="newest">Newest</option>
-            <option value="oldest">Oldest</option>
-            <option value="name-az">Name A-Z</option>
-            <option value="name-za">Name Z-A</option>
-          </select>
+          {/* Sort dropdown - icon only */}
+          <div className="relative">
+            <button
+              onClick={() => setSortDropdownOpen(!sortDropdownOpen)}
+              className="p-2 bg-input border border-border rounded-lg hover:bg-accent transition-colors"
+              title="Sort"
+            >
+              <ArrowUpDown className="h-4 w-4 text-foreground" />
+            </button>
+            {sortDropdownOpen && (
+              <div className="absolute right-0 mt-1 z-50 bg-popover border border-border rounded-xl shadow-xl overflow-hidden dropdown-animate">
+                <button
+                  onClick={() => { setSortBy('newest'); setSortDropdownOpen(false); }}
+                  className={`w-full text-left px-4 py-2 text-sm hover:bg-accent transition-colors ${sortBy === 'newest' ? 'text-primary font-medium' : 'text-foreground'}`}
+                >
+                  Newest
+                </button>
+                <button
+                  onClick={() => { setSortBy('oldest'); setSortDropdownOpen(false); }}
+                  className={`w-full text-left px-4 py-2 text-sm hover:bg-accent transition-colors ${sortBy === 'oldest' ? 'text-primary font-medium' : 'text-foreground'}`}
+                >
+                  Oldest
+                </button>
+                <button
+                  onClick={() => { setSortBy('name-az'); setSortDropdownOpen(false); }}
+                  className={`w-full text-left px-4 py-2 text-sm hover:bg-accent transition-colors ${sortBy === 'name-az' ? 'text-primary font-medium' : 'text-foreground'}`}
+                >
+                  Name A-Z
+                </button>
+                <button
+                  onClick={() => { setSortBy('name-za'); setSortDropdownOpen(false); }}
+                  className={`w-full text-left px-4 py-2 text-sm hover:bg-accent transition-colors ${sortBy === 'name-za' ? 'text-primary font-medium' : 'text-foreground'}`}
+                >
+                  Name Z-A
+                </button>
+              </div>
+            )}
+          </div>
           <Button variant="outline" size="sm" onClick={loadData} className="px-2 sm:px-3">
             <RefreshCw className="h-4 w-4 sm:mr-1" />
             <span className="hidden sm:inline">Sync</span>
@@ -721,7 +749,7 @@ export function ContractsTab() {
             </div>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 overflow-hidden">
             {sortedContracts.map((contract) => (
               <ContractCard key={contract.id || contract.phone} contract={contract} />
             ))}

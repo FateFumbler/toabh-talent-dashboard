@@ -391,6 +391,14 @@ html, body {
   background: var(--accent);
 }
 
+/* Contracts grid mobile overflow prevention */
+@media (max-width: 640px) {
+  .contracts-grid-wrapper {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
+}
+
 /* Table container with rounded corners */
 .table-container {
   border-radius: 12px;
