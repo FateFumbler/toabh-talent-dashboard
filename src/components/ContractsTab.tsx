@@ -12,7 +12,8 @@ export function ContractsTab() {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [view, setView] = useState<'list' | 'grid'>('list');
+  const [view, setView] = useState<'list' | 'grid'>('grid');
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'name-az' | 'name-za'>('newest');
 
   // Settings state (from existing Settings component)
   const [showDeleteButtons, setShowDeleteButtons] = useState(false);
@@ -270,6 +271,64 @@ export function ContractsTab() {
     );
   });
 
+  // Sort contracts
+  const sortedContracts = [...filteredContracts].sort((a, b) => {
+    // Helper to get effective date for sorting
+    const getDateForSort = (contract: Contract): number => {
+      if (contract.createdAt) {
+        return new Date(contract.createdAt).getTime();
+      }
+      // Sheet contracts use rowIndex as proxy for date (higher rowIndex = newer)
+      if (contract.source === 'sheet' && contract.rowIndex !== undefined) {
+        return contract.rowIndex * 1000000; // Scale rowIndex to avoid collision with timestamps
+      }
+      return 0; // Treat missing dates as very old
+    };
+
+    switch (sortBy) {
+      case 'newest': {
+        const dateA = getDateForSort(a);
+        const dateB = getDateForSort(b);
+        if (dateB !== dateA) return dateB - dateA;
+        // Secondary: for same date, sheet contracts (higher rowIndex) first
+        if (a.rowIndex !== undefined && b.rowIndex !== undefined) {
+          return b.rowIndex - a.rowIndex;
+        }
+        return 0;
+      }
+      case 'oldest': {
+        const dateA = getDateForSort(a);
+        const dateB = getDateForSort(b);
+        if (dateA !== dateB) return dateA - dateB;
+        // Secondary: for same date, sheet contracts (lower rowIndex) first
+        if (a.rowIndex !== undefined && b.rowIndex !== undefined) {
+          return a.rowIndex - b.rowIndex;
+        }
+        return 0;
+      }
+      case 'name-az': {
+        const nameA = (a.name || '').toLowerCase();
+        const nameB = (b.name || '').toLowerCase();
+        if (nameA === nameB) return 0;
+        // Empty names go to end
+        if (!nameA) return 1;
+        if (!nameB) return -1;
+        return nameA.localeCompare(nameB);
+      }
+      case 'name-za': {
+        const nameA = (a.name || '').toLowerCase();
+        const nameB = (b.name || '').toLowerCase();
+        if (nameA === nameB) return 0;
+        // Empty names go to start
+        if (!nameA) return -1;
+        if (!nameB) return 1;
+        return nameB.localeCompare(nameA);
+      }
+      default:
+        return 0;
+    }
+  });
+
   // Filter talents for searchable dropdown
   const filteredTalents = (talents || []).filter(t => {
     if (!t) return false;
@@ -281,7 +340,7 @@ export function ContractsTab() {
   });
 
   // Group by phone for display
-  const contractsByPhone = filteredContracts.reduce(
+  const contractsByPhone = sortedContracts.reduce(
     (acc, contract) => {
       const phone = contract.phone || 'Unknown';
       if (!acc[phone]) acc[phone] = [];
@@ -330,6 +389,17 @@ export function ContractsTab() {
               <LayoutGrid className="h-4 w-4" />
             </button>
           </div>
+          {/* Sort dropdown */}
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+            className="bg-input border border-border rounded-lg px-3 py-2 text-sm text-foreground cursor-pointer hover:bg-accent transition-colors"
+          >
+            <option value="newest">Newest</option>
+            <option value="oldest">Oldest</option>
+            <option value="name-az">Name A-Z</option>
+            <option value="name-za">Name Z-A</option>
+          </select>
           <Button variant="outline" size="sm" onClick={loadData} className="px-2 sm:px-3">
             <RefreshCw className="h-4 w-4 sm:mr-1" />
             <span className="hidden sm:inline">Sync</span>
@@ -471,7 +541,7 @@ export function ContractsTab() {
       )}
 
       {/* Contracts List/Grid View */}
-      {!loading && filteredContracts.length > 0 && (
+      {!loading && sortedContracts.length > 0 && (
         view === 'list' ? (
           <Card className="overflow-hidden">
             <div className="overflow-x-auto">
@@ -628,7 +698,7 @@ export function ContractsTab() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredContracts.map((contract) => (
+            {sortedContracts.map((contract) => (
               <ContractCard key={contract.id || contract.phone} contract={contract} />
             ))}
           </div>
@@ -636,7 +706,7 @@ export function ContractsTab() {
       )}
 
       {/* Empty State */}
-      {!loading && filteredContracts.length === 0 && (
+      {!loading && sortedContracts.length === 0 && (
         <div className="text-center py-12 text-muted-foreground">
           No contracts found. Add contracts manually or sync to refresh.
         </div>
