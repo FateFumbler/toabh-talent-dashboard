@@ -1444,6 +1444,9 @@ function TalentGridView({
   managers = [],
 }: TalentGridViewProps) {
   const [search, setSearch] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestions, setSuggestions] = useState<Talent[]>([]);
+  const searchRef = useRef<HTMLDivElement>(null);
   const [internalStatusFilter, setInternalStatusFilter] = useState<string>("all");
   const [managerFilter, setManagerFilter] = useState<string>("all");
   const [cityFilter, setCityFilter] = useState<string>("all");
@@ -1512,6 +1515,53 @@ function TalentGridView({
     onManagerAssign(rowIndex, manager);
   };
 
+  // Autocomplete: compute suggestions when search changes
+  const updateSuggestions = (value: string) => {
+    setSearch(value);
+    if (value.length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    const searchLower = value.toLowerCase();
+    const matches = talents
+      .filter((t) => {
+        const name = (t["Full Name"] || "").toLowerCase();
+        const email = ((t["Email "] as string) || "").toLowerCase();
+        const phone = String(t["Phone"] || "").toLowerCase();
+        return (
+          name.includes(searchLower) ||
+          email.includes(searchLower) ||
+          phone.includes(searchLower)
+        );
+      })
+      .slice(0, 7);
+    setSuggestions(matches);
+    setShowSuggestions(matches.length > 0);
+  };
+
+  // Autocomplete: click outside to close
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Autocomplete: Escape key to close
+  useEffect(() => {
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape" && showSuggestions) {
+        setShowSuggestions(false);
+      }
+    }
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [showSuggestions]);
+
   if (isLoading && talents.length === 0) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -1530,14 +1580,53 @@ function TalentGridView({
     <div className="space-y-4 animate-fade-in">
       {/* Search */}
       <Card className="p-4">
-        <div className="relative">
+        <div className="relative" ref={searchRef}>
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search by name, Instagram, or city..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => updateSuggestions(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && showSuggestions) {
+                setShowSuggestions(false);
+              }
+            }}
             className="pl-10"
           />
+          {/* Autocomplete dropdown */}
+          {showSuggestions && suggestions.length > 0 && (
+            <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-lg shadow-lg overflow-hidden">
+              {suggestions.map((talent) => {
+                const phone = String(talent["Phone"] || "");
+                const email = ((talent["Email "] as string) || "").trim();
+                return (
+                  <button
+                    key={talent.rowIndex}
+                    onClick={() => {
+                      onTalentClick(talent["Full Name"], talent.rowIndex!);
+                      setShowSuggestions(false);
+                      setSearch("");
+                    }}
+                    className="w-full px-3 py-2 text-left hover:bg-accent/50 transition-colors flex items-center gap-2"
+                  >
+                    <span className="font-medium truncate capitalize">
+                      {talent["Full Name"]}
+                    </span>
+                    {phone && (
+                      <span className="text-muted-foreground text-sm truncate">
+                        {phone}
+                      </span>
+                    )}
+                    {email && (
+                      <span className="text-muted-foreground text-sm truncate hidden sm:inline">
+                        {email}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Mobile filter toggle */}

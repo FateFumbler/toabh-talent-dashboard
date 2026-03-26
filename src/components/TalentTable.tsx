@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
   Table,
@@ -173,6 +173,9 @@ export function TalentTable({
   managers = [],
 }: TalentTableProps) {
   const [search, setSearch] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestions, setSuggestions] = useState<Talent[]>([]);
+  const searchRef = useRef<HTMLDivElement>(null);
   const [internalStatusFilter, setInternalStatusFilter] = useState<string>("all");
   const [managerFilter, setManagerFilter] = useState<string>("all");
   const [cityFilter, setCityFilter] = useState<string>("all");
@@ -251,6 +254,53 @@ export function TalentTable({
   const handleManagerSelect = (rowIndex: number, manager: string) => {
     onManagerAssign(rowIndex, manager);
   };
+
+  // Autocomplete: compute suggestions when search changes
+  const updateSuggestions = (value: string) => {
+    setSearch(value);
+    if (value.length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    const searchLower = value.toLowerCase();
+    const matches = talents
+      .filter((t) => {
+        const name = (t["Full Name"] || "").toLowerCase();
+        const email = ((t["Email "] as string) || "").toLowerCase();
+        const phone = String(t["Phone"] || "").toLowerCase();
+        return (
+          name.includes(searchLower) ||
+          email.includes(searchLower) ||
+          phone.includes(searchLower)
+        );
+      })
+      .slice(0, 7);
+    setSuggestions(matches);
+    setShowSuggestions(matches.length > 0);
+  };
+
+  // Autocomplete: click outside to close
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Autocomplete: Escape key to close
+  useEffect(() => {
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape" && showSuggestions) {
+        setShowSuggestions(false);
+      }
+    }
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [showSuggestions]);
 
   // Manager dropdown handlers (portal-based, viewport-constrained)
   useEffect(() => {
@@ -337,14 +387,53 @@ export function TalentTable({
         <div className="flex flex-col gap-4">
           {/* Search Row */}
           <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
+            <div className="relative flex-1" ref={searchRef}>
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search by name, Instagram, or city..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => updateSuggestions(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && showSuggestions) {
+                    setShowSuggestions(false);
+                  }
+                }}
                 className="pl-10"
               />
+              {/* Autocomplete dropdown */}
+              {showSuggestions && suggestions.length > 0 && (
+                <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-lg shadow-lg overflow-hidden">
+                  {suggestions.map((talent) => {
+                    const phone = String(talent["Phone"] || "");
+                    const email = ((talent["Email "] as string) || "").trim();
+                    return (
+                      <button
+                        key={talent.rowIndex}
+                        onClick={() => {
+                          onTalentClick(talent["Full Name"], talent.rowIndex!);
+                          setShowSuggestions(false);
+                          setSearch("");
+                        }}
+                        className="w-full px-3 py-2 text-left hover:bg-accent/50 transition-colors flex items-center gap-2"
+                      >
+                        <span className="font-medium truncate capitalize">
+                          {talent["Full Name"]}
+                        </span>
+                        {phone && (
+                          <span className="text-muted-foreground text-sm truncate">
+                            {phone}
+                          </span>
+                        )}
+                        {email && (
+                          <span className="text-muted-foreground text-sm truncate hidden sm:inline">
+                            {email}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Filter toggles */}
