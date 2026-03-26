@@ -273,36 +273,60 @@ export function ContractsTab() {
 
   // Sort contracts
   const sortedContracts = [...filteredContracts].sort((a, b) => {
-    // Helper to get effective date for sorting
-    const getDateForSort = (contract: Contract): number => {
-      if (contract.createdAt) {
-        return new Date(contract.createdAt).getTime();
-      }
-      // Sheet contracts use rowIndex as proxy for date (higher rowIndex = newer)
+    // For newest/oldest: normalize rowIndex and createdAt to comparable scales
+    // rowIndex: higher = newer (more recently added to sheet)
+    // createdAt: higher = newer (more recently created locally)
+    
+    // Compute min/max for normalization (only for mixed-source comparison)
+    const sheetContracts = filteredContracts.filter(c => c.source === 'sheet' && c.rowIndex !== undefined);
+    const localContracts = filteredContracts.filter(c => c.source === 'local' && c.createdAt);
+    const maxRowIndex = sheetContracts.length > 0 ? Math.max(...sheetContracts.map(c => c.rowIndex!)) : 2000;
+    const minCreatedAt = localContracts.length > 0 ? Math.min(...localContracts.map(c => new Date(c.createdAt!).getTime())) : 0;
+    const maxCreatedAt = localContracts.length > 0 ? Math.max(...localContracts.map(c => new Date(c.createdAt!).getTime())) : Date.now();
+    const createdAtRange = maxCreatedAt - minCreatedAt || 1;
+
+    // Get normalized "newer score" (0-1 scale, higher = newer)
+    const getNewerScore = (contract: Contract): number => {
       if (contract.source === 'sheet' && contract.rowIndex !== undefined) {
-        return contract.rowIndex * 1000000; // Scale rowIndex to avoid collision with timestamps
+        // Higher rowIndex = newer in sheet (normalize to 0-1 where 1 = max rowIndex)
+        return contract.rowIndex / maxRowIndex;
       }
-      return 0; // Treat missing dates as very old
+      if (contract.source === 'local' && contract.createdAt) {
+        // Higher createdAt = newer (normalize to 0-1 based on actual range)
+        const ts = new Date(contract.createdAt).getTime();
+        return (ts - minCreatedAt) / createdAtRange;
+      }
+      return 0; // Default for missing data
     };
 
     switch (sortBy) {
       case 'newest': {
-        const dateA = getDateForSort(a);
-        const dateB = getDateForSort(b);
-        if (dateB !== dateA) return dateB - dateA;
-        // Secondary: for same date, sheet contracts (higher rowIndex) first
-        if (a.rowIndex !== undefined && b.rowIndex !== undefined) {
-          return b.rowIndex - a.rowIndex;
+        // Newest = highest rowIndex for sheet, most recent for local
+        // Use normalized newerScore for comparison (higher = newer)
+        const scoreA = getNewerScore(a);
+        const scoreB = getNewerScore(b);
+        if (scoreB !== scoreA) return scoreB - scoreA;
+        // Fallback: same score, use raw values
+        if (a.source === 'sheet' && b.source === 'sheet') {
+          return (b.rowIndex || 0) - (a.rowIndex || 0);
+        }
+        if (a.source === 'local' && b.source === 'local') {
+          return new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime();
         }
         return 0;
       }
       case 'oldest': {
-        const dateA = getDateForSort(a);
-        const dateB = getDateForSort(b);
-        if (dateA !== dateB) return dateA - dateB;
-        // Secondary: for same date, sheet contracts (lower rowIndex) first
-        if (a.rowIndex !== undefined && b.rowIndex !== undefined) {
-          return a.rowIndex - b.rowIndex;
+        // Oldest = lowest rowIndex for sheet, earliest for local
+        // Use normalized newerScore (lower = older)
+        const scoreA = getNewerScore(a);
+        const scoreB = getNewerScore(b);
+        if (scoreA !== scoreB) return scoreA - scoreB;
+        // Fallback: same score, use raw values
+        if (a.source === 'sheet' && b.source === 'sheet') {
+          return (a.rowIndex || 0) - (b.rowIndex || 0);
+        }
+        if (a.source === 'local' && b.source === 'local') {
+          return new Date(a.createdAt!).getTime() - new Date(b.createdAt!).getTime();
         }
         return 0;
       }
