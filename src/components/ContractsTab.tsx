@@ -377,18 +377,20 @@ export function ContractsTab() {
 
   return (
     <div className="space-y-4">
-      {/* Header - title and buttons on same row */}
-      <div className="flex items-center justify-between px-4 py-3 overflow-hidden">
-        {/* Left side: Title and metadata */}
-        <div>
-          <h2 className="text-lg font-bold text-foreground">Contracts</h2>
-          <p className="text-xs text-muted-foreground">
-            {contracts.length} contract{contracts.length !== 1 ? 's' : ''} found
-
-          </p>
+      {/* Header - title and count on row 1, buttons on row 2 */}
+      <div className="px-4 py-3 space-y-3">
+        {/* Row 1: Title and count */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-bold text-foreground">Contracts</h2>
+            <p className="text-xs text-muted-foreground">
+              {contracts.length} contract{contracts.length !== 1 ? 's' : ''} found
+            </p>
+          </div>
         </div>
-        {/* Right side: Buttons */}
-        <div className="flex items-center gap-2">
+
+        {/* Row 2: Action buttons */}
+        <div className="flex flex-wrap items-center gap-2">
           {/* View toggle - icon only */}
           <div className="flex items-center gap-1 bg-muted rounded-lg p-1 border border-border/50">
             <button
@@ -424,7 +426,7 @@ export function ContractsTab() {
               <ArrowUpDown className="h-4 w-4 text-foreground" />
             </button>
             {sortDropdownOpen && (
-              <div className="absolute right-0 mt-1 z-50 bg-popover border border-border rounded-xl shadow-xl overflow-hidden dropdown-animate">
+              <div className="absolute left-0 sm:right-0 mt-1 z-50 bg-popover border border-border rounded-xl shadow-xl overflow-hidden dropdown-animate">
                 <button
                   onClick={() => { setSortBy('newest'); setSortDropdownOpen(false); }}
                   className={`w-full text-left px-4 py-2 text-sm hover:bg-accent transition-colors ${sortBy === 'newest' ? 'text-primary font-medium' : 'text-foreground'}`}
