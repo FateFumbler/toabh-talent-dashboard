@@ -1476,16 +1476,25 @@ function TalentGridView({
   const uniqueCities = getUniqueValues(talents, "City");
 
   const filteredTalents = useMemo(() => {
+    // When search query is present, search across ALL talents regardless of status filter
+    // This ensures search results are not limited by the current status filter
     const filtered = talents.filter((talent) => {
       const searchLower = search.toLowerCase();
-      const matchesSearch =
-        !search ||
-        talent["Full Name"]?.toLowerCase().includes(searchLower) ||
-        talent["Instagram"]?.toLowerCase().includes(searchLower) ||
-        talent["City"]?.toLowerCase().includes(searchLower);
+      const hasSearch = search.trim().length > 0;
 
-      const matchesStatus =
-        statusFilter === "all"
+      // Search matches across full name, email, phone, and Instagram
+      const matchesSearch =
+        !hasSearch ||
+        (talent["Full Name"] || "")?.toLowerCase().includes(searchLower) ||
+        ((talent["Email "] as string) || "")?.toLowerCase().includes(searchLower) ||
+        String(talent["Phone"] || "")?.toLowerCase().includes(searchLower) ||
+        (talent["Instagram"] || "")?.toLowerCase().includes(searchLower);
+
+      // When searching, ignore status filter (search all statuses)
+      // When not searching, apply status filter normally
+      const matchesStatus = hasSearch
+        ? true // Search ignores status filter
+        : statusFilter === "all"
           ? talent["Status"] !== "Rejected" && talent["Status"] !== "Onboarded"
           : statusFilter === "New"
             ? !talent["Status"] || talent["Status"] === "New"
