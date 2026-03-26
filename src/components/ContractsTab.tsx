@@ -390,85 +390,91 @@ export function ContractsTab() {
         </div>
 
         {/* Row 2: Action buttons */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* View toggle - icon only */}
-          <div className="flex items-center gap-1 bg-muted rounded-lg p-1 border border-border/50">
-            <button
-              onClick={() => setView('list')}
-              className={`p-2 rounded-md transition-colors ${
-                view === 'list'
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/80'
-              }`}
-              title="List View"
-            >
-              <List className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => setView('grid')}
-              className={`p-2 rounded-md transition-colors ${
-                view === 'grid'
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/80'
-              }`}
-              title="Grid View"
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </button>
+        <div className="flex justify-between items-center gap-2 overflow-x-auto">
+          {/* Left group: Sync + Sort */}
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={loadData} className="px-2 sm:px-3">
+              <RefreshCw className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Sync</span>
+            </Button>
+            {/* Sort dropdown - icon only */}
+            <div className="relative">
+              <button
+                onClick={() => setSortDropdownOpen(!sortDropdownOpen)}
+                className="p-2 bg-input border border-border rounded-lg hover:bg-accent transition-colors"
+                title="Sort"
+              >
+                <ArrowUpDown className="h-4 w-4 text-foreground" />
+              </button>
+              {sortDropdownOpen && (
+                <div className="absolute left-0 sm:right-0 mt-1 z-50 bg-popover border border-border rounded-xl shadow-xl overflow-hidden dropdown-animate">
+                  <button
+                    onClick={() => { setSortBy('newest'); setSortDropdownOpen(false); }}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-accent transition-colors ${sortBy === 'newest' ? 'text-primary font-medium' : 'text-foreground'}`}
+                  >
+                    Newest
+                  </button>
+                  <button
+                    onClick={() => { setSortBy('oldest'); setSortDropdownOpen(false); }}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-accent transition-colors ${sortBy === 'oldest' ? 'text-primary font-medium' : 'text-foreground'}`}
+                  >
+                    Oldest
+                  </button>
+                  <button
+                    onClick={() => { setSortBy('name-az'); setSortDropdownOpen(false); }}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-accent transition-colors ${sortBy === 'name-az' ? 'text-primary font-medium' : 'text-foreground'}`}
+                  >
+                    Name A-Z
+                  </button>
+                  <button
+                    onClick={() => { setSortBy('name-za'); setSortDropdownOpen(false); }}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-accent transition-colors ${sortBy === 'name-za' ? 'text-primary font-medium' : 'text-foreground'}`}
+                  >
+                    Name Z-A
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-          {/* Sort dropdown - icon only */}
-          <div className="relative">
-            <button
-              onClick={() => setSortDropdownOpen(!sortDropdownOpen)}
-              className="p-2 bg-input border border-border rounded-lg hover:bg-accent transition-colors"
-              title="Sort"
-            >
-              <ArrowUpDown className="h-4 w-4 text-foreground" />
-            </button>
-            {sortDropdownOpen && (
-              <div className="absolute left-0 sm:right-0 mt-1 z-50 bg-popover border border-border rounded-xl shadow-xl overflow-hidden dropdown-animate">
-                <button
-                  onClick={() => { setSortBy('newest'); setSortDropdownOpen(false); }}
-                  className={`w-full text-left px-4 py-2 text-sm hover:bg-accent transition-colors ${sortBy === 'newest' ? 'text-primary font-medium' : 'text-foreground'}`}
-                >
-                  Newest
-                </button>
-                <button
-                  onClick={() => { setSortBy('oldest'); setSortDropdownOpen(false); }}
-                  className={`w-full text-left px-4 py-2 text-sm hover:bg-accent transition-colors ${sortBy === 'oldest' ? 'text-primary font-medium' : 'text-foreground'}`}
-                >
-                  Oldest
-                </button>
-                <button
-                  onClick={() => { setSortBy('name-az'); setSortDropdownOpen(false); }}
-                  className={`w-full text-left px-4 py-2 text-sm hover:bg-accent transition-colors ${sortBy === 'name-az' ? 'text-primary font-medium' : 'text-foreground'}`}
-                >
-                  Name A-Z
-                </button>
-                <button
-                  onClick={() => { setSortBy('name-za'); setSortDropdownOpen(false); }}
-                  className={`w-full text-left px-4 py-2 text-sm hover:bg-accent transition-colors ${sortBy === 'name-za' ? 'text-primary font-medium' : 'text-foreground'}`}
-                >
-                  Name Z-A
-                </button>
-              </div>
-            )}
+          {/* Right group: View toggle + Add */}
+          <div className="flex items-center gap-2">
+            {/* View toggle - icon only */}
+            <div className="flex items-center gap-1 bg-muted rounded-lg p-1 border border-border/50">
+              <button
+                onClick={() => setView('list')}
+                className={`p-2 rounded-md transition-colors ${
+                  view === 'list'
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/80'
+                }`}
+                title="List View"
+              >
+                <List className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setView('grid')}
+                className={`p-2 rounded-md transition-colors ${
+                  view === 'grid'
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/80'
+                }`}
+                title="Grid View"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </button>
+            </div>
+            <Button variant="default" size="sm" onClick={() => {
+              setShowAddForm(!showAddForm);
+              if (!showAddForm) {
+                // Reset form when opening
+                setFormData({ name: '', email: '', phone: '', contractLink: '' });
+                setTalentSearch('');
+              }
+            }} className="px-2 sm:px-3">
+              <Plus className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Add</span>
+            </Button>
           </div>
-          <Button variant="outline" size="sm" onClick={loadData} className="px-2 sm:px-3">
-            <RefreshCw className="h-4 w-4 sm:mr-1" />
-            <span className="hidden sm:inline">Sync</span>
-          </Button>
-          <Button variant="default" size="sm" onClick={() => {
-            setShowAddForm(!showAddForm);
-            if (!showAddForm) {
-              // Reset form when opening
-              setFormData({ name: '', email: '', phone: '', contractLink: '' });
-              setTalentSearch('');
-            }
-          }} className="px-2 sm:px-3">
-            <Plus className="h-4 w-4 sm:mr-1" />
-            <span className="hidden sm:inline">Add</span>
-          </Button>
         </div>
       </div>
 
