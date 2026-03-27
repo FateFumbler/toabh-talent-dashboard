@@ -383,11 +383,11 @@ export function TalentTable({
   return (
     <div className="space-y-4 animate-fade-in">
       {/* Toolbar */}
-      <Card className="p-4">
+      <Card className="p-4 relative z-10">
         <div className="flex flex-col gap-4">
           {/* Search Row */}
           <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1" ref={searchRef}>
+            <div className="relative flex-1 overflow-visible" ref={searchRef} style={{ overflow: 'visible' }}>
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search by name, Instagram, or city..."
@@ -402,7 +402,7 @@ export function TalentTable({
               />
               {/* Autocomplete dropdown */}
               {showSuggestions && suggestions.length > 0 && (
-                <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-lg shadow-lg overflow-hidden">
+                <div className="absolute z-[100] w-full mt-1 bg-background border border-border rounded-lg shadow-lg overflow-hidden">
                   {suggestions.map((talent) => {
                     const phone = String(talent["Phone"] || "");
                     const email = ((talent["Email "] as string) || "").trim();
