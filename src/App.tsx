@@ -1603,9 +1603,9 @@ function TalentGridView({
                   <button
                     key={talent.rowIndex}
                     onClick={() => {
-                      onTalentClick(talent["Full Name"], talent.rowIndex!);
+                      // Autofill search and filter, don't open profile dialog
+                      setSearch(talent["Full Name"] || "");
                       setShowSuggestions(false);
-                      setSearch("");
                     }}
                     className="w-full px-3 py-2 text-left hover:bg-accent/50 transition-colors flex items-center gap-2"
                   >
