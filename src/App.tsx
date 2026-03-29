@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { TalentTable } from "./components/TalentTable";
 import { TalentProfileDialog } from "./components/TalentProfile";
 import { ContractsTab } from "./components/ContractsTab";
+import { DocumentsTab } from "./components/DocumentsTab";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Card } from "./components/ui/card";
 import { Button } from "./components/ui/button";
@@ -385,7 +386,7 @@ function App() {
     recentlyUpdatedRef.current = recentlyUpdated;
   }, [recentlyUpdated]);
   const [activeTab, setActiveTab] = useState<
-    "talent-master" | "talent-profile" | "settings" | "contracts"
+    "talent-master" | "talent-profile" | "settings" | "contracts" | "documents"
   >("talent-master");
   const [theme, setThemeState] = useState<Theme>(getStoredTheme);
   const { setTheme } = useTheme();
@@ -848,6 +849,12 @@ function App() {
               className={`nav-tab ${activeTab === "contracts" ? "nav-tab-active" : ""}`}
             >
               Contracts
+            </button>
+            <button
+              onClick={() => setActiveTab("documents")}
+              className={`nav-tab ${activeTab === "documents" ? "nav-tab-active" : ""}`}
+            >
+              Documents
             </button>
           </div>
           {/* Right: Settings icon only */}
@@ -1366,6 +1373,13 @@ function App() {
         {activeTab === "contracts" && (
           <ErrorBoundary>
             <ContractsTab />
+          </ErrorBoundary>
+        )}
+
+        {/* Documents Tab */}
+        {activeTab === "documents" && (
+          <ErrorBoundary>
+            <DocumentsTab />
           </ErrorBoundary>
         )}
 
