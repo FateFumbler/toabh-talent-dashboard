@@ -1,6 +1,6 @@
 import type { DocumentUser } from '../types/document';
 
-const API_URL = 'DOCUMENTS_API_URL_PLACEHOLDER';
+const API_URL = 'https://script.google.com/macros/s/AKfycbx6WHG6jE3ZqQoa-1V4PoeWcwsDnv22ZXlEnIWB4F84ujg4lojZUretZ0gOYsdJGDF5EA/exec';
 const CACHE_KEY = 'toabh_documents_cache';
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
