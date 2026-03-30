@@ -1,489 +1,385 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Card } from './ui/card';
-import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { Search, Folder, FileText, ExternalLink, RefreshCw, ArrowUpDown, LayoutGrid, List } from 'lucide-react';
-import type { DocumentUser } from '../types/document';
-import { fetchDocuments } from '../services/documentsApi';
+import { Input } from './ui/input';
+import {
+  FolderOpen,
+  Search,
+  FileText,
+  ExternalLink,
+  ArrowLeft,
+  RefreshCw,
+  User,
+} from 'lucide-react';
+import { fetchAllDocuments, type DocumentUser, type TalentDocuments } from '../services/documentsApi';
 
-// Extract Google Drive file ID from various URL formats
-function extractDriveFileId(url: string): string | null {
-  if (!url) return null;
-  const patterns = [
-    /\/file\/d\/([a-zA-Z0-9_-]+)/,
-    /\/open\?id=([a-zA-Z0-9_-]+)/,
-    /\/document\/d\/([a-zA-Z0-9_-]+)/,
-    /\/thumbnail\?id=([a-zA-Z0-9_-]+)/,
-    /id=([a-zA-Z0-9_-]+)/,
-    /\/uc\?.*id=([a-zA-Z0-9_-]+)/,
-  ];
-  for (const pattern of patterns) {
-    const match = url.match(pattern);
-    if (match) return match[1];
-  }
-  return null;
-}
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-// Normalize Google Drive URL to view format
 function normalizeDriveUrl(url: string): string {
   if (!url) return '';
-  const trimmed = url.trim();
-  
-  // Already a valid view URL
-  if (trimmed.includes('/view') || trimmed.includes('drive.google.com/thumbnail')) {
-    return trimmed;
-  }
-  
-  const fileId = extractDriveFileId(trimmed);
-  if (fileId) {
-    // Check if it's a Google Doc
-    if (trimmed.includes('/document/d/')) {
-      return `https://docs.google.com/document/d/${fileId}/edit`;
-    }
-    return `https://drive.google.com/file/d/${fileId}/view`;
-  }
-  
-  return trimmed;
+  const t = url.trim();
+  if (t.includes('/view') || t.includes('thumbnail')) return t;
+  const m =
+    t.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) ||
+    t.match(/\/open\?id=([a-zA-Z0-9_-]+)/) ||
+    t.match(/\/document\/d\/([a-zA-Z0-9_-]+)/) ||
+    t.match(/id=([a-zA-Z0-9_-]+)/);
+  if (!m) return t;
+  const id = m[1];
+  return t.includes('/document/d/')
+    ? `https://docs.google.com/document/d/${id}/edit`
+    : `https://drive.google.com/file/d/${id}/view`;
 }
 
-// Get display-friendly label for document types
-function getDocumentLabel(type: string, side?: string): string {
-  switch (type) {
-    case 'aadhaarFront':
-      return 'Aadhaar Front';
-    case 'aadhaarBack':
-      return 'Aadhaar Back';
-    case 'pan':
-      return 'PAN Card';
-    case 'passportFront':
-      return 'Passport Front';
-    case 'passportBack':
-      return 'Passport Back';
-    default:
-      return type;
-  }
+function docIcon(key: string) {
+  if (key === 'aadhaar') return '🪪';
+  if (key === 'pan') return '🆔';
+  return '📘';
 }
 
-// Get icon for document type
-function getDocumentIcon(type: string): string {
-  switch (type) {
-    case 'aadhaarFront':
-    case 'aadhaarBack':
-      return '🪪';
-    case 'pan':
-      return '🆔';
-    case 'passportFront':
-    case 'passportBack':
-      return '📘';
-    default:
-      return '📄';
-  }
+function initials(name: string | number | undefined | null) {
+  return String(name ?? '').split(' ').map((w) => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || '?';
 }
 
-type SortOption = 'name-az' | 'name-za' | 'newest';
+const SECTIONS: { key: keyof TalentDocuments; label: string }[] = [
+  { key: 'aadhaar', label: 'Aadhaar' },
+  { key: 'pan', label: 'PAN' },
+  { key: 'passport', label: 'Passport' },
+];
 
-// FolderCard component for grid/list view
-const FolderCard = ({
-  user,
-  onClick,
-}: {
-  user: DocumentUser;
-  onClick: () => void;
-}) => {
-  const docCount = useMemo(() => {
-    return Object.values(user.documents).filter(Boolean).length;
-  }, [user.documents]);
-  
+// ── Document Card ─────────────────────────────────────────────────────────────
+
+function DocCard({ label, url }: { label: string; url: string }) {
   return (
-    <div
-      onClick={onClick}
-      className="bg-card rounded-xl p-4 hover:bg-accent/30 hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer border border-border flex flex-col items-center gap-2"
+    <a
+      href={normalizeDriveUrl(url)}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group flex flex-col items-center gap-2 p-4 rounded-xl border border-border bg-card hover:bg-card/80 hover:border-primary/40 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer no-underline text-center"
     >
-      <Folder className="w-10 h-10 text-primary mx-auto" />
-      <h3 className="font-semibold text-foreground text-center">{user.fullName}</h3>
-      <p className="text-muted-foreground text-xs text-center">{user.email || 'N/A'}</p>
-      {docCount > 0 && (
-        <span className="text-xs text-muted-foreground">{docCount} document{docCount !== 1 ? 's' : ''}</span>
-      )}
-    </div>
+      <span className="text-3xl transition-transform group-hover:scale-110">{docIcon(label.toLowerCase())}</span>
+      <span className="text-sm font-medium text-foreground leading-tight">{label}</span>
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-medium rounded-full transition-colors">
+        View <ExternalLink className="h-3 w-3" />
+      </span>
+    </a>
   );
-};
+}
 
-// DocumentCard component for individual documents inside a user's folder
-const DocumentCard = ({
+// ── Section ──────────────────────────────────────────────────────────────────
+
+function DocSection({
   label,
-  icon,
-  link,
+  links,
 }: {
   label: string;
-  icon: string;
-  link?: string;
-}) => {
-  const normalizedLink = link ? normalizeDriveUrl(link) : undefined;
-  
-  return (
-    <div className="bg-card rounded-xl p-4 hover:shadow-lg hover:-translate-y-0.5 transition-all border border-border flex flex-col items-center gap-2 min-w-[140px]">
-      <span className="text-3xl">{icon}</span>
-      <span className="text-sm font-medium text-foreground text-center">{label}</span>
-      {normalizedLink ? (
-        <a
-          href={normalizedLink}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-500/20 text-green-600 dark:text-green-400 hover:text-green-500 dark:hover:text-green-300 rounded-lg text-xs font-medium transition-colors"
-        >
-          View Document <ExternalLink className="h-3 w-3" />
-        </a>
-      ) : (
-        <span className="text-xs text-muted-foreground px-2 py-1 bg-muted/50 rounded">Not Uploaded</span>
-      )}
-    </div>
-  );
-};
-
-// List row for a single document type
-const DocumentListRow = ({
-  label,
-  icon,
-  link,
-}: {
-  label: string;
-  icon: string;
-  link?: string;
-}) => {
-  const normalizedLink = link ? normalizeDriveUrl(link) : undefined;
-  
-  return (
-    <div className="flex items-center justify-between py-2 px-3 hover:bg-accent/30 rounded-lg transition-colors">
-      <div className="flex items-center gap-3">
-        <span className="text-xl">{icon}</span>
-        <span className="text-sm font-medium text-foreground">{label}</span>
-      </div>
-      {normalizedLink ? (
-        <a
-          href={normalizedLink}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-500/20 text-green-600 dark:text-green-400 hover:text-green-500 dark:hover:text-green-300 rounded-lg text-xs font-medium transition-colors"
-        >
-          View <ExternalLink className="h-3 w-3" />
-        </a>
-      ) : (
-        <span className="text-xs text-muted-foreground px-2 py-1 bg-muted/50 rounded">Not Uploaded</span>
-      )}
-    </div>
-  );
-};
-
-export function DocumentsTab() {
-  const [users, setUsers] = useState<DocumentUser[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [view, setView] = useState<'list' | 'grid'>('grid');
-  const [sortBy, setSortBy] = useState<SortOption>('name-az');
-  const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<DocumentUser | null>(null);
-
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const apiData = await fetchDocuments();
-      setUsers(apiData);
-    } catch (error) {
-      console.error('Failed to load documents:', error);
-      setUsers([]);
-    }
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  // Memoized filtered users for search
-  const filteredUsers = useMemo(() => {
-    if (!search.trim()) return users;
-    const searchLower = search.toLowerCase();
-    return users.filter((user) => {
-      return (
-        user.fullName.toLowerCase().includes(searchLower) ||
-        (user.email?.toLowerCase().includes(searchLower)) ||
-        (user.phone?.includes(searchLower))
-      );
-    });
-  }, [users, search]);
-
-  // Memoized sorted users
-  const sortedUsers = useMemo(() => {
-    return [...filteredUsers].sort((a, b) => {
-      switch (sortBy) {
-        case 'name-az':
-          return a.fullName.localeCompare(b.fullName);
-        case 'name-za':
-          return b.fullName.localeCompare(a.fullName);
-        case 'newest':
-          return (b.rowIndex || 0) - (a.rowIndex || 0);
-        default:
-          return 0;
-      }
-    });
-  }, [filteredUsers, sortBy]);
-
-  // Memoized document types list for selected user
-  const documentTypes = useMemo(() => {
-    return [
-      { key: 'aadhaarFront', label: 'Aadhaar Front', icon: '🪪' },
-      { key: 'aadhaarBack', label: 'Aadhaar Back', icon: '🪪' },
-      { key: 'pan', label: 'PAN Card', icon: '🆔' },
-      { key: 'passportFront', label: 'Passport Front', icon: '📘' },
-      { key: 'passportBack', label: 'Passport Back', icon: '📘' },
-    ];
-  }, []);
-
-  // Documents view when a folder is clicked
-  if (selectedUser) {
-    const { documents } = selectedUser;
-
+  links: string[];
+}) {
+  if (links.length === 0) {
     return (
-      <div className="space-y-4">
-        {/* Back button and title */}
-        <div className="px-4 py-3">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setSelectedUser(null)}
-            className="mb-3"
-          >
-            ← Back to Documents
-          </Button>
-          <h2 className="text-lg font-bold text-foreground">{selectedUser.fullName}</h2>
-          <p className="text-xs text-muted-foreground">
-            {selectedUser.email && <span>{selectedUser.email} • </span>}
-            {selectedUser.phone && <span>{selectedUser.phone}</span>}
-            {!selectedUser.email && !selectedUser.phone && <span>No contact info</span>}
-          </p>
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <span className="text-base">{docIcon(label.toLowerCase())}</span>
+          <h3 className="text-sm font-semibold text-foreground">{label}</h3>
         </div>
-
-        {/* Document cards - responsive grid */}
-        <div className="px-4">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {documentTypes.map(({ key, label, icon }) => {
-              const link = (documents as Record<string, string | undefined>)[key];
-              return (
-                <DocumentCard
-                  key={key}
-                  label={label}
-                  icon={icon}
-                  link={link}
-                />
-              );
-            })}
-          </div>
+        <div className="flex items-center gap-2 px-4 py-3 rounded-xl border border-dashed border-border bg-muted/30">
+          <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          <span className="text-sm text-muted-foreground">No documents uploaded</span>
         </div>
       </div>
     );
   }
 
-  // Main documents view (folder grid/list)
   return (
-    <div className="space-y-4">
-      {/* Header - title and count on row 1, buttons on row 2 */}
-      <div className="px-4 py-3 space-y-3">
-        {/* Row 1: Title and count */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-bold text-foreground">Documents</h2>
-            <p className="text-xs text-muted-foreground">
-              {sortedUsers.length} user{sortedUsers.length !== 1 ? 's' : ''} found
-              {users.length !== sortedUsers.length && ` (${users.length} total)`}
-            </p>
-          </div>
-        </div>
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <span className="text-base">{docIcon(label.toLowerCase())}</span>
+        <h3 className="text-sm font-semibold text-foreground">{label}</h3>
+        <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+          {links.length} file{links.length !== 1 ? 's' : ''}
+        </span>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {links.map((link, i) => (
+          <DocCard key={i} label={`${label} ${i + 1}`} url={link} />
+        ))}
+      </div>
+    </div>
+  );
+}
 
-        {/* Row 2: Action buttons */}
-        <div className="flex justify-between items-center gap-2 overflow-x-auto">
-          {/* Left group: Sync + Sort */}
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={loadData} className="px-2 sm:px-3">
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline ml-1">Sync</span>
-            </Button>
-            {/* Sort dropdown */}
-            <div className="relative overflow-hidden">
-              <button
-                onClick={() => setSortDropdownOpen(!sortDropdownOpen)}
-                className="p-2 bg-input border border-border rounded-lg hover:bg-accent transition-colors"
-                title="Sort"
-              >
-                <ArrowUpDown className="h-4 w-4 text-foreground" />
-              </button>
-              {sortDropdownOpen && (
-                <div className="absolute right-0 mt-1 z-50 bg-popover border border-border rounded-xl shadow-xl max-h-[50vh] overflow-y-auto dropdown-animate">
-                  <button
-                    onClick={() => { setSortBy('name-az'); setSortDropdownOpen(false); }}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-accent transition-colors ${sortBy === 'name-az' ? 'text-primary font-medium' : 'text-foreground'}`}
-                  >
-                    Name A-Z
-                  </button>
-                  <button
-                    onClick={() => { setSortBy('name-za'); setSortDropdownOpen(false); }}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-accent transition-colors ${sortBy === 'name-za' ? 'text-primary font-medium' : 'text-foreground'}`}
-                  >
-                    Name Z-A
-                  </button>
-                  <button
-                    onClick={() => { setSortBy('newest'); setSortDropdownOpen(false); }}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-accent transition-colors ${sortBy === 'newest' ? 'text-primary font-medium' : 'text-foreground'}`}
-                  >
-                    Recently Added
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
+// ── User Files View (inline, replaces folder grid) ─────────────────────────────
 
-          {/* Right group: View toggle */}
-          <div className="flex items-center gap-2">
-            {/* View toggle - icon only */}
-            <div className="flex items-center gap-1 bg-muted rounded-lg p-1 border border-border/50">
-              <button
-                onClick={() => setView('list')}
-                className={`p-2 rounded-md transition-colors ${
-                  view === 'list'
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/80'
-                }`}
-                title="List View"
-              >
-                <List className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => setView('grid')}
-                className={`p-2 rounded-md transition-colors ${
-                  view === 'grid'
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/80'
-                }`}
-                title="Grid View"
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </button>
-            </div>
+function UserFilesView({
+  user,
+  onBack,
+}: {
+  user: DocumentUser;
+  onBack: () => void;
+}) {
+  const name = String(user.name || '');
+  const hasAny = SECTIONS.some((s) => (user[s.key] ?? []).length > 0);
+
+  return (
+    <div className="space-y-6">
+      {/* Breadcrumb / Back */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onBack}
+          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          All Documents
+        </button>
+        <span className="text-muted-foreground">/</span>
+        <div className="flex items-center gap-2">
+          <div className="h-7 w-7 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold">
+            {initials(name)}
           </div>
+          <span className="text-sm font-medium text-foreground truncate">{name}</span>
+          {user.email && (
+            <span className="text-xs text-muted-foreground hidden sm:inline">{user.email}</span>
+          )}
         </div>
       </div>
 
-      {/* Search */}
-      <Card className="p-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by name, email, or phone..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 bg-input/50"
-          />
-        </div>
-      </Card>
+      {/* Divider */}
+      <div className="border-t border-border" />
 
-      {/* Loading State */}
-      {loading && (
-        <div className="text-center py-12 text-muted-foreground">
-          Loading documents...
+      {/* Sections */}
+      {!hasAny ? (
+        <div className="flex flex-col items-center gap-3 py-16 text-muted-foreground">
+          <FileText className="h-12 w-12 opacity-40" />
+          <p className="text-sm">No documents uploaded.</p>
         </div>
-      )}
-
-      {/* Grid View */}
-      {!loading && sortedUsers.length > 0 && view === 'grid' && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 px-4">
-          {sortedUsers.map((user, index) => (
-            <FolderCard
-              key={`${user.fullName}-${user.rowIndex || index}`}
-              user={user}
-              onClick={() => setSelectedUser(user)}
+      ) : (
+        <div className="space-y-6">
+          {SECTIONS.map(({ key, label }) => (
+            <DocSection
+              key={key}
+              label={label}
+              links={user[key] ?? []}
             />
           ))}
         </div>
       )}
+    </div>
+  );
+}
 
-      {/* List View */}
-      {!loading && sortedUsers.length > 0 && view === 'list' && (
-        <Card className="overflow-hidden mx-4">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-muted/50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                    Full Name
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                    Email
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                    Phone
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                    Documents
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedUsers.map((user, index) => {
-                  const docCount = Object.values(user.documents).filter(Boolean).length;
-                  return (
-                    <tr
-                      key={`${user.fullName}-${user.rowIndex || index}`}
-                      className="border-t cursor-pointer hover:bg-accent/30 transition-colors"
-                      onClick={() => setSelectedUser(user)}
-                    >
-                      <td className="px-4 py-3 text-sm text-foreground font-medium">
-                        {user.fullName}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-muted-foreground">
-                        {user.email || 'N/A'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-muted-foreground">
-                        {user.phone || 'N/A'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-muted-foreground">
-                        {docCount} / 5
-                      </td>
-                      <td className="px-4 py-3">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedUser(user);
-                          }}
-                        >
-                          View
-                        </Button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+// ── Folder Card ───────────────────────────────────────────────────────────────
+
+function FolderCard({
+  user,
+  onClick,
+}: {
+  user: DocumentUser;
+  onClick: () => void;
+}) {
+  const name = String(user.name || '');
+  const email = user.email || '';
+  const docCount =
+    (user.aadhaar?.length ?? 0) +
+    (user.pan?.length ?? 0) +
+    (user.passport?.length ?? 0);
+
+  return (
+    <button
+      onClick={onClick}
+      className="group bg-card rounded-xl border border-border p-5 hover:border-primary/40 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 text-left cursor-pointer w-full flex items-center gap-4"
+    >
+      {/* Avatar */}
+      <div className="relative flex-shrink-0">
+        <div className="h-12 w-12 rounded-full bg-primary/15 flex items-center justify-center text-primary font-bold text-base">
+          {initials(name) || <User className="h-6 w-6" />}
+        </div>
+        {docCount > 0 && (
+          <span className="absolute -top-1 -right-1 h-5 w-5 bg-primary text-primary-foreground text-xs font-bold rounded-full flex items-center justify-center">
+            {docCount}
+          </span>
+        )}
+      </div>
+
+      {/* Info */}
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+          {name || '(No Name)'}
+        </p>
+        {email && (
+          <p className="text-xs text-muted-foreground truncate mt-0.5">{email}</p>
+        )}
+      </div>
+
+      {/* Doc badges */}
+      {docCount > 0 && (
+        <div className="hidden sm:flex items-center gap-1.5 flex-shrink-0">
+          {user.aadhaar?.length ? (
+            <span className="text-xs bg-blue-500/15 text-blue-400 px-2 py-0.5 rounded-full">
+              {user.aadhaar.length} Aadhaar
+            </span>
+          ) : null}
+          {user.pan?.length ? (
+            <span className="text-xs bg-green-500/15 text-green-400 px-2 py-0.5 rounded-full">
+              {user.pan.length} PAN
+            </span>
+          ) : null}
+          {user.passport?.length ? (
+            <span className="text-xs bg-purple-500/15 text-purple-400 px-2 py-0.5 rounded-full">
+              {user.passport.length} Passport
+            </span>
+          ) : null}
+        </div>
       )}
 
-      {/* Empty State */}
-      {!loading && sortedUsers.length === 0 && (
-        <div className="text-center py-12 text-muted-foreground">
-          {users.length === 0 ? (
-            <>
-              <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No documents found.</p>
-              <p className="text-xs mt-2">Click Sync to refresh or check if the API is configured.</p>
-            </>
-          ) : (
-            <p>No documents match your search.</p>
-          )}
+      {/* Arrow */}
+      <ArrowLeft className="h-4 w-4 text-muted-foreground rotate-180 flex-shrink-0 group-hover:text-primary transition-colors" style={{ transform: 'rotate(180deg)' }} />
+    </button>
+  );
+}
+
+// ── Skeleton ──────────────────────────────────────────────────────────────────
+
+function FolderSkeleton() {
+  return (
+    <div className="flex items-center gap-4 p-5 rounded-xl border border-border animate-pulse">
+      <div className="h-12 w-12 rounded-full bg-muted flex-shrink-0" />
+      <div className="flex-1 space-y-2">
+        <div className="h-4 bg-muted rounded w-1/3" />
+        <div className="h-3 bg-muted rounded w-1/4" />
+      </div>
+    </div>
+  );
+}
+
+// ── Main ─────────────────────────────────────────────────────────────────────
+
+export function DocumentsTab() {
+  const [users, setUsers] = useState<DocumentUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
+  const [selectedUser, setSelectedUser] = useState<DocumentUser | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await fetchAllDocuments();
+      setUsers(data);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed to load documents');
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const filtered = useMemo(() => {
+    const q = query.toLowerCase().trim();
+    if (!q) return users;
+    return users.filter(
+      (u) =>
+        (u.name || '').toString().toLowerCase().includes(q) ||
+        (u.email || '').toLowerCase().includes(q)
+    );
+  }, [users, query]);
+
+  return (
+    <div className="px-4 py-5">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-3 mb-5">
+        <div>
+          <h2 className="text-xl font-bold text-foreground">
+            {selectedUser ? String(selectedUser.name || '') : 'Documents'}
+          </h2>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {loading
+              ? 'Loading...'
+              : selectedUser
+              ? 'Viewing documents'
+              : `${users.length} user${users.length !== 1 ? 's' : ''} with documents`}
+          </p>
+        </div>
+        {selectedUser ? (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSelectedUser(null)}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span className="ml-1">Back</span>
+          </Button>
+        ) : (
+          <Button variant="outline" size="sm" onClick={load} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            <span className="ml-1 hidden sm:inline">Sync</span>
+          </Button>
+        )}
+      </div>
+
+      {/* Search (only in folder view) */}
+      {!selectedUser && !loading && (
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by name or email..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+      )}
+
+      {/* Loading */}
+      {loading && (
+        <div className="space-y-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <FolderSkeleton key={i} />
+          ))}
+        </div>
+      )}
+
+      {/* Error */}
+      {!loading && error && (
+        <div className="text-center py-16">
+          <p className="text-destructive mb-3">{error}</p>
+          <Button variant="outline" size="sm" onClick={load}>Retry</Button>
+        </div>
+      )}
+
+      {/* User Files View (inline) */}
+      {!loading && !error && selectedUser && (
+        <UserFilesView
+          user={selectedUser}
+          onBack={() => setSelectedUser(null)}
+        />
+      )}
+
+      {/* Folder Grid */}
+      {!loading && !error && !selectedUser && users.length === 0 && (
+        <div className="flex flex-col items-center gap-3 py-20 text-muted-foreground">
+          <FolderOpen className="h-14 w-14 opacity-40" />
+          <p className="text-base font-medium">No documents found</p>
+          <p className="text-sm">DOCUMENTS_DB is empty or the API is not returning data.</p>
+        </div>
+      )}
+
+      {!loading && !error && !selectedUser && query && filtered.length === 0 && (
+        <div className="flex flex-col items-center gap-3 py-16 text-muted-foreground">
+          <Search className="h-10 w-10 opacity-40" />
+          <p>No users match "{query}"</p>
+        </div>
+      )}
+
+      {/* Folder list */}
+      {!loading && !error && !selectedUser && filtered.length > 0 && (
+        <div className="space-y-3">
+          {filtered.map((user) => (
+            <FolderCard
+              key={user.name?.toString() ?? Math.random()}
+              user={user}
+              onClick={() => setSelectedUser(user)}
+            />
+          ))}
         </div>
       )}
     </div>
