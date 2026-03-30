@@ -51,7 +51,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             alt="TOABH"
             className="h-12 w-auto mb-4"
           />
-          <h1 className="text-xl font-bold text-foreground">Talent Dashboard</h1>
+          <h1 className="text-xl font-bold text-foreground">Models Dashboard</h1>
           <p className="text-sm text-muted-foreground mt-1">Enter password to access</p>
         </div>
 
@@ -110,7 +110,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
 
         {/* Footer */}
         <p className="text-xs text-muted-foreground text-center mt-8">
-          TOABH Talent Dashboard — Internal Use Only
+          TOABH Models Dashboard — Internal Use Only
         </p>
       </Card>
     </div>

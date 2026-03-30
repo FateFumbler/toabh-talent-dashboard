@@ -842,7 +842,7 @@ function App() {
               onClick={() => setActiveTab("talent-master")}
               className={`nav-tab ${activeTab === "talent-master" ? "nav-tab-active" : ""}`}
             >
-              Talent
+              Models
             </button>
             <button
               onClick={() => setActiveTab("contracts")}
@@ -854,7 +854,7 @@ function App() {
               onClick={() => setActiveTab("documents")}
               className={`nav-tab ${activeTab === "documents" ? "nav-tab-active" : ""}`}
             >
-              Documents
+              Docs
             </button>
           </div>
           {/* Right: Settings icon only */}
@@ -873,7 +873,7 @@ function App() {
         {/* Stats Cards */}
         <div className="stats-scroll mb-6 stagger-children">
           <StatCard
-            label="Total Talents"
+            label="Total Models"
             value={totalTalents}
             color="purple"
             isActive={activeTile === null}
@@ -1035,7 +1035,7 @@ function App() {
                 <h3 className="text-sm font-medium text-muted-foreground mb-3">
                   {profileSearch.trim()
                     ? "Search Results"
-                    : "Recent Talents"}
+                    : "Recent Models"}
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {profileSearchResults.map((talent) => (
@@ -1332,7 +1332,7 @@ function App() {
 
                 <Card className="p-4">
                   <h4 className="text-base font-semibold text-foreground mb-4">
-                    Documents
+                    Docs
                   </h4>
                   <div className="space-y-3">
                     <div>
@@ -1418,7 +1418,7 @@ function App() {
       {/* Footer */}
       <footer className="footer-bar">
         <div className="container mx-auto px-4 py-4 text-center text-sm text-muted-foreground">
-          TOABH Talent Dashboard — Internal Use Only
+          TOABH Models Dashboard — Internal Use Only
         </div>
       </footer>
     </div>
