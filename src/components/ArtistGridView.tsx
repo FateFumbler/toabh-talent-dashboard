@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Search, RefreshCw, Loader2, X, SlidersHorizontal, ChevronDown, User } from "lucide-react";
+import { Search, RefreshCw, Loader2, X, SlidersHorizontal, ChevronDown, User, ChevronLeft, ChevronRight, ExternalLink, Image as ImageIcon } from "lucide-react";
 import type { Artist, ArtistStatusValue } from "@/types/artist";
 import { StatusDropdown } from "./StatusDropdown";
 
@@ -73,6 +73,12 @@ function parsePortfolioLinks(field: unknown): string[] {
   const str = String(field);
   if (!str.trim()) return [];
   return str.split(/[,\n]/).map((s) => s.trim()).filter(Boolean);
+}
+
+function getModalImageUrl(url: string): string | undefined {
+  const fileId = extractDriveFileId(url);
+  if (!fileId) return undefined;
+  return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
 }
 
 function parseInstagram(value: string): string {
@@ -142,6 +148,12 @@ export function ArtistGridView({
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [openManagerDropdown, setOpenManagerDropdown] = useState<number | null>(null);
   const [managerDropdownPosition, setManagerDropdownPosition] = useState<{ top: number; left: number } | null>(null);
+
+  // Image preview modal state
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const imageCountRef = useRef(0);
+  const [modalImageItems, setModalImageItems] = useState<string[]>([]);
 
   const getUniqueValues = (arr: Artist[], key: keyof Artist): string[] => {
     const values = arr.map(a => (a[key] || "").toString().trim()).filter(v => v.length > 0);
@@ -238,6 +250,41 @@ export function ArtistGridView({
     setOpenManagerDropdown(null);
     setManagerDropdownPosition(null);
   };
+
+  const openModal = (index: number, imageItems: string[]) => {
+    setModalImageItems(imageItems);
+    imageCountRef.current = imageItems.length;
+    setCurrentImageIndex(index);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = useCallback(() => setIsModalOpen(false), []);
+
+  const goToPrevious = useCallback(() => {
+    setCurrentImageIndex((prev) =>
+      prev === 0 ? imageCountRef.current - 1 : prev - 1
+    );
+  }, []);
+
+  const goToNext = useCallback(() => {
+    setCurrentImageIndex((prev) =>
+      prev === imageCountRef.current - 1 ? 0 : prev + 1
+    );
+  }, []);
+
+  // Keyboard navigation for image modal
+  useEffect(() => {
+    if (!isModalOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      switch (e.key) {
+        case "Escape": closeModal(); break;
+        case "ArrowLeft": goToPrevious(); break;
+        case "ArrowRight": goToNext(); break;
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isModalOpen, closeModal, goToPrevious, goToNext]);
 
   const hasActiveFilters = () =>
     statusFilter !== "all" || managerFilter !== "all" || categoryFilter !== "all" || search !== "";
@@ -353,12 +400,23 @@ export function ArtistGridView({
                   <div className="flex items-start gap-3">
                     <div className="bg-muted p-1 rounded-lg shrink-0 overflow-hidden">
                       {profileImageUrl ? (
-                        <img
-                          src={profileImageUrl}
-                          alt={artist["Full Name"]}
-                          className="h-10 w-10 object-cover rounded-md"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                        />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (portfolioLinks.length > 0) {
+                              openModal(0, portfolioLinks);
+                            }
+                          }}
+                          className="block hover:opacity-80 transition-opacity"
+                          title="View portfolio"
+                        >
+                          <img
+                            src={profileImageUrl}
+                            alt={artist["Full Name"]}
+                            className="h-10 w-10 object-cover rounded-md"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                          />
+                        </button>
                       ) : null}
                       {!profileImageUrl && (
                         <div className="h-10 w-10 flex items-center justify-center">
@@ -404,14 +462,6 @@ export function ArtistGridView({
                       {artist["Status "] || "New"}
                     </Badge>
                   </div>
-
-                  {/* Work Field */}
-                  {artist["Notable Projects (Brand/Film/Campaings)"] && (
-                    <div className="text-xs text-muted-foreground truncate">
-                      <span className="font-medium text-foreground/70">Work: </span>
-                      {artist["Notable Projects (Brand/Film/Campaings)"]}
-                    </div>
-                  )}
 
                   {/* Call/WhatsApp buttons */}
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
@@ -461,20 +511,22 @@ export function ArtistGridView({
                       <button
                         onClick={(e) => handleManagerTriggerClick(artist.rowIndex!, e)}
                         disabled={!!pendingUpdates[artist.rowIndex] || updatingIds.has(artist.rowIndex!)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary text-secondary-foreground rounded-full text-sm font-medium hover:bg-secondary/80 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-left flex-1 justify-center sm:min-w-[140px]"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary text-secondary-foreground rounded-lg text-sm font-medium hover:bg-secondary/80 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-left flex-1 justify-center sm:min-w-[140px]"
                       >
                         Assign...
                       </button>
                     )}
 
-                    <StatusDropdown
-                      currentStatus={(artist["Status "] as ArtistStatusValue) || "New"}
-                      rowIndex={artist.rowIndex}
-                      onStatusChange={onStatusUpdate}
-                      disabled={!!pendingUpdates[artist.rowIndex] || updatingIds.has(artist.rowIndex!)}
-                      isLoading={updatingIds.has(artist.rowIndex!)}
-                      hasManager={!!artist["Talent Manager"]}
-                    />
+                    <div className="flex-1 min-w-[140px]">
+                      <StatusDropdown
+                        currentStatus={(artist["Status "] as ArtistStatusValue) || "New"}
+                        rowIndex={artist.rowIndex}
+                        onStatusChange={onStatusUpdate}
+                        disabled={!!pendingUpdates[artist.rowIndex] || updatingIds.has(artist.rowIndex!)}
+                        isLoading={updatingIds.has(artist.rowIndex!)}
+                        hasManager={!!artist["Talent Manager"]}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -482,6 +534,78 @@ export function ArtistGridView({
           );
         })}
       </div>
+
+      {/* Image Lightbox Modal */}
+      {isModalOpen && modalImageItems.length > 0 && (
+        <div
+          className="image-modal-overlay"
+          onClick={closeModal}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Image preview"
+        >
+          <div
+            className="image-modal-content"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={closeModal}
+              className="image-modal-close"
+              aria-label="Close preview"
+            >
+              <X className="h-6 w-6" />
+            </button>
+
+            <div className="image-modal-counter">
+              {currentImageIndex + 1} of {modalImageItems.length}
+            </div>
+
+            <img
+              src={getModalImageUrl(modalImageItems[currentImageIndex])}
+              alt={`Photo ${currentImageIndex + 1}`}
+              className="image-modal-image"
+              onError={(e) => {
+                const img = e.currentTarget;
+                img.style.display = "none";
+                const fallback = img.parentElement?.querySelector(".fallback-div") as HTMLElement | null;
+                if (fallback) fallback.classList.remove("hidden");
+              }}
+            />
+            <div className="hidden fallback-div absolute inset-0 flex items-center justify-center bg-black/50">
+              <ImageIcon className="h-12 w-12 text-white/60" />
+            </div>
+
+            {modalImageItems.length > 1 && (
+              <>
+                <button
+                  onClick={(e) => { e.stopPropagation(); goToPrevious(); }}
+                  className="image-modal-nav image-modal-nav-prev"
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft className="h-8 w-8" />
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); goToNext(); }}
+                  className="image-modal-nav image-modal-nav-next"
+                  aria-label="Next image"
+                >
+                  <ChevronRight className="h-8 w-8" />
+                </button>
+              </>
+            )}
+
+            <a
+              href={modalImageItems[currentImageIndex]}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="absolute bottom-3 right-3 h-9 px-3 flex items-center gap-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-medium transition-colors"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              Open in Drive
+            </a>
+          </div>
+        </div>
+      )}
 
       {/* Manager Dropdown Portal */}
       {openManagerDropdown !== null && managerDropdownPosition && typeof document !== "undefined" &&
