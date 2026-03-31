@@ -749,6 +749,13 @@ export function ArtistProfileDialog({
                 <h2 className="text-xl sm:text-2xl font-bold text-foreground break-words capitalize">
                   {profileName}
                 </h2>
+                <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-2 mt-2">
+                  {profile?.["Talent Category"] && (
+                    <Badge variant="outline" className="text-xs font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary border-primary/20">
+                      {profile["Talent Category"]}
+                    </Badge>
+                  )}
+                </div>
                 <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-3 mt-3">
                   {profileManager ? (
                     <Badge variant="outline" className="text-xs sm:text-sm break-words">

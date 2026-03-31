@@ -370,7 +370,12 @@ export function ArtistGridView({
                       <div className="font-semibold text-foreground truncate capitalize">
                         {artist["Full Name"]}
                       </div>
-                      <div className="text-sm text-muted-foreground truncate">
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <Badge variant="outline" className="text-xs font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary border-primary/20">
+                          {artist["Talent Category"] || "Uncategorized"}
+                        </Badge>
+                      </div>
+                      <div className="text-sm text-muted-foreground truncate mt-0.5">
                         {artist["Instagram Link"] ? renderInstagramLink(artist["Instagram Link"]) : (
                           <span className="text-muted-foreground/50">No Instagram</span>
                         )}
@@ -388,12 +393,13 @@ export function ArtistGridView({
                     </span>
                   </div>
 
-                  {/* Category Row */}
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary border-primary/20">
-                      {artist["Talent Category"] || "Uncategorized"}
-                    </Badge>
-                  </div>
+                  {/* Work Field */}
+                  {artist["Notable Projects (Brand/Film/Campaings)"] && (
+                    <div className="text-xs text-muted-foreground truncate">
+                      <span className="font-medium text-foreground/70">Work: </span>
+                      {artist["Notable Projects (Brand/Film/Campaings)"]}
+                    </div>
+                  )}
 
                   {/* Manager Row */}
                   <div className="text-sm text-muted-foreground truncate">

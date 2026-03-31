@@ -705,7 +705,7 @@ function App() {
     setArtistUpdatingIds((prev) => new Set(prev).add(row));
     const original = artists.find((a) => a.rowIndex === row);
     setArtists((prev) =>
-      prev.map((a) => (a.rowIndex === row ? { ...a, Status: status } : a))
+      prev.map((a) => (a.rowIndex === row ? { ...a, "Status ": status } : a))
     );
     try {
       await updateArtistStatus(row, status);
@@ -738,7 +738,7 @@ function App() {
     setArtistUpdatingIds((prev) => new Set(prev).add(row));
     const original = artists.find((a) => a.rowIndex === row);
     setArtists((prev) =>
-      prev.map((a) => (a.rowIndex === row ? { ...a, Manager: manager } : a))
+      prev.map((a) => (a.rowIndex === row ? { ...a, "Talent Manager": manager } : a))
     );
     try {
       await assignArtistManager(row, manager);
@@ -747,7 +747,7 @@ function App() {
     } catch (err) {
       setArtists((prev) => {
         const restored = prev.map((a) =>
-          a.rowIndex === row ? { ...a, Manager: original?.Manager || "" } : a
+          a.rowIndex === row ? { ...a, "Talent Manager": original?.["Talent Manager"] || "" } : a
         );
         return restored;
       });
@@ -789,13 +789,13 @@ function App() {
 
   const totalArtists = artists.length;
   const artistOnboardedCount = artists.filter(
-    (a) => a["Status"] === "Onboarded"
+    (a) => a["Status "] === "Onboarded"
   ).length;
   const artistMeetingRequiredCount = artists.filter(
-    (a) => a["Status"] === "Meeting Required"
+    (a) => a["Status "] === "Meeting Required"
   ).length;
   const artistKycRequiredCount = artists.filter(
-    (a) => a["Status"] === "KYC Required"
+    (a) => a["Status "] === "KYC Required"
   ).length;
 
   const handleViewModeChange = (mode: "list" | "grid") => {
