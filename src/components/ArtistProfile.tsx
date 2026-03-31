@@ -13,6 +13,9 @@ import {
   ChevronLeft,
   ChevronRight,
   ExternalLink,
+  FileText,
+  Image as ImageIcon,
+  User,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -151,6 +154,23 @@ function parsePortfolioLinks(field: unknown): string[] {
   const str = String(field);
   if (!str.trim()) return [];
   return str.split(/[,\n]/).map((s) => s.trim()).filter(Boolean);
+}
+
+function getFileType(url: string): "image" | "pdf" | "other" {
+  if (!url) return "other";
+  const lower = url.toLowerCase();
+  if (lower.includes(".pdf") || lower.includes("export=pdf") || lower.includes("format=pdf")) {
+    return "pdf";
+  }
+  // Check for common image extensions
+  if (/\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?|$)/i.test(lower)) {
+    return "image";
+  }
+  // Check Drive thumbnail which works for images
+  if (lower.includes("drive.google.com") || lower.includes("thumbnail")) {
+    return "image";
+  }
+  return "other";
 }
 
 function safeField(value: unknown): string | undefined {
@@ -409,9 +429,10 @@ export function ArtistProfileDialog({
     if (!imdb || imdb.trim() === "") return "-";
     const trimmed = imdb.trim();
     const url = trimmed.startsWith("http") ? trimmed : `https://www.imdb.com/name/${trimmed}`;
+    const label = trimmed.startsWith("http") ? "IMDB" : trimmed;
     return (
       <a href={url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">
-        {trimmed.startsWith("http") ? "IMDB" : trimmed}
+        {label}
         <ExternalLink className="h-3 w-3" />
       </a>
     );
@@ -426,11 +447,9 @@ export function ArtistProfileDialog({
         <dl className="grid grid-cols-2 gap-x-3 gap-y-1">
           {section.fields.map((field) =>
             field.value ? (
-              <div key={field.label} className="flex flex-col py-0.5">
-                <dt className="text-xs text-muted-foreground font-medium">
-                  {field.label}
-                </dt>
-                <dd className="text-sm text-foreground font-medium break-words">
+              <div key={field.label} className="profile-field">
+                <dt className="profile-field-label">{field.label}</dt>
+                <dd className={`profile-field-value ${/instagram|imdb|youtube|wiki|link|website|facebook|twitter|tiktok/i.test(field.label) ? "url-text" : ""}`}>
                   {field.value}
                 </dd>
               </div>
@@ -441,313 +460,472 @@ export function ArtistProfileDialog({
     );
   };
 
-  if (!profile) {
-    const sections: ProfileSection[] = [
-      {
-        title: "Basic Info",
-        fields: [
-          { label: "Full Name", value: safeField(name) },
-        ],
-      },
-    ];
+  // Parse portfolio links
+  const portfolioLinks = profile ? parsePortfolioLinks(profile["Portfolio"]) : [];
+  
+  // Separate images from non-images
+  const imageItems = portfolioLinks.filter(link => getFileType(link) === "image");
+  const nonImageItems = portfolioLinks.filter(link => getFileType(link) !== "image");
 
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-3">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <p className="text-muted-foreground text-sm">Loading profile...</p>
+  useEffect(() => {
+    imageCountRef.current = imageItems.length;
+  }, [imageItems.length]);
+
+  const profileName = profile ? profile["Full Name"] || "Unknown Artist" : (name || "Unknown Artist");
+  const profileStatus = profile ? (profile["Status"] || "New") : "New";
+  const profileManager = profile ? profile["Manager"] : null;
+  const statusColor = STATUS_COLORS[profileStatus as ArtistStatusValue] || STATUS_COLORS["New"];
+
+  const managerColor = profileManager ? getManagerBadgeColor(profileManager) : null;
+
+  // Image modal helper
+  const currentModalImage = isModalOpen && imageItems.length > 0 ? imageItems[currentImageIndex] : null;
+
+  // Handle image click
+  const handleImageClick = useCallback((e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    // Only open if clicking an image thumbnail
+    if (!target.closest('.image-clickable')) return;
+    const button = target.closest('.image-clickable') as HTMLElement;
+    const idxAttr = button?.dataset?.idx;
+    if (idxAttr !== undefined) {
+      openModal(parseInt(idxAttr, 10));
+    }
+  }, [openModal]);
+
+  // ==========================================
+  // MANAGER DROPDOWN PORTAL
+  // ==========================================
+  const ManagerDropdownPortal = () => {
+    if (!isManagerOpen || !managerPosition || typeof document === "undefined") return null;
+
+    return ReactDOM.createPortal(
+      <div
+        ref={managerDropdownRef}
+        className="dropdown-container fixed inset-0 z-[99999] pointer-events-auto"
+        style={{ pointerEvents: 'auto' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div
+          className="dropdown-animate pointer-events-auto absolute bg-popover border border-border rounded-xl shadow-xl overflow-hidden"
+          style={{
+            top: `${managerPosition.top}px`,
+            left: `${Math.max(16, Math.min(managerPosition.left, window.innerWidth - 280 - 16))}px`,
+            width: "280px",
+            zIndex: 99999,
+            pointerEvents: 'auto',
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="py-1">
+            <div className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              Select Manager
             </div>
-          ) : error ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-3">
-              <AlertTriangle className="h-10 w-10 text-destructive" />
-              <p className="text-muted-foreground text-sm">{error}</p>
-            </div>
-          ) : (
-            sections.map(renderSection)
-          )}
-        </DialogContent>
-      </Dialog>
-    );
-  }
 
-  const status = profile["Status"] || "New";
-  const statusColor = STATUS_COLORS[status as ArtistStatusValue] || STATUS_COLORS["New"];
-  const managerColor = profile["Manager"]
-    ? getManagerBadgeColor(profile["Manager"])
-    : null;
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                handleManagerSelect("");
+              }}
+              className={`w-full flex items-center gap-3 px-3 py-3 sm:py-2.5 text-sm transition-colors min-h-[48px] hover:bg-accent ${
+                !profileManager
+                  ? "bg-accent/80 font-medium text-foreground"
+                  : "text-popover-foreground"
+              }`}
+            >
+              <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+                <User className="w-4 h-4 text-muted-foreground" />
+              </div>
+              <span className="flex-1 text-left">Unassigned</span>
+              {!profileManager && (
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Current</Badge>
+              )}
+            </button>
 
-  const portfolioLinks = parsePortfolioLinks(profile["Portfolio"]);
+            <div className="h-px bg-border mx-3 my-1" />
 
-  const sections: ProfileSection[] = [
-    {
-      title: "Basic Info",
-      fields: [
-        { label: "Full Name", value: safeField(profile["Full Name"]) },
-        { label: "Category", value: safeField(profile["Category"]) },
-        { label: "Gender", value: safeField(profile["Gender"]) },
-        { label: "Age", value: safeField(profile["Age"]) },
-        { label: "Location", value: safeField(profile["Location"]) },
-      ],
-    },
-    {
-      title: "Contact",
-      fields: [
-        { label: "Phone", value: safeField(profile["Phone"]) },
-        { label: "Email", value: safeField(profile["Email"]) },
-      ],
-    },
-    {
-      title: "Social & Media",
-      fields: [
-        { label: "Instagram", value: renderInstagramLink(profile["Instagram"]) },
-        { label: "IMDB", value: renderIMDBLink(profile["IMDB"]) },
-      ],
-    },
-    {
-      title: "Work",
-      fields: [
-        { label: "Work", value: safeField(profile["Work"]) },
-      ],
-    },
-  ];
-
-  const allImages = portfolioLinks
-    .map((link, i) => ({ link, label: `Portfolio ${i + 1}` }))
-    .filter((item) => getDriveThumbnailUrl(item.link));
-
-  return (
-    <ProfileErrorBoundary>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-3">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <p className="text-muted-foreground text-sm">Loading profile...</p>
-            </div>
-          ) : error ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-3">
-              <AlertTriangle className="h-10 w-10 text-destructive" />
-              <p className="text-muted-foreground text-sm">{error}</p>
-            </div>
-          ) : (
-            <>
-              {/* Header */}
-              <div className="flex items-start justify-between gap-3 mb-4">
-                <div>
-                  <h2 className="text-xl font-semibold text-foreground capitalize mb-1">
-                    {profile["Full Name"] || "—"}
-                  </h2>
-                  {profile["Category"] && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
-                      {profile["Category"]}
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  {isStatusOpen && statusPosition && typeof document !== "undefined" &&
-                    ReactDOM.createPortal(
-                      <div
-                        className="fixed inset-0 z-[9999]"
-                        onClick={(e) => {
-                          const panel = document.getElementById("artist-status-panel");
-                          if (panel && !panel.contains(e.target as Node)) {
-                            closeStatusDropdown();
-                          }
-                        }}
-                      >
-                        <div
-                          id="artist-status-panel"
-                          className="bg-popover border border-border rounded-xl shadow-xl animate-scale-in overflow-hidden"
-                          style={{ position: 'fixed', top: `${statusPosition.top}px`, left: `${Math.max(8, Math.min(statusPosition.left, window.innerWidth - 180))}px` }}
-                        >
-                          {(["New", "Meeting Required", "KYC Required", "Onboarded", "Rejected"] as ArtistStatusValue[]).map((s) => {
-                            const colors = STATUS_COLORS[s];
-                            const isSelected = s === status;
-                            return (
-                              <button
-                                key={s}
-                                onClick={() => handleStatusSelect(s)}
-                                className={`w-full flex items-center gap-2 px-4 py-3 text-sm transition-colors hover:bg-accent ${isSelected ? "bg-accent font-medium" : ""}`}
-                              >
-                                <span className={`w-2 h-2 rounded-full shrink-0 ${colors.dot}`} />
-                                <span>{s}</span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>,
-                      document.body
-                    )}
-                  {isManagerOpen && managerPosition && typeof document !== "undefined" &&
-                    ReactDOM.createPortal(
-                      <div
-                        className="fixed inset-0 z-[9999]"
-                        onClick={(e) => {
-                          const panel = document.getElementById("artist-manager-panel");
-                          if (panel && !panel.contains(e.target as Node)) {
-                            closeManagerDropdown();
-                          }
-                        }}
-                      >
-                        <div
-                          id="artist-manager-panel"
-                          className="bg-popover border border-border rounded-xl shadow-xl animate-scale-in overflow-hidden"
-                          style={{ position: 'fixed', top: `${managerPosition.top}px`, left: `${Math.max(8, Math.min(managerPosition.left, window.innerWidth - 200))}px`, width: '180px' }}
-                        >
-                          {managers.map((m) => {
-                            const mc = getManagerBadgeColor(m);
-                            const isSelected = m === profile["Manager"];
-                            return (
-                              <button
-                                key={m}
-                                onClick={() => handleManagerSelect(m)}
-                                className={`w-full flex items-center gap-2 px-3 py-3 text-sm transition-colors hover:bg-accent ${isSelected ? "bg-accent font-medium" : ""}`}
-                              >
-                                <div
-                                  className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-xs font-medium"
-                                  style={{ backgroundColor: mc.bg, color: mc.text, border: `1px solid ${mc.border}` }}
-                                >
-                                  {m.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
-                                </div>
-                                <span>{m}</span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>,
-                      document.body
-                    )}
-                  {/* Status badge */}
-                  <button
-                    ref={statusButtonRef}
-                    onClick={openStatusDropdown}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors hover:bg-accent"
-                    style={{ backgroundColor: statusColor.bg, borderColor: statusColor.border, color: statusColor.text }}
+            {(managers || []).map((manager) => {
+              const mColor = getManagerBadgeColor(manager);
+              const isSelected = manager === profileManager;
+              return (
+                <button
+                  key={manager}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    handleManagerSelect(manager);
+                  }}
+                  className={`w-full flex items-center gap-3 px-3 py-3 sm:py-2.5 text-sm transition-colors min-h-[48px] hover:bg-accent ${
+                    isSelected ? "bg-accent/60" : "text-popover-foreground"
+                  }`}
+                >
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-medium text-xs"
+                    style={{
+                      backgroundColor: mColor.bg,
+                      color: mColor.text,
+                      border: `1px solid ${mColor.border}`
+                    }}
                   >
-                    <span className={`w-2 h-2 rounded-full shrink-0 ${statusColor.dot}`} />
-                    {status}
-                  </button>
-                  {/* Manager badge */}
-                  {managerColor ? (
-                    <button
-                      ref={managerButtonRef}
-                      onClick={openManagerDropdown}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors hover:opacity-80"
-                      style={{ backgroundColor: managerColor.bg, borderColor: managerColor.border, color: managerColor.text }}
+                    {manager.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                  </div>
+                  <span className="flex-1 text-left font-medium">{manager}</span>
+                  {isSelected && (
+                    <Badge
+                      className="text-[10px] px-1.5 py-0 font-normal"
+                      style={{
+                        backgroundColor: mColor.bg,
+                        color: mColor.text,
+                        borderColor: mColor.border
+                      }}
                     >
-                      <div
-                        className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-xs font-medium"
-                        style={{ backgroundColor: managerColor.text + "20", color: managerColor.text }}
-                      >
-                        {profile["Manager"].split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
-                      </div>
-                      {profile["Manager"]}
-                    </button>
-                  ) : (
-                    <button
-                      ref={managerButtonRef}
-                      onClick={openManagerDropdown}
-                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground border border-border/50 hover:bg-secondary/80 transition-colors"
-                    >
-                      Assign Manager
-                    </button>
+                      Selected
+                    </Badge>
                   )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>,
+      document.body
+    );
+  };
+
+  // ==========================================
+  // STATUS DROPDOWN PORTAL
+  // ==========================================
+  const StatusDropdownPortal = () => {
+    if (!isStatusOpen || !statusPosition || typeof document === "undefined") return null;
+
+    return ReactDOM.createPortal(
+      <div
+        ref={statusDropdownRef}
+        className="dropdown-container fixed inset-0 z-[99999] pointer-events-auto"
+        style={{ pointerEvents: 'auto' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div
+          className="dropdown-animate pointer-events-auto absolute bg-popover border border-border rounded-xl shadow-xl overflow-hidden"
+          style={{
+            top: `${statusPosition.top}px`,
+            left: `${Math.max(8, Math.min(statusPosition.left, window.innerWidth - 200 - 8))}px`,
+            minWidth: "200px",
+            maxWidth: `${window.innerWidth - 16}px`,
+            zIndex: 99999,
+            pointerEvents: 'auto',
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="py-1">
+            {(["New", "Meeting Required", "KYC Required", "Onboarded", "Rejected"] as ArtistStatusValue[]).map((status) => {
+              const colors = STATUS_COLORS[status];
+              const isSelected = status === profileStatus;
+              return (
+                <button
+                  key={status}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    handleStatusSelect(status);
+                  }}
+                  className={`w-full flex items-center gap-3 px-3 py-3 sm:py-2.5 text-sm transition-colors min-h-[44px] ${
+                    isSelected
+                      ? "bg-accent/60 font-medium text-foreground"
+                      : "text-popover-foreground hover:bg-accent"
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${colors.dot}`} />
+                  <span className="flex-1 text-left">{status}</span>
+                  {isSelected && (
+                    <span className="text-xs text-muted-foreground shrink-0">Current</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>,
+      document.body
+    );
+  };
+
+  // ==========================================
+  // SECTIONS
+  // ==========================================
+  const gf = (key: keyof Artist): string | undefined => {
+    if (!profile) return undefined;
+    return safeField(profile[key]);
+  };
+
+  const getBasicInfo = (): ProfileSection => ({
+    title: "Basic Information",
+    fields: [
+      { label: "Full Name", value: gf("Full Name") },
+      { label: "Category", value: gf("Category") },
+      { label: "Gender", value: gf("Gender") },
+      { label: "Age", value: gf("Age") },
+      { label: "Location", value: gf("Location") },
+    ],
+  });
+
+  const getContact = (): ProfileSection => ({
+    title: "Contact",
+    fields: [
+      {
+        label: "Phone",
+        value: gf("Phone") ? (
+          <a href={`tel:${gf("Phone")}`} className="text-primary hover:underline">
+            {gf("Phone")}
+          </a>
+        ) : undefined,
+      },
+      {
+        label: "Email",
+        value: gf("Email") ? (
+          <a href={`mailto:${gf("Email")}`} className="text-primary hover:underline" style={{ wordBreak: "break-all" }}>
+            {gf("Email")}
+          </a>
+        ) : undefined,
+      },
+    ],
+  });
+
+  const getSocialMedia = (): ProfileSection => ({
+    title: "Social & Media",
+    fields: [
+      { label: "Instagram", value: renderInstagramLink(gf("Instagram")) },
+      { label: "IMDb", value: renderIMDBLink(gf("IMDB")) },
+    ],
+  });
+
+  const getWork = (): ProfileSection => ({
+    title: "Work",
+    fields: [
+      { label: "Work", value: gf("Work") },
+    ],
+  });
+
+  const getManagementInfo = (): ProfileSection => ({
+    title: "Management",
+    fields: [
+      { label: "Status", value: profileStatus },
+      { label: "Manager", value: profileManager || "Unassigned" },
+      { label: "Notes", value: gf("Notes") },
+    ],
+  });
+
+  // ==========================================
+  // RENDER
+  // ==========================================
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent 
+        className="max-w-3xl max-h-[90vh] overflow-y-auto p-0 bg-background border-border animate-scale-in"
+        onClick={handleImageClick}
+      >
+        {isLoading && (
+          <div className="flex flex-col items-center justify-center py-16">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+            <p className="text-muted-foreground">Loading profile...</p>
+          </div>
+        )}
+
+        {error && (
+          <div className="text-center py-16 text-destructive px-6">
+            <p>{error}</p>
+          </div>
+        )}
+
+        {profile && !isLoading && (
+          <ProfileErrorBoundary>
+            <div className="talent-profile space-y-5 p-6">
+              {/* Header */}
+              <div className="profile-header">
+                <h2 className="text-xl sm:text-2xl font-bold text-foreground break-words capitalize">
+                  {profileName}
+                </h2>
+                <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-3 mt-3">
+                  {profileManager ? (
+                    <Badge variant="outline" className="text-xs sm:text-sm break-words">
+                      Manager: {profileManager}
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-xs sm:text-sm text-muted-foreground">
+                      No Manager Assigned
+                    </Badge>
+                  )}
+                  <Badge variant={getStatusVariant(profileStatus)} className="text-xs sm:text-sm">
+                    {profileStatus}
+                  </Badge>
                 </div>
               </div>
 
-              {/* Profile Sections */}
-              {sections.map(renderSection)}
+              {/* Portfolio Gallery */}
+              {portfolioLinks.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    Portfolio
+                  </h3>
 
-              {/* Portfolio Section */}
-              <div className="profile-card">
-                <h3 className="profile-section-title">Portfolio</h3>
-                {allImages.length > 0 ? (
-                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                    {allImages.map((item, i) => (
-                      <button
-                        key={i}
-                        onClick={() => { imageCountRef.current = allImages.length; openModal(i); }}
-                        className="relative aspect-square rounded-lg overflow-hidden border border-border hover:border-primary transition-colors group"
-                      >
-                        <img
-                          src={getDriveThumbnailUrl(item.link) || ""}
-                          alt={item.label}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                        />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                          <ExternalLink className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                  {/* Image thumbnails */}
+                  {imageItems.length > 0 && (
+                    <>
+                      <div className="photos-thumbnail-grid">
+                        {imageItems.map((link, idx) => {
+                          const thumbnailUrl = getDriveThumbnailUrl(link);
+                          return (
+                            <button
+                              key={`img-${idx}`}
+                              data-idx={idx}
+                              className="thumbnail-item image-clickable"
+                              aria-label={`View photo ${idx + 1}`}
+                            >
+                              {thumbnailUrl ? (
+                                <img
+                                  src={thumbnailUrl}
+                                  alt={`Portfolio ${idx + 1}`}
+                                  loading="lazy"
+                                  onError={(e) => {
+                                    const img = e.currentTarget;
+                                    img.style.display = "none";
+                                    const fallback = img.parentElement?.querySelector(
+                                      ".fallback-div"
+                                    ) as HTMLElement | null;
+                                    if (fallback) fallback.classList.remove("hidden");
+                                  }}
+                                />
+                              ) : null}
+                              <div className="hidden fallback-div absolute inset-0 flex items-center justify-center bg-muted rounded-md">
+                                <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Image Lightbox Modal */}
+                      {isModalOpen && currentModalImage && (
+                        <div
+                          className="image-modal-overlay"
+                          onClick={closeModal}
+                          role="dialog"
+                          aria-modal="true"
+                          aria-label="Image preview"
+                        >
+                          <div
+                            className="image-modal-content"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              onClick={closeModal}
+                              className="image-modal-close"
+                              aria-label="Close preview"
+                            >
+                              <X className="h-6 w-6" />
+                            </button>
+
+                            <div className="image-modal-counter">
+                              {currentImageIndex + 1} of {imageItems.length}
+                            </div>
+
+                            <img
+                              src={getModalImageUrl(currentModalImage)}
+                              alt={`Photo ${currentImageIndex + 1}`}
+                              className="image-modal-image"
+                            />
+
+                            {imageItems.length > 1 && (
+                              <>
+                                <button
+                                  onClick={goToPrevious}
+                                  className="image-modal-nav image-modal-nav-prev"
+                                  aria-label="Previous image"
+                                >
+                                  <ChevronLeft className="h-8 w-8" />
+                                </button>
+                                <button
+                                  onClick={goToNext}
+                                  className="image-modal-nav image-modal-nav-next"
+                                  aria-label="Next image"
+                                >
+                                  <ChevronRight className="h-8 w-8" />
+                                </button>
+                              </>
+                            )}
+
+                            <a
+                              href={currentModalImage}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="absolute bottom-3 right-3 h-9 px-3 flex items-center gap-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-medium transition-colors"
+                            >
+                              <ExternalLink className="h-3.5 w-3.5" />
+                              Open in Drive
+                            </a>
+                          </div>
                         </div>
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground italic py-2">No portfolio uploaded</p>
-                )}
-              </div>
+                      )}
+                    </>
+                  )}
 
-              {/* Notes */}
-              {profile["Notes"] && (
-                <div className="profile-card">
-                  <h3 className="profile-section-title">Notes</h3>
-                  <p className="text-sm text-foreground whitespace-pre-wrap">{profile["Notes"]}</p>
+                  {/* Non-image files (PDFs, documents, etc.) */}
+                  {nonImageItems.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {nonImageItems.map((link, idx) => {
+                        const isPdf = getFileType(link) === "pdf";
+                        const fileIndex = imageItems.length + idx;
+                        return (
+                          <a
+                            key={`file-${idx}`}
+                            href={link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors border border-border text-sm"
+                          >
+                            <FileText className={`h-4 w-4 ${isPdf ? "text-red-500" : "text-primary"}`} />
+                            <span className="text-foreground">
+                              {isPdf ? "PDF Document" : `File ${fileIndex + 1}`}
+                            </span>
+                            <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                          </a>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
 
-              {/* Image Lightbox */}
-              <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <DialogContent className="max-w-3xl p-0 bg-black/95 border-none max-h-[90vh] flex flex-col">
-                  <div className="flex items-center justify-between p-3 absolute top-0 left-0 right-0 z-10">
-                    <span className="text-white text-sm">
-                      {currentImageIndex + 1} / {allImages.length}
-                    </span>
-                    <button
-                      onClick={closeModal}
-                      className="h-8 w-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-                    >
-                      <X className="h-4 w-4 text-white" />
-                    </button>
+              {portfolioLinks.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-10 sm:py-14 bg-secondary/50 rounded-xl border border-border">
+                  <div className="bg-muted p-4 rounded-full mb-3">
+                    <ImageIcon className="h-7 w-7 text-muted-foreground" />
                   </div>
-                  {allImages[currentImageIndex] && (
-                    <img
-                      src={getModalImageUrl(allImages[currentImageIndex].link)}
-                      alt={allImages[currentImageIndex].label}
-                      className="w-full h-full object-contain"
-                    />
-                  )}
-                  {allImages.length > 1 && (
-                    <>
-                      <button
-                        onClick={goToPrevious}
-                        className="absolute left-2 top-1/2 -translate-y-1/2 h-10 w-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-                      >
-                        <ChevronLeft className="h-5 w-5 text-white" />
-                      </button>
-                      <button
-                        onClick={goToNext}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-                      >
-                        <ChevronRight className="h-5 w-5 text-white" />
-                      </button>
-                    </>
-                  )}
-                  <a
-                    href={allImages[currentImageIndex]?.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="absolute bottom-3 right-3 h-9 px-3 flex items-center gap-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-medium transition-colors"
-                  >
-                    <ExternalLink className="h-3.5 w-3.5" />
-                    Open in Drive
-                  </a>
-                </DialogContent>
-              </Dialog>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-    </ProfileErrorBoundary>
+                  <p className="text-muted-foreground text-xs sm:text-sm">
+                    No portfolio uploaded
+                  </p>
+                </div>
+              )}
+
+              {/* Profile Sections */}
+              {renderSection(getBasicInfo())}
+              {renderSection(getContact())}
+              {renderSection(getSocialMedia())}
+              {renderSection(getWork())}
+              {renderSection(getManagementInfo())}
+            </div>
+          </ProfileErrorBoundary>
+        )}
+      </DialogContent>
+
+      {/* Manager Dropdown Portal - FIRST */}
+      <ManagerDropdownPortal />
+
+      {/* Status Dropdown Portal - SECOND */}
+      <StatusDropdownPortal />
+    </Dialog>
   );
 }
