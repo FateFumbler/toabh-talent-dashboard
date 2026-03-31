@@ -389,8 +389,10 @@ export function ArtistGridView({
                   </div>
 
                   {/* Category Row */}
-                  <div className="text-sm text-muted-foreground truncate">
-                    {artist["Category"] || "Uncategorized"}
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-xs font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary border-primary/20">
+                      {artist["Category"] || "Uncategorized"}
+                    </Badge>
                   </div>
 
                   {/* Manager Row */}

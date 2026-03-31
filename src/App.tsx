@@ -788,6 +788,15 @@ function App() {
   }, []);
 
   const totalArtists = artists.length;
+  const artistOnboardedCount = artists.filter(
+    (a) => a["Status"] === "Onboarded"
+  ).length;
+  const artistMeetingRequiredCount = artists.filter(
+    (a) => a["Status"] === "Meeting Required"
+  ).length;
+  const artistKycRequiredCount = artists.filter(
+    (a) => a["Status"] === "KYC Required"
+  ).length;
 
   const handleViewModeChange = (mode: "list" | "grid") => {
     setViewMode(mode);
@@ -1002,7 +1011,7 @@ function App() {
               onClick={() => setActiveTab("artists")}
               className={`nav-tab ${activeTab === "artists" || activeTab === "artist-profile" ? "nav-tab-active" : ""}`}
             >
-              Artist
+              Artists
             </button>
           </div>
           {/* Right: Settings icon only */}
@@ -1160,6 +1169,42 @@ function App() {
         {/* Artists Tab */}
         {activeTab === "artists" && (
           <ErrorBoundary>
+            {/* Artist Stats Cards */}
+            <div className="stats-scroll mb-6 stagger-children">
+              <StatCard
+                label="Total Artists"
+                value={totalArtists}
+                color="purple"
+                isActive={activeTile === null}
+                onClick={() => handleTileClick("Total")}
+                icon={<User className="h-4 w-4" />}
+              />
+              <StatCard
+                label="Meeting Scheduled"
+                value={artistMeetingRequiredCount}
+                color="blue"
+                isActive={activeTile === "Meeting Required"}
+                onClick={() => handleTileClick("Meeting Required")}
+                icon={<User className="h-4 w-4" />}
+              />
+              <StatCard
+                label="Contract Signing"
+                value={artistKycRequiredCount}
+                color="orange"
+                isActive={activeTile === "KYC Required"}
+                onClick={() => handleTileClick("KYC Required")}
+                icon={<FileText className="h-4 w-4" />}
+              />
+              <StatCard
+                label="Onboarded"
+                value={artistOnboardedCount}
+                color="green"
+                isActive={activeTile === "Onboarded"}
+                onClick={() => handleTileClick("Onboarded")}
+                icon={<User className="h-4 w-4" />}
+              />
+            </div>
+
             <div className="flex items-center justify-between mb-4 gap-3">
               <div className="flex items-center gap-2">
                 <button

@@ -1,17 +1,17 @@
 export interface Artist {
   "Full Name": string;
-  "Category": string;
+  "Talent Category": string;
   "Gender": string;
   "Age": string;
-  "Location": string;
-  "Phone": number | string;
+  "City & State (Current location)": string;
+  "Phone Number": number | string;
   "Email": string;
   "Instagram Link": string;
   "IMDB (If Available)": string;
-  "Notable Projects (Brand/Film/Campaigns)": string;
+  "Notable Projects (Brand/Film/Campaings)": string;
   "Portfolio / Work Images": string;
-  "Status": string;
-  "Manager": string;
+  "Status ": string;
+  "Talent Manager": string;
   "Notes": string;
   "rowIndex": number;
   // Allow additional API fields
