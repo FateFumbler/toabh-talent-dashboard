@@ -140,7 +140,7 @@ const getUniqueValues = (artists: Artist[], key: keyof Artist): string[] => {
 
 const getAllManagers = (artists: Artist[], apiManagers: string[] = []): string[] => {
   const dynamicManagers = artists
-    .map(a => (a["Manager"] || "").toString().trim())
+    .map(a => (a["Talent Manager"] || "").toString().trim())
     .filter(m => m.length > 0);
 
   const all = [...apiManagers, ...dynamicManagers].map(m => m.trim());
@@ -205,18 +205,18 @@ export function ArtistTable({
         !search ||
         artist["Full Name"]?.toLowerCase().includes(searchLower) ||
         artist["Instagram Link"]?.toLowerCase().includes(searchLower) ||
-        artist["Location"]?.toLowerCase().includes(searchLower);
+        artist["City & State (Current location)"]?.toLowerCase().includes(searchLower);
 
       const matchesStatus =
         statusFilter === "all"
-          ? artist["Status"] !== "Rejected" && artist["Status"] !== "Onboarded"
+          ? artist["Status "] !== "Rejected" && artist["Status "] !== "Onboarded"
           : statusFilter === "New"
-            ? !artist["Status"] || artist["Status"] === "New"
-            : artist["Status"] === statusFilter;
+            ? !artist["Status "] || artist["Status "] === "New"
+            : artist["Status "] === statusFilter;
       const matchesManager =
-        managerFilter === "all" || artist["Manager"] === managerFilter;
+        managerFilter === "all" || artist["Talent Manager"] === managerFilter;
       const matchesCategory =
-        categoryFilter === "all" || artist["Category"] === categoryFilter;
+        categoryFilter === "all" || artist["Talent Category"] === categoryFilter;
 
       return matchesSearch && matchesStatus && matchesManager && matchesCategory;
     });
@@ -259,7 +259,7 @@ export function ArtistTable({
       .filter((a) => {
         const name = (a["Full Name"] || "").toLowerCase();
         const email = (a["Email"] || "").toLowerCase();
-        const phone = String(a["Phone"] || "").toLowerCase();
+        const phone = String(a["Phone Number"] || "").toLowerCase();
         return (
           name.includes(searchLower) ||
           email.includes(searchLower) ||
@@ -387,7 +387,7 @@ export function ArtistTable({
               {showSuggestions && suggestions.length > 0 && (
                 <div className="absolute z-[100] w-full mt-1 bg-background border border-border rounded-lg shadow-lg overflow-hidden">
                   {suggestions.map((artist) => {
-                    const phone = String(artist["Phone"] || "");
+                    const phone = String(artist["Phone Number"] || "");
                     const email = (artist["Email"] || "").trim();
                     return (
                       <button
@@ -641,10 +641,10 @@ export function ArtistTable({
                     {renderInstagramLink(artist["Instagram Link"])}
                   </TableCell>
                   <TableCell className="text-left py-3 px-4 align-middle text-sm text-muted-foreground">
-                    {artist["Location"] || "-"}
+                    {artist["City & State (Current location)"] || "-"}
                   </TableCell>
                   <TableCell className="text-left py-3 px-4 align-middle text-sm text-muted-foreground">
-                    {artist["Category"] || "-"}
+                    {artist["Talent Category"] || "-"}
                   </TableCell>
                   <TableCell className="text-center py-3 px-4 align-middle text-sm text-muted-foreground">
                     {artist["Gender"] || "-"}
@@ -656,20 +656,20 @@ export function ArtistTable({
                     <div className="flex items-center justify-center gap-2">
                       <span
                         className={`w-2 h-2 rounded-full shrink-0 ${getStatusDot(
-                          artist["Status"]
+                          artist["Status "]
                         )}`}
                       />
                       <Badge
-                        variant={getStatusVariant(artist["Status"])}
+                        variant={getStatusVariant(artist["Status "])}
                         className="text-xs"
                       >
-                        {artist["Status"] || "New"}
+                        {artist["Status "] || "New"}
                       </Badge>
                     </div>
                   </TableCell>
                   <TableCell className="text-left py-3 px-4 align-middle">
-                    {artist["Manager"] ? (() => {
-                      const mColor = getManagerColor(artist["Manager"]);
+                    {artist["Talent Manager"] ? (() => {
+                      const mColor = getManagerColor(artist["Talent Manager"]);
                       return (
                         <button
                           onClick={(e) => handleManagerTriggerClick(artist.rowIndex!, e)}
@@ -684,10 +684,10 @@ export function ArtistTable({
                               border: `1px solid ${mColor.border}`
                             }}
                           >
-                            {artist["Manager"].split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
+                            {artist["Talent Manager"].split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
                           </div>
                           <span className="text-sm text-foreground font-medium">
-                            {artist["Manager"]}
+                            {artist["Talent Manager"]}
                           </span>
                         </button>
                       );
@@ -710,12 +710,12 @@ export function ArtistTable({
                   </TableCell>
                   <TableCell className="text-right py-3 px-4 align-middle">
                     <div className="flex items-center justify-end gap-2">
-                    {artist["Phone"] && (
+                    {artist["Phone Number"] && (
                       <div className="flex items-center justify-center gap-1.5">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            window.location.href = `tel:${artist["Phone"]}`;
+                            window.location.href = `tel:${artist["Phone Number"]}`;
                           }}
                           className="h-7 w-7 flex items-center justify-center rounded-lg bg-blue-500/15 text-blue-500 hover:bg-blue-500/25 transition-colors"
                           title="Call"
@@ -725,7 +725,7 @@ export function ArtistTable({
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            const phone = String(artist["Phone"]).replace(/\D/g, "");
+                            const phone = String(artist["Phone Number"]).replace(/\D/g, "");
                             window.open(`https://wa.me/${phone}`, "_blank");
                           }}
                           className="h-7 w-7 flex items-center justify-center rounded-lg bg-green-500/15 text-green-500 hover:bg-green-500/25 transition-colors"
@@ -737,13 +737,13 @@ export function ArtistTable({
                     )}
                     <StatusDropdown
                       currentStatus={
-                        (artist["Status"] as ArtistStatusValue) || "New"
+                        (artist["Status "] as ArtistStatusValue) || "New"
                       }
                       rowIndex={artist.rowIndex}
                       onStatusChange={onStatusUpdate}
                       disabled={!!pendingUpdates[artist.rowIndex] || updatingIds.has(artist.rowIndex!)}
                       isLoading={pendingUpdates[artist.rowIndex] === "status" || updatingIds.has(artist.rowIndex!)}
-                      hasManager={!!artist["Manager"]}
+                      hasManager={!!artist["Talent Manager"]}
                     />
                     </div>
                   </TableCell>

@@ -221,7 +221,7 @@ export function ArtistProfileDialog({
   const closeManagerDropdown = useCallback(() => setIsManagerOpen(false), []);
 
   const handleManagerSelect = useCallback((manager: string) => {
-    if (manager === profile?.["Manager"]) {
+    if (manager === profile?.["Talent Manager"]) {
       closeManagerDropdown();
       return;
     }
@@ -267,7 +267,7 @@ export function ArtistProfileDialog({
   const closeStatusDropdown = useCallback(() => setIsStatusOpen(false), []);
 
   const handleStatusSelect = useCallback((status: ArtistStatusValue) => {
-    const currentManager = profile?.["Manager"];
+    const currentManager = profile?.["Talent Manager"];
     if (status === "Onboarded" && !currentManager) {
       toast.error("Please assign a Manager first");
       closeStatusDropdown();
@@ -473,8 +473,8 @@ export function ArtistProfileDialog({
   }, [imageItems.length]);
 
   const profileName = profile ? profile["Full Name"] || "Unknown Artist" : (name || "Unknown Artist");
-  const profileStatus = profile ? (profile["Status"] || "New") : "New";
-  const profileManager = profile ? profile["Manager"] : null;
+  const profileStatus = profile ? (profile["Status "] || "New") : "New";
+  const profileManager = profile ? profile["Talent Manager"] : null;
   const statusColor = STATUS_COLORS[profileStatus as ArtistStatusValue] || STATUS_COLORS["New"];
 
   const managerColor = profileManager ? getManagerBadgeColor(profileManager) : null;
@@ -666,10 +666,10 @@ export function ArtistProfileDialog({
     title: "Basic Information",
     fields: [
       { label: "Full Name", value: gf("Full Name") },
-      { label: "Category", value: gf("Category") },
+      { label: "Category", value: gf("Talent Category") },
       { label: "Gender", value: gf("Gender") },
       { label: "Age", value: gf("Age") },
-      { label: "Location", value: gf("Location") },
+      { label: "Location", value: gf("City & State (Current location)") },
     ],
   });
 
@@ -678,9 +678,9 @@ export function ArtistProfileDialog({
     fields: [
       {
         label: "Phone",
-        value: gf("Phone") ? (
-          <a href={`tel:${gf("Phone")}`} className="text-primary hover:underline">
-            {gf("Phone")}
+        value: gf("Phone Number") ? (
+          <a href={`tel:${gf("Phone Number")}`} className="text-primary hover:underline">
+            {gf("Phone Number")}
           </a>
         ) : undefined,
       },
@@ -706,7 +706,7 @@ export function ArtistProfileDialog({
   const getWork = (): ProfileSection => ({
     title: "Work",
     fields: [
-      { label: "Work", value: gf("Notable Projects (Brand/Film/Campaigns)") },
+      { label: "Work", value: gf("Notable Projects (Brand/Film/Campaings)") },
     ],
   });
 

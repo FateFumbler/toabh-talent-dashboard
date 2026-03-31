@@ -112,7 +112,7 @@ interface ArtistGridViewProps {
 
 const getAllManagers = (artists: Artist[], apiManagers: string[] = []): string[] => {
   const dynamicManagers = artists
-    .map(a => (a["Manager"] || "").toString().trim())
+    .map(a => (a["Talent Manager"] || "").toString().trim())
     .filter(m => m.length > 0);
   const all = [...apiManagers, ...dynamicManagers].map(m => m.trim());
   const normalized = all.map(m => m.toLowerCase());
@@ -161,18 +161,18 @@ export function ArtistGridView({
         !hasSearch ||
         (artist["Full Name"] || "").toLowerCase().includes(searchLower) ||
         (artist["Email"] || "").toLowerCase().includes(searchLower) ||
-        String(artist["Phone"] || "").toLowerCase().includes(searchLower) ||
+        String(artist["Phone Number"] || "").toLowerCase().includes(searchLower) ||
         (artist["Instagram Link"] || "").toLowerCase().includes(searchLower);
 
       const matchesStatus = hasSearch
         ? true
         : statusFilter === "all"
-          ? artist["Status"] !== "Rejected" && artist["Status"] !== "Onboarded"
+          ? artist["Status "] !== "Rejected" && artist["Status "] !== "Onboarded"
           : statusFilter === "New"
-            ? !artist["Status"] || artist["Status"] === "New"
-            : artist["Status"] === statusFilter;
-      const matchesManager = managerFilter === "all" || artist["Manager"] === managerFilter;
-      const matchesCategory = categoryFilter === "all" || artist["Category"] === categoryFilter;
+            ? !artist["Status "] || artist["Status "] === "New"
+            : artist["Status "] === statusFilter;
+      const matchesManager = managerFilter === "all" || artist["Talent Manager"] === managerFilter;
+      const matchesCategory = categoryFilter === "all" || artist["Talent Category"] === categoryFilter;
 
       return matchesSearch && matchesStatus && matchesManager && matchesCategory;
     }).sort((a, b) => b.rowIndex - a.rowIndex);
@@ -186,7 +186,7 @@ export function ArtistGridView({
       .filter(a => {
         const name = (a["Full Name"] || "").toLowerCase();
         const email = (a["Email"] || "").toLowerCase();
-        const phone = String(a["Phone"] || "").toLowerCase();
+        const phone = String(a["Phone Number"] || "").toLowerCase();
         return name.includes(searchLower) || email.includes(searchLower) || phone.includes(searchLower);
       })
       .slice(0, 7);
@@ -278,8 +278,8 @@ export function ArtistGridView({
                   className="w-full px-3 py-2 text-left hover:bg-accent/50 transition-colors flex items-center gap-2"
                 >
                   <span className="font-medium truncate capitalize">{artist["Full Name"]}</span>
-                  {String(artist["Phone"] || "") && (
-                    <span className="text-muted-foreground text-sm truncate">{artist["Phone"]}</span>
+                  {String(artist["Phone Number"] || "") && (
+                    <span className="text-muted-foreground text-sm truncate">{artist["Phone Number"]}</span>
                   )}
                 </button>
               ))}
@@ -376,28 +376,28 @@ export function ArtistGridView({
                         )}
                       </div>
                     </div>
-                    <Badge variant={getStatusVariant(artist["Status"])} className="shrink-0 text-xs">
-                      {artist["Status"] || "New"}
+                    <Badge variant={getStatusVariant(artist["Status "])} className="shrink-0 text-xs">
+                      {artist["Status "] || "New"}
                     </Badge>
                   </div>
 
                   {/* Info Row */}
                   <div className="flex items-center gap-2 text-sm">
                     <span className="text-muted-foreground truncate">
-                      {artist["Location"] || "Unknown location"}
+                      {artist["City & State (Current location)"] || "Unknown location"}
                     </span>
                   </div>
 
                   {/* Category Row */}
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" className="text-xs font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary border-primary/20">
-                      {artist["Category"] || "Uncategorized"}
+                      {artist["Talent Category"] || "Uncategorized"}
                     </Badge>
                   </div>
 
                   {/* Manager Row */}
                   <div className="text-sm text-muted-foreground truncate">
-                    {artist["Manager"] || "No manager"}
+                    {artist["Talent Manager"] || "No manager"}
                   </div>
 
                   {/* Details Row */}
@@ -405,17 +405,17 @@ export function ArtistGridView({
                     {artist["Gender"] && <span className="whitespace-nowrap">{artist["Gender"]}</span>}
                     {artist["Gender"] && artist["Age"] && <span className="text-border">•</span>}
                     {artist["Age"] && <span className="whitespace-nowrap">{artist["Age"]} yrs</span>}
-                    {artist["Phone"] && (
+                    {artist["Phone Number"] && (
                       <div className="flex items-center gap-1.5 ml-auto">
                         <button
-                          onClick={(e) => { e.stopPropagation(); window.location.href = `tel:${artist["Phone"]}`; }}
+                          onClick={(e) => { e.stopPropagation(); window.location.href = `tel:${artist["Phone Number"]}`; }}
                           className="h-8 w-8 flex items-center justify-center rounded-lg bg-blue-500/15 text-blue-500 hover:bg-blue-500/25 transition-colors"
                           title="Call"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                         </button>
                         <button
-                          onClick={(e) => { e.stopPropagation(); const phone = String(artist["Phone"]).replace(/\D/g, ""); window.open(`https://wa.me/${phone}`, "_blank"); }}
+                          onClick={(e) => { e.stopPropagation(); const phone = String(artist["Phone Number"]).replace(/\D/g, ""); window.open(`https://wa.me/${phone}`, "_blank"); }}
                           className="h-8 w-8 flex items-center justify-center rounded-lg bg-green-500/15 text-green-500 hover:bg-green-500/25 transition-colors"
                           title="WhatsApp"
                         >
@@ -430,8 +430,8 @@ export function ArtistGridView({
                 <div className="pt-2 border-t border-border/50 card-actions">
                   <div className="flex flex-row sm:flex-col items-center sm:items-stretch justify-between gap-2">
                     {/* Manager button */}
-                    {artist["Manager"] ? (() => {
-                      const mc = getManagerColor(artist["Manager"]);
+                    {artist["Talent Manager"] ? (() => {
+                      const mc = getManagerColor(artist["Talent Manager"]);
                       return (
                         <button
                           onClick={(e) => handleManagerTriggerClick(artist.rowIndex!, e)}
@@ -442,9 +442,9 @@ export function ArtistGridView({
                             className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 font-medium text-xs"
                             style={{ backgroundColor: mc.bg, color: mc.text, border: `1px solid ${mc.border}` }}
                           >
-                            {artist["Manager"].split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}
+                            {artist["Talent Manager"].split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}
                           </div>
-                          <span className="text-sm font-medium truncate">{artist["Manager"]}</span>
+                          <span className="text-sm font-medium truncate">{artist["Talent Manager"]}</span>
                         </button>
                       );
                     })() : (
@@ -458,12 +458,12 @@ export function ArtistGridView({
                     )}
 
                     <StatusDropdown
-                      currentStatus={(artist["Status"] as ArtistStatusValue) || "New"}
+                      currentStatus={(artist["Status "] as ArtistStatusValue) || "New"}
                       rowIndex={artist.rowIndex}
                       onStatusChange={onStatusUpdate}
                       disabled={!!pendingUpdates[artist.rowIndex] || updatingIds.has(artist.rowIndex!)}
                       isLoading={updatingIds.has(artist.rowIndex!)}
-                      hasManager={!!artist["Manager"]}
+                      hasManager={!!artist["Talent Manager"]}
                     />
                   </div>
                 </div>
