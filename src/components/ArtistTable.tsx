@@ -1,0 +1,815 @@
+import React, { useState, useMemo, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import type { Artist, ArtistStatusValue } from "@/types/artist";
+import { Search, RefreshCw, Loader2, X, SlidersHorizontal, ChevronDown } from "lucide-react";
+import { StatusDropdown } from "./StatusDropdown";
+import type { ColumnName } from "./ColumnVisibility";
+import { getInitialColumns } from "./ColumnVisibility";
+
+const MANAGER_COLORS = [
+  { bg: "#F3E8FF", text: "#7C3AED", border: "#DDD6FE" },
+  { bg: "#DBEAFE", text: "#2563EB", border: "#BFDBFE" },
+  { bg: "#D1FAE5", text: "#059669", border: "#A7F3D0" },
+  { bg: "#FEE2E2", text: "#DC2626", border: "#FECACA" },
+  { bg: "#FEF3C7", text: "#D97706", border: "#FDE68A" },
+  { bg: "#FCE7F3", text: "#DB2777", border: "#FBCFE8" },
+  { bg: "#CFFAFE", text: "#0891B2", border: "#A5F3FC" },
+  { bg: "#E0E7FF", text: "#4F46E5", border: "#C7D2FE" },
+  { bg: "#FFEDD5", text: "#EA580C", border: "#FED7AA" },
+];
+
+function getManagerColor(name: string): { bg: string; text: string; border: string } {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return MANAGER_COLORS[Math.abs(hash) % MANAGER_COLORS.length];
+}
+
+interface ArtistTableProps {
+  artists: Artist[];
+  onStatusUpdate: (row: number, status: string) => void;
+  onManagerAssign: (row: number, manager: string) => void;
+  onArtistClick: (name: string, rowIndex: number) => void;
+  isLoading: boolean;
+  onRefresh: () => void;
+  lastUpdated: Date | null;
+  pendingUpdates?: Record<number, "status" | "manager">;
+  updatingIds?: Set<number>;
+  visibleColumns?: ColumnName[];
+  statusFilter?: string;
+  onStatusFilterChange?: (status: string) => void;
+  managers?: string[];
+}
+
+function parseInstagram(value: string): string {
+  if (!value) return "";
+  const trimmed = value.trim();
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    return trimmed;
+  }
+  let username = trimmed.replace(/^@/, "");
+  username = username.replace(/^(https?:\/\/)?(www\.)?instagram\.com\//, "");
+  username = username.split("?")[0].split("#")[0];
+  username = username.replace(/\/+$/, "");
+  return `https://instagram.com/${username}`;
+}
+
+const renderInstagramLink = (
+  instagram: string | undefined
+): React.ReactNode => {
+  if (!instagram || instagram.trim() === "") return "-";
+  const url = parseInstagram(instagram);
+  const display = instagram
+    .trim()
+    .replace(/^https?:\/\/(www\.)?instagram\.com\//, "@")
+    .replace(/\/+$/, "");
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={url}
+      className="text-primary hover:underline block overflow-hidden text-ellipsis whitespace-nowrap max-w-[150px]"
+    >
+      {display}
+    </a>
+  );
+};
+
+const getStatusDot = (status: string): string => {
+  switch (status) {
+    case "Onboarded":
+      return "bg-green-500";
+    case "Meeting Required":
+      return "bg-orange-400";
+    case "KYC Required":
+      return "bg-blue-500";
+    case "Rejected":
+      return "bg-red-500";
+    case "New":
+    default:
+      return "bg-muted-foreground";
+  }
+};
+
+const getStatusVariant = (
+  status: string
+): "default" | "success" | "warning" | "destructive" | "info" => {
+  switch (status) {
+    case "Onboarded":
+      return "success";
+    case "Meeting Required":
+      return "warning";
+    case "KYC Required":
+      return "info";
+    case "Rejected":
+      return "destructive";
+    case "New":
+      return "default";
+    default:
+      return "default";
+  }
+};
+
+const getUniqueValues = (artists: Artist[], key: keyof Artist): string[] => {
+  const values = artists
+    .map(row => (row[key] || "").toString().trim())
+    .filter(name => name.length > 0);
+  return Array.from(new Set(values)).sort();
+};
+
+const getAllManagers = (artists: Artist[], apiManagers: string[] = []): string[] => {
+  const dynamicManagers = artists
+    .map(a => (a["Manager"] || "").toString().trim())
+    .filter(m => m.length > 0);
+
+  const all = [...apiManagers, ...dynamicManagers].map(m => m.trim());
+  const normalized = all.map(m => m.toLowerCase());
+  const uniqueNormalized = Array.from(new Set(normalized));
+  return uniqueNormalized
+    .map(norm => all[normalized.indexOf(norm)])
+    .sort();
+};
+
+export function ArtistTable({
+  artists,
+  onStatusUpdate,
+  onManagerAssign,
+  onArtistClick,
+  isLoading,
+  onRefresh,
+  lastUpdated,
+  pendingUpdates = {},
+  updatingIds = new Set(),
+  visibleColumns: externalVisibleColumns,
+  statusFilter: externalStatusFilter,
+  onStatusFilterChange: externalOnStatusFilterChange,
+  managers = [],
+}: ArtistTableProps) {
+  const [search, setSearch] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestions, setSuggestions] = useState<Artist[]>([]);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const [internalStatusFilter, setInternalStatusFilter] = useState<string>("all");
+  const [managerFilter, setManagerFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "az" | "za">("newest");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [openManagerDropdown, setOpenManagerDropdown] = useState<number | null>(null);
+  const [managerDropdownPosition, setManagerDropdownPosition] = useState<{ top: number; left: number; width: number } | null>(null);
+
+  const statusFilter =
+    externalStatusFilter !== undefined
+      ? externalStatusFilter
+      : internalStatusFilter;
+  const setStatusFilter = (value: string) => {
+    if (externalOnStatusFilterChange) {
+      externalOnStatusFilterChange(value);
+    } else {
+      setInternalStatusFilter(value);
+    }
+  };
+
+  const visibleColumns = externalVisibleColumns || getInitialColumns();
+  const uniqueStatuses = getUniqueValues(artists, "Status");
+  if (!uniqueStatuses.includes("New")) {
+    uniqueStatuses.unshift("New");
+  }
+  const uniqueManagers = getAllManagers(artists, managers);
+  const uniqueCategories = getUniqueValues(artists, "Category");
+
+  const filteredArtists = useMemo(() => {
+    let filtered = artists.filter((artist) => {
+      const searchLower = search.toLowerCase();
+      const matchesSearch =
+        !search ||
+        artist["Full Name"]?.toLowerCase().includes(searchLower) ||
+        artist["Instagram"]?.toLowerCase().includes(searchLower) ||
+        artist["Location"]?.toLowerCase().includes(searchLower);
+
+      const matchesStatus =
+        statusFilter === "all"
+          ? artist["Status"] !== "Rejected" && artist["Status"] !== "Onboarded"
+          : statusFilter === "New"
+            ? !artist["Status"] || artist["Status"] === "New"
+            : artist["Status"] === statusFilter;
+      const matchesManager =
+        managerFilter === "all" || artist["Manager"] === managerFilter;
+      const matchesCategory =
+        categoryFilter === "all" || artist["Category"] === categoryFilter;
+
+      return matchesSearch && matchesStatus && matchesManager && matchesCategory;
+    });
+
+    switch (sortBy) {
+      case "newest":
+        filtered = filtered.sort((a, b) => b.rowIndex - a.rowIndex);
+        break;
+      case "oldest":
+        filtered = filtered.sort((a, b) => a.rowIndex - b.rowIndex);
+        break;
+      case "az":
+        filtered = filtered.sort((a, b) =>
+          a["Full Name"].localeCompare(b["Full Name"])
+        );
+        break;
+      case "za":
+        filtered = filtered.sort((a, b) =>
+          b["Full Name"].localeCompare(a["Full Name"])
+        );
+        break;
+    }
+
+    return filtered;
+  }, [artists, search, statusFilter, managerFilter, categoryFilter, sortBy]);
+
+  const handleManagerSelect = (rowIndex: number, manager: string) => {
+    onManagerAssign(rowIndex, manager);
+  };
+
+  const updateSuggestions = (value: string) => {
+    setSearch(value);
+    if (value.length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    const searchLower = value.toLowerCase();
+    const matches = artists
+      .filter((a) => {
+        const name = (a["Full Name"] || "").toLowerCase();
+        const email = (a["Email"] || "").toLowerCase();
+        const phone = String(a["Phone"] || "").toLowerCase();
+        return (
+          name.includes(searchLower) ||
+          email.includes(searchLower) ||
+          phone.includes(searchLower)
+        );
+      })
+      .slice(0, 7);
+    setSuggestions(matches);
+    setShowSuggestions(matches.length > 0);
+  };
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape" && showSuggestions) {
+        setShowSuggestions(false);
+      }
+    }
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [showSuggestions]);
+
+  useEffect(() => {
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpenManagerDropdown(null);
+        setManagerDropdownPosition(null);
+      }
+    }
+    if (openManagerDropdown !== null) {
+      document.addEventListener("keydown", handleEscape);
+      return () => document.removeEventListener("keydown", handleEscape);
+    }
+  }, [openManagerDropdown]);
+
+  useEffect(() => {
+    if (openManagerDropdown === null) return;
+    const handleScroll = () => {
+      setOpenManagerDropdown(null);
+      setManagerDropdownPosition(null);
+    };
+    window.addEventListener("scroll", handleScroll, true);
+    window.addEventListener("resize", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll, true);
+      window.removeEventListener("resize", handleScroll);
+    };
+  }, [openManagerDropdown]);
+
+  const handleManagerTriggerClick = (rowIndex: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (pendingUpdates[rowIndex] || updatingIds.has(rowIndex)) return;
+    if (openManagerDropdown === rowIndex) {
+      setOpenManagerDropdown(null);
+      setManagerDropdownPosition(null);
+    } else {
+      if (e.currentTarget instanceof HTMLElement) {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const spaceAbove = rect.top;
+        const ITEM_HEIGHT = 56;
+        const estimatedDropdownHeight = uniqueManagers.length * ITEM_HEIGHT + 8;
+        const openUpward = spaceBelow < estimatedDropdownHeight && spaceAbove > spaceBelow;
+        const top = openUpward ? rect.top - estimatedDropdownHeight : rect.bottom - 1;
+        setManagerDropdownPosition({ top, left: rect.left, width: rect.width });
+      }
+      setOpenManagerDropdown(rowIndex);
+    }
+  };
+
+  const handleManagerItemSelect = (manager: string) => {
+    if (openManagerDropdown !== null) {
+      handleManagerSelect(openManagerDropdown, manager);
+      setOpenManagerDropdown(null);
+      setManagerDropdownPosition(null);
+    }
+  };
+
+  const hasActiveFilters = () => {
+    return (
+      statusFilter !== "all" ||
+      managerFilter !== "all" ||
+      categoryFilter !== "all" ||
+      search !== "" ||
+      sortBy !== "newest"
+    );
+  };
+
+  const clearAllFilters = () => {
+    setStatusFilter("all");
+    setManagerFilter("all");
+    setCategoryFilter("all");
+    setSearch("");
+    setSortBy("newest");
+  };
+
+  return (
+    <div className="space-y-4 animate-fade-in">
+      {/* Toolbar */}
+      <Card className="p-4 relative z-10">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1 overflow-visible" ref={searchRef} style={{ overflow: 'visible' }}>
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name, Instagram, or location..."
+                value={search}
+                onChange={(e) => updateSuggestions(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && showSuggestions) {
+                    setShowSuggestions(false);
+                  }
+                }}
+                className="pl-10"
+              />
+              {showSuggestions && suggestions.length > 0 && (
+                <div className="absolute z-[100] w-full mt-1 bg-background border border-border rounded-lg shadow-lg overflow-hidden">
+                  {suggestions.map((artist) => {
+                    const phone = String(artist["Phone"] || "");
+                    const email = (artist["Email"] || "").trim();
+                    return (
+                      <button
+                        key={artist.rowIndex}
+                        onClick={() => {
+                          setSearch(artist["Full Name"] || "");
+                          setShowSuggestions(false);
+                        }}
+                        className="w-full px-3 py-2 text-left hover:bg-accent/50 transition-colors flex items-center gap-2"
+                      >
+                        <span className="font-medium truncate capitalize">
+                          {artist["Full Name"]}
+                        </span>
+                        {phone && (
+                          <span className="text-muted-foreground text-sm truncate">
+                            {phone}
+                          </span>
+                        )}
+                        {email && (
+                          <span className="text-muted-foreground text-sm truncate hidden sm:inline">
+                            {email}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setFiltersOpen(!filtersOpen)}
+                className={`btn-premium border ${filtersOpen ? "bg-primary text-primary-foreground border-primary" : "bg-secondary hover:bg-secondary/80 text-secondary-foreground border-border"}`}
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+                <span className="hidden sm:inline">Filters</span>
+                {hasActiveFilters() && (
+                  <span className="h-2 w-2 rounded-full bg-primary shrink-0" />
+                )}
+              </button>
+
+              <Select
+                value={sortBy}
+                onValueChange={(v: "newest" | "oldest" | "az" | "za") =>
+                  setSortBy(v)
+                }
+              >
+                <SelectTrigger className="w-[130px]">
+                  <SelectValue placeholder="Sort" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="newest">Newest</SelectItem>
+                  <SelectItem value="oldest">Oldest</SelectItem>
+                  <SelectItem value="az">A–Z</SelectItem>
+                  <SelectItem value="za">Z–A</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onRefresh}
+                disabled={isLoading}
+                className="hover:bg-secondary/80"
+              >
+                <RefreshCw
+                  className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
+                />
+              </Button>
+            </div>
+          </div>
+
+          <div
+            className={`overflow-hidden transition-all duration-200 ${
+              filtersOpen ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
+            }`}
+          >
+            <div className="flex flex-wrap gap-2 pt-2 border-t border-border">
+              <Select
+                value={statusFilter}
+                onValueChange={setStatusFilter}
+              >
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  {uniqueStatuses.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {status}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={managerFilter}
+                onValueChange={setManagerFilter}
+              >
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Manager" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Managers</SelectItem>
+                  {uniqueManagers.map((manager) => (
+                    <SelectItem key={manager} value={manager}>
+                      {manager}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={categoryFilter}
+                onValueChange={setCategoryFilter}
+              >
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {uniqueCategories.map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">
+              Showing{" "}
+              <span className="font-medium text-foreground">
+                {filteredArtists.length}
+              </span>{" "}
+              of{" "}
+              <span className="font-medium text-foreground">{artists.length}</span>{" "}
+              artists
+              {lastUpdated && (
+                <span className="ml-2 text-xs">
+                  · Updated {lastUpdated.toLocaleTimeString()}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {hasActiveFilters() && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearAllFilters}
+                  className="text-xs text-muted-foreground hover:text-foreground h-7 px-2"
+                >
+                  <X className="h-3 w-3 mr-1" />
+                  Clear
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Table */}
+      <div className="table-container overflow-x-auto relative">
+        <Table>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent border-b border-border">
+              <TableHead className="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[200px]">
+                Name
+              </TableHead>
+              <TableHead className="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Instagram
+              </TableHead>
+              <TableHead className="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Location
+              </TableHead>
+              <TableHead className="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Category
+              </TableHead>
+              <TableHead className="text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Gender
+              </TableHead>
+              <TableHead className="text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Age
+              </TableHead>
+              <TableHead className="text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Status
+              </TableHead>
+              <TableHead className="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Manager
+              </TableHead>
+              <TableHead className="text-right sm:text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Actions
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading && filteredArtists.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={9}
+                  className="text-center py-16"
+                >
+                  <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>Loading artists...</span>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : filteredArtists.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={9}
+                  className="text-center py-16"
+                >
+                  <div className="empty-state">
+                    <Search className="h-10 w-10 mb-3 mx-auto text-muted-foreground/40" />
+                    <p className="text-muted-foreground">No artists found</p>
+                    {hasActiveFilters() && (
+                      <button
+                        onClick={clearAllFilters}
+                        className="mt-2 text-sm text-primary hover:underline"
+                      >
+                        Clear filters
+                      </button>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredArtists.map((artist, index) => (
+                <TableRow
+                  key={artist.rowIndex}
+                  className={`group border-b border-border/50 transition-colors hover:bg-accent/30 ${
+                    index % 2 === 1 ? "bg-muted/10" : ""
+                  }`}
+                >
+                  <TableCell className="text-left py-3 px-4 align-middle">
+                    <button
+                      onClick={() =>
+                        onArtistClick(artist["Full Name"], artist.rowIndex!)
+                      }
+                      className="text-foreground font-medium hover:text-primary transition-colors text-left"
+                    >
+                      {artist["Full Name"]}
+                    </button>
+                  </TableCell>
+                  <TableCell className="text-left py-3 px-4 align-middle text-sm text-muted-foreground">
+                    {renderInstagramLink(artist["Instagram"])}
+                  </TableCell>
+                  <TableCell className="text-left py-3 px-4 align-middle text-sm text-muted-foreground">
+                    {artist["Location"] || "-"}
+                  </TableCell>
+                  <TableCell className="text-left py-3 px-4 align-middle text-sm text-muted-foreground">
+                    {artist["Category"] || "-"}
+                  </TableCell>
+                  <TableCell className="text-center py-3 px-4 align-middle text-sm text-muted-foreground">
+                    {artist["Gender"] || "-"}
+                  </TableCell>
+                  <TableCell className="text-center py-3 px-4 align-middle text-sm text-muted-foreground">
+                    {artist["Age"] || "-"}
+                  </TableCell>
+                  <TableCell className="text-center py-3 px-4 align-middle">
+                    <div className="flex items-center justify-center gap-2">
+                      <span
+                        className={`w-2 h-2 rounded-full shrink-0 ${getStatusDot(
+                          artist["Status"]
+                        )}`}
+                      />
+                      <Badge
+                        variant={getStatusVariant(artist["Status"])}
+                        className="text-xs"
+                      >
+                        {artist["Status"] || "New"}
+                      </Badge>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-left py-3 px-4 align-middle">
+                    {artist["Manager"] ? (() => {
+                      const mColor = getManagerColor(artist["Manager"]);
+                      return (
+                        <button
+                          onClick={(e) => handleManagerTriggerClick(artist.rowIndex!, e)}
+                          disabled={!!pendingUpdates[artist.rowIndex] || updatingIds.has(artist.rowIndex!)}
+                          className="flex items-center gap-2 hover:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <div
+                            className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 font-medium text-xs"
+                            style={{
+                              backgroundColor: mColor.bg,
+                              color: mColor.text,
+                              border: `1px solid ${mColor.border}`
+                            }}
+                          >
+                            {artist["Manager"].split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
+                          </div>
+                          <span className="text-sm text-foreground font-medium">
+                            {artist["Manager"]}
+                          </span>
+                        </button>
+                      );
+                    })() : (
+                      <button
+                        onClick={(e) => handleManagerTriggerClick(artist.rowIndex!, e)}
+                        disabled={!!pendingUpdates[artist.rowIndex] || updatingIds.has(artist.rowIndex!)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary text-secondary-foreground sm:rounded-full rounded-lg text-sm sm:text-sm font-medium hover:bg-secondary/80 transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-border/50 whitespace-nowrap sm:min-w-[140px] justify-center"
+                      >
+                        {(pendingUpdates[artist.rowIndex] === "manager" || updatingIds.has(artist.rowIndex!)) ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <>
+                            <span>Assign...</span>
+                            <ChevronDown className="h-3 w-3 opacity-70" />
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right py-3 px-4 align-middle">
+                    <div className="flex items-center justify-end gap-2">
+                    {artist["Phone"] && (
+                      <div className="flex items-center justify-center gap-1.5">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.location.href = `tel:${artist["Phone"]}`;
+                          }}
+                          className="h-7 w-7 flex items-center justify-center rounded-lg bg-blue-500/15 text-blue-500 hover:bg-blue-500/25 transition-colors"
+                          title="Call"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const phone = String(artist["Phone"]).replace(/\D/g, "");
+                            window.open(`https://wa.me/${phone}`, "_blank");
+                          }}
+                          className="h-7 w-7 flex items-center justify-center rounded-lg bg-green-500/15 text-green-500 hover:bg-green-500/25 transition-colors"
+                          title="WhatsApp"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                        </button>
+                      </div>
+                    )}
+                    <StatusDropdown
+                      currentStatus={
+                        (artist["Status"] as ArtistStatusValue) || "New"
+                      }
+                      rowIndex={artist.rowIndex}
+                      onStatusChange={onStatusUpdate}
+                      disabled={!!pendingUpdates[artist.rowIndex] || updatingIds.has(artist.rowIndex!)}
+                      isLoading={pendingUpdates[artist.rowIndex] === "status" || updatingIds.has(artist.rowIndex!)}
+                      hasManager={!!artist["Manager"]}
+                    />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Manager dropdown portal */}
+      {openManagerDropdown !== null && managerDropdownPosition && typeof document !== "undefined" &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-50"
+            style={{ top: 0 }}
+            onClick={(e) => {
+              const dropdown = document.getElementById("artist-manager-dropdown-panel");
+              if (dropdown && !dropdown.contains(e.target as Node)) {
+                setOpenManagerDropdown(null);
+                setManagerDropdownPosition(null);
+              }
+            }}
+          >
+            <div
+              id="artist-manager-dropdown-panel"
+              className="bg-popover border border-border rounded-xl shadow-xl animate-scale-in"
+              style={{
+                position: "fixed",
+                top: `${managerDropdownPosition.top}px`,
+                left: `${Math.max(8, Math.min(managerDropdownPosition.left, window.innerWidth - 220))}px`,
+                width: "200px",
+                maxWidth: "calc(100vw - 16px)",
+                marginTop: 0,
+                transformOrigin: 'top left',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="py-1">
+                {uniqueManagers.map((manager) => {
+                  const mColor = getManagerColor(manager);
+                  return (
+                    <button
+                      key={manager}
+                      onClick={() => handleManagerItemSelect(manager)}
+                      className="w-full flex items-center gap-2 px-3 py-3 sm:py-2.5 text-sm text-popover-foreground hover:bg-accent transition-colors min-h-[44px] text-left"
+                    >
+                      <div
+                        className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 font-medium text-xs"
+                        style={{
+                          backgroundColor: mColor.bg,
+                          color: mColor.text,
+                          border: `1px solid ${mColor.border}`
+                        }}
+                      >
+                        {manager.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
+                      </div>
+                      <span className="font-medium">{manager}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+    </div>
+  );
+}

@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { TalentTable } from "./components/TalentTable";
 import { TalentProfileDialog } from "./components/TalentProfile";
+import { ArtistTable } from "./components/ArtistTable";
+import { ArtistProfileDialog } from "./components/ArtistProfile";
+import { ArtistGridView } from "./components/ArtistGridView";
 import { ContractsTab } from "./components/ContractsTab";
 import { DocumentsTab } from "./components/DocumentsTab";
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -22,7 +25,14 @@ import {
   assignManager,
   fetchManagers,
 } from "./services/api";
+import {
+  fetchArtistMaster,
+  updateArtistStatus,
+  assignArtistManager,
+  fetchArtistManagers,
+} from "./services/artistsApi";
 import type { Talent, TalentDetails } from "@/types/talent";
+import type { Artist } from "@/types/artist";
 import { StatusDropdown } from "@/components/StatusDropdown";
 import { ManagerDropdown } from "@/components/ManagerDropdown";
 import {
@@ -386,7 +396,7 @@ function App() {
     recentlyUpdatedRef.current = recentlyUpdated;
   }, [recentlyUpdated]);
   const [activeTab, setActiveTab] = useState<
-    "talent-master" | "talent-profile" | "settings" | "contracts" | "documents"
+    "talent-master" | "talent-profile" | "settings" | "contracts" | "documents" | "artists" | "artist-profile"
   >("talent-master");
   const [theme, setThemeState] = useState<Theme>(getStoredTheme);
   const { setTheme } = useTheme();
@@ -415,6 +425,21 @@ function App() {
   );
   const [activeTile, setActiveTile] = useState<string | null>(null);
   const [managers, setManagers] = useState<string[]>([]);
+  // Artist state
+  const [artists, setArtists] = useState<Artist[]>([]);
+  const [artistsLoading, setArtistsLoading] = useState(true);
+  const [artistLastUpdated, setArtistLastUpdated] = useState<Date | null>(null);
+  const [selectedArtist, setSelectedArtist] = useState<string | null>(null);
+  const [selectedArtistRowIndex, setSelectedArtistRowIndex] = useState<number | null>(null);
+  const [artistProfileOpen, setArtistProfileOpen] = useState(false);
+  const [artistPendingUpdates, setArtistPendingUpdates] = useState<Record<number, "status" | "manager">>({});
+  const [artistUpdatingIds, setArtistUpdatingIds] = useState<Set<number>>(new Set());
+  const artistUpdatingIdsRef = useRef<Set<number>>(new Set());
+  const [artistManagers, setArtistManagers] = useState<string[]>([]);
+
+  useEffect(() => {
+    artistUpdatingIdsRef.current = artistUpdatingIds;
+  }, [artistUpdatingIds]);
 
 
 
@@ -647,6 +672,123 @@ function App() {
     setProfileOpen(true);
   };
 
+  // ===== ARTIST HANDLERS =====
+  const loadArtists = useCallback(async (forceRefresh = false) => {
+    try {
+      setArtistsLoading(true);
+      const data = await fetchArtistMaster(forceRefresh);
+      const validArtists = data.filter(
+        (a) => a["Full Name"] && a["Full Name"].trim() !== ""
+      );
+      const sorted = [...validArtists].sort((a, b) => (b.rowIndex || 0) - (a.rowIndex || 0));
+      setArtists(sorted);
+      setArtistLastUpdated(new Date());
+    } catch (err) {
+      console.error("Error loading artists:", err);
+    } finally {
+      setArtistsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadArtists();
+  }, [loadArtists]);
+
+  // Auto-refresh artists
+  useEffect(() => {
+    const interval = setInterval(loadArtists, REFRESH_INTERVAL);
+    return () => clearInterval(interval);
+  }, [loadArtists]);
+
+  const handleArtistStatusUpdate = async (row: number, status: string) => {
+    setArtistPendingUpdates((prev) => ({ ...prev, [row]: "status" }));
+    setArtistUpdatingIds((prev) => new Set(prev).add(row));
+    const original = artists.find((a) => a.rowIndex === row);
+    setArtists((prev) =>
+      prev.map((a) => (a.rowIndex === row ? { ...a, Status: status } : a))
+    );
+    try {
+      await updateArtistStatus(row, status);
+      toast.success(`Status updated to ${status}`);
+    } catch (err) {
+      setArtists((prev) => {
+        const restored = prev.map((a) =>
+          a.rowIndex === row ? { ...a, Status: original?.Status || "New" } : a
+        );
+        return restored;
+      });
+      toast.error("Failed to update status. Please try again.");
+      console.error(err);
+    } finally {
+      setArtistPendingUpdates((prev) => {
+        const next = { ...prev };
+        delete next[row];
+        return next;
+      });
+      setArtistUpdatingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(row);
+        return next;
+      });
+    }
+  };
+
+  const handleArtistManagerAssign = async (row: number, manager: string) => {
+    setArtistPendingUpdates((prev) => ({ ...prev, [row]: "manager" }));
+    setArtistUpdatingIds((prev) => new Set(prev).add(row));
+    const original = artists.find((a) => a.rowIndex === row);
+    setArtists((prev) =>
+      prev.map((a) => (a.rowIndex === row ? { ...a, Manager: manager } : a))
+    );
+    try {
+      await assignArtistManager(row, manager);
+      toast.success(`Manager assigned: ${manager}`);
+      fetchArtistManagersList();
+    } catch (err) {
+      setArtists((prev) => {
+        const restored = prev.map((a) =>
+          a.rowIndex === row ? { ...a, Manager: original?.Manager || "" } : a
+        );
+        return restored;
+      });
+      toast.error("Failed to assign manager. Please try again.");
+      console.error(err);
+    } finally {
+      setArtistPendingUpdates((prev) => {
+        const next = { ...prev };
+        delete next[row];
+        return next;
+      });
+      setArtistUpdatingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(row);
+        return next;
+      });
+    }
+  };
+
+  const handleArtistClick = (name: string, rowIndex: number) => {
+    setSelectedArtist(name);
+    setSelectedArtistRowIndex(rowIndex);
+    setArtistProfileOpen(true);
+  };
+
+  const fetchArtistManagersList = async () => {
+    try {
+      const data = await fetchArtistManagers();
+      const sorted = [...data].sort();
+      setArtistManagers(sorted);
+    } catch (err) {
+      console.log("Failed to fetch artist managers:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchArtistManagersList();
+  }, []);
+
+  const totalArtists = artists.length;
+
   const handleViewModeChange = (mode: "list" | "grid") => {
     setViewMode(mode);
     localStorage.setItem("toabh-view-mode", mode);
@@ -856,6 +998,12 @@ function App() {
             >
               Docs
             </button>
+            <button
+              onClick={() => setActiveTab("artists")}
+              className={`nav-tab ${activeTab === "artists" || activeTab === "artist-profile" ? "nav-tab-active" : ""}`}
+            >
+              Artist
+            </button>
           </div>
           {/* Right: Settings icon only */}
           <button
@@ -1006,6 +1154,94 @@ function App() {
                 />
               ) : null}
             </>
+          </ErrorBoundary>
+        )}
+
+        {/* Artists Tab */}
+        {activeTab === "artists" && (
+          <ErrorBoundary>
+            <div className="flex items-center justify-between mb-4 gap-3">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => loadArtists(true)}
+                  disabled={artistsLoading}
+                  className="btn-premium bg-secondary hover:bg-secondary/80 text-secondary-foreground"
+                >
+                  <RefreshCw
+                    className={`h-4 w-4 ${artistsLoading ? "animate-spin" : ""}`}
+                  />
+                  <span className="hidden sm:inline">Sync</span>
+                </button>
+                {artistLastUpdated && (
+                  <span className="hidden md:block text-xs text-muted-foreground">
+                    {artistLastUpdated.toLocaleTimeString()}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setViewMode("list")}
+                  className={`h-9 px-3 flex items-center gap-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    viewMode === "list"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-secondary hover:bg-secondary/80 text-secondary-foreground border border-border"
+                  }`}
+                >
+                  <List className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode("grid")}
+                  className={`h-9 px-3 flex items-center gap-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    viewMode === "grid"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-secondary hover:bg-secondary/80 text-secondary-foreground border border-border"
+                  }`}
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            {viewMode === "list" ? (
+              <ArtistTable
+                artists={artists}
+                onStatusUpdate={handleArtistStatusUpdate}
+                onManagerAssign={handleArtistManagerAssign}
+                onArtistClick={handleArtistClick}
+                isLoading={artistsLoading}
+                onRefresh={() => loadArtists(true)}
+                lastUpdated={artistLastUpdated}
+                pendingUpdates={artistPendingUpdates}
+                updatingIds={artistUpdatingIds}
+                managers={artistManagers}
+              />
+            ) : (
+              <ArtistGridView
+                artists={artists}
+                onStatusUpdate={handleArtistStatusUpdate}
+                onManagerAssign={handleArtistManagerAssign}
+                onArtistClick={handleArtistClick}
+                isLoading={artistsLoading}
+                onRefresh={() => loadArtists(true)}
+                lastUpdated={artistLastUpdated}
+                pendingUpdates={artistPendingUpdates}
+                updatingIds={artistUpdatingIds}
+                managers={artistManagers}
+              />
+            )}
+
+            <ArtistProfileDialog
+              name={selectedArtist}
+              open={artistProfileOpen}
+              onOpenChange={(open) => {
+                setArtistProfileOpen(open);
+                if (!open) setSelectedArtist(null);
+              }}
+              onStatusUpdate={handleArtistStatusUpdate}
+              onManagerAssign={handleArtistManagerAssign}
+              managers={artistManagers}
+              rowIndex={selectedArtistRowIndex ?? undefined}
+            />
           </ErrorBoundary>
         )}
 
