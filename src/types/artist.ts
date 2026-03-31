@@ -6,14 +6,16 @@ export interface Artist {
   "Location": string;
   "Phone": number | string;
   "Email": string;
-  "Instagram": string;
-  "IMDB": string;
-  "Work": string;
-  "Portfolio": string;
+  "Instagram Link": string;
+  "IMDB (If Available)": string;
+  "Notable Projects (Brand/Film/Campaigns)": string;
+  "Portfolio / Work Images": string;
   "Status": string;
   "Manager": string;
   "Notes": string;
   "rowIndex": number;
+  // Allow additional API fields
+  [key: string]: string | number;
 }
 
 export type ArtistStatusValue = "New" | "Meeting Required" | "KYC Required" | "Onboarded" | "Rejected";

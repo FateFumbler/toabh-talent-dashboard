@@ -336,7 +336,7 @@ export function ArtistGridView({
       {/* Artist Cards Grid */}
       <div className="talent-grid">
         {filteredArtists.map((artist) => {
-          const portfolioLinks = parsePortfolioLinks(artist["Portfolio"]);
+          const portfolioLinks = parsePortfolioLinks(artist["Portfolio / Work Images"]);
           const profileImageUrl = portfolioLinks.length > 0 ? getDriveThumbnailUrl(portfolioLinks[0]) : null;
 
           return (

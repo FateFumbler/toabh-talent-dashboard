@@ -390,6 +390,7 @@ export function ArtistProfileDialog({
         setIsLoading(false);
         return;
       }
+      console.log("ARTIST DATA:", artist);
       setProfile(artist);
     } catch (err) {
       setError("Failed to load profile");
@@ -461,7 +462,7 @@ export function ArtistProfileDialog({
   };
 
   // Parse portfolio links
-  const portfolioLinks = profile ? parsePortfolioLinks(profile["Portfolio"]) : [];
+  const portfolioLinks = profile ? parsePortfolioLinks(profile["Portfolio / Work Images"]) : [];
   
   // Separate images from non-images
   const imageItems = portfolioLinks.filter(link => getFileType(link) === "image");
@@ -697,15 +698,15 @@ export function ArtistProfileDialog({
   const getSocialMedia = (): ProfileSection => ({
     title: "Social & Media",
     fields: [
-      { label: "Instagram", value: renderInstagramLink(gf("Instagram")) },
-      { label: "IMDb", value: renderIMDBLink(gf("IMDB")) },
+      { label: "Instagram", value: renderInstagramLink(gf("Instagram Link")) },
+      { label: "IMDb", value: renderIMDBLink(gf("IMDB (If Available)")) },
     ],
   });
 
   const getWork = (): ProfileSection => ({
     title: "Work",
     fields: [
-      { label: "Work", value: gf("Work") },
+      { label: "Work", value: gf("Notable Projects (Brand/Film/Campaigns)") },
     ],
   });
 

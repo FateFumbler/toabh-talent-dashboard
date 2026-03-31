@@ -204,7 +204,7 @@ export function ArtistTable({
       const matchesSearch =
         !search ||
         artist["Full Name"]?.toLowerCase().includes(searchLower) ||
-        artist["Instagram"]?.toLowerCase().includes(searchLower) ||
+        artist["Instagram Link"]?.toLowerCase().includes(searchLower) ||
         artist["Location"]?.toLowerCase().includes(searchLower);
 
       const matchesStatus =
@@ -638,7 +638,7 @@ export function ArtistTable({
                     </button>
                   </TableCell>
                   <TableCell className="text-left py-3 px-4 align-middle text-sm text-muted-foreground">
-                    {renderInstagramLink(artist["Instagram"])}
+                    {renderInstagramLink(artist["Instagram Link"])}
                   </TableCell>
                   <TableCell className="text-left py-3 px-4 align-middle text-sm text-muted-foreground">
                     {artist["Location"] || "-"}
