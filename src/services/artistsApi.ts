@@ -1,7 +1,7 @@
 import type { Artist } from "../types/artist";
 
 // TODO: Replace with Artist Master Sheet URL once Ainesh provides it
-const API_URL = "https://script.google.com/macros/s/AKfycbwXYCqhFPlsyqaKD-qj824vsGZ551kigvEfcGv6JPi-iWwWa8iaT8mGhD8-4E3FA5pykw/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbxyBfw7eCBQUZ8wW3sT417zKHL5Y243ikMAvKhfCagmICxc06Om49P6OQ3MfyTcvfP6/exec";
 
 // Cache config
 const CACHE_PREFIX = `toabh_artist_cache_`;
