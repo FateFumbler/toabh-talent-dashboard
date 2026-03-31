@@ -162,7 +162,7 @@ export function ArtistGridView({
         (artist["Full Name"] || "").toLowerCase().includes(searchLower) ||
         (artist["Email"] || "").toLowerCase().includes(searchLower) ||
         String(artist["Phone"] || "").toLowerCase().includes(searchLower) ||
-        (artist["Instagram"] || "").toLowerCase().includes(searchLower);
+        (artist["Instagram Link"] || "").toLowerCase().includes(searchLower);
 
       const matchesStatus = hasSearch
         ? true
@@ -371,7 +371,7 @@ export function ArtistGridView({
                         {artist["Full Name"]}
                       </div>
                       <div className="text-sm text-muted-foreground truncate">
-                        {artist["Instagram"] ? renderInstagramLink(artist["Instagram"]) : (
+                        {artist["Instagram Link"] ? renderInstagramLink(artist["Instagram Link"]) : (
                           <span className="text-muted-foreground/50">No Instagram</span>
                         )}
                       </div>
