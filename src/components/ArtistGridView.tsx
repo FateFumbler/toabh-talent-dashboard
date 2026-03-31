@@ -367,30 +367,42 @@ export function ArtistGridView({
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
+                      {/* 1. Name (bold, top) */}
                       <div className="font-semibold text-foreground truncate capitalize">
                         {artist["Full Name"]}
                       </div>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <Badge variant="outline" className="text-xs font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary border-primary/20">
-                          {artist["Talent Category"] || "Uncategorized"}
-                        </Badge>
-                      </div>
+                      {/* 2. Instagram handle */}
                       <div className="text-sm text-muted-foreground truncate mt-0.5">
                         {artist["Instagram Link"] ? renderInstagramLink(artist["Instagram Link"]) : (
                           <span className="text-muted-foreground/50">No Instagram</span>
                         )}
                       </div>
+                      {/* 3. Category badge (highlighted) */}
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <Badge variant="outline" className="text-xs font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary border-primary/20">
+                          {artist["Talent Category"] || "Uncategorized"}
+                        </Badge>
+                      </div>
+                      {/* 4. City */}
+                      <div className="flex items-center gap-2 text-sm mt-0.5">
+                        <span className="text-muted-foreground truncate">
+                          {artist["City & State (Current location)"] || "Unknown location"}
+                        </span>
+                      </div>
+                      {/* 5. Manager */}
+                      <div className="text-sm text-muted-foreground truncate mt-0.5">
+                        {artist["Talent Manager"] || "No manager"}
+                      </div>
+                      {/* 6. Gender & Age on one line */}
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground mt-0.5">
+                        {artist["Gender"] && <span className="whitespace-nowrap">{artist["Gender"]}</span>}
+                        {artist["Gender"] && artist["Age"] && <span className="text-border">•</span>}
+                        {artist["Age"] && <span className="whitespace-nowrap">{artist["Age"]} yrs</span>}
+                      </div>
                     </div>
                     <Badge variant={getStatusVariant(artist["Status "])} className="shrink-0 text-xs">
                       {artist["Status "] || "New"}
                     </Badge>
-                  </div>
-
-                  {/* Info Row */}
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="text-muted-foreground truncate">
-                      {artist["City & State (Current location)"] || "Unknown location"}
-                    </span>
                   </div>
 
                   {/* Work Field */}
@@ -401,16 +413,8 @@ export function ArtistGridView({
                     </div>
                   )}
 
-                  {/* Manager Row */}
-                  <div className="text-sm text-muted-foreground truncate">
-                    {artist["Talent Manager"] || "No manager"}
-                  </div>
-
-                  {/* Details Row */}
+                  {/* Call/WhatsApp buttons */}
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-                    {artist["Gender"] && <span className="whitespace-nowrap">{artist["Gender"]}</span>}
-                    {artist["Gender"] && artist["Age"] && <span className="text-border">•</span>}
-                    {artist["Age"] && <span className="whitespace-nowrap">{artist["Age"]} yrs</span>}
                     {artist["Phone Number"] && (
                       <div className="flex items-center gap-1.5 ml-auto">
                         <button
