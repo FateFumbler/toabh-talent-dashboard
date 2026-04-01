@@ -694,7 +694,7 @@ html, body {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: 14px;
-  padding: 1rem;
+  padding: 0.75rem;
   transition: all 0.2s;
   cursor: pointer;
   display: flex;
@@ -710,7 +710,7 @@ html, body {
 
 @media (max-width: 767px) {
   .talent-card {
-    padding: 0.875rem;
+    padding: 0.625rem;
   }
 }
 
