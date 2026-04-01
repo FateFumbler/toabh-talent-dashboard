@@ -108,6 +108,8 @@ interface ArtistGridViewProps {
   pendingUpdates?: Record<number, "status" | "manager">;
   updatingIds?: Set<number>;
   managers?: string[];
+  statusFilter?: string;
+  onStatusFilterChange?: (status: string) => void;
 }
 
 const getAllManagers = (artists: Artist[], apiManagers: string[] = []): string[] => {
@@ -131,12 +133,22 @@ export function ArtistGridView({
   pendingUpdates = {},
   updatingIds = new Set(),
   managers = [],
+  statusFilter: externalStatusFilter,
+  onStatusFilterChange,
 }: ArtistGridViewProps) {
   const [search, setSearch] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<Artist[]>([]);
   const searchRef = useRef<HTMLDivElement>(null);
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [localStatusFilter, setLocalStatusFilter] = useState<string>("all");
+  const statusFilter = externalStatusFilter ?? localStatusFilter;
+  const setStatusFilter = (val: string) => {
+    if (onStatusFilterChange) {
+      onStatusFilterChange(val);
+    } else {
+      setLocalStatusFilter(val);
+    }
+  };
   const [managerFilter, setManagerFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [filtersOpen, setFiltersOpen] = useState(false);

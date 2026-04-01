@@ -1337,6 +1337,8 @@ function App() {
                 lastUpdated={artistLastUpdated}
                 pendingUpdates={artistPendingUpdates}
                 updatingIds={artistUpdatingIds}
+                statusFilter={activeTile || "all"}
+                onStatusFilterChange={handleStatusFilterChange}
                 managers={artistManagers}
               />
             ) : (
@@ -1350,6 +1352,8 @@ function App() {
                 lastUpdated={artistLastUpdated}
                 pendingUpdates={artistPendingUpdates}
                 updatingIds={artistUpdatingIds}
+                statusFilter={activeTile || "all"}
+                onStatusFilterChange={handleStatusFilterChange}
                 managers={artistManagers}
               />
             )}
