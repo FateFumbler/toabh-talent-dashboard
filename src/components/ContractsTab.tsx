@@ -13,7 +13,7 @@ export function ContractsTab() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [view, setView] = useState<'list' | 'grid'>('grid');
-  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'name-az' | 'name-za'>('newest');
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'name-az' | 'name-za'>('oldest');
   const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
 
   // Settings state (from existing Settings component)
