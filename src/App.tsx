@@ -436,10 +436,17 @@ function App() {
   const [artistUpdatingIds, setArtistUpdatingIds] = useState<Set<number>>(new Set());
   const artistUpdatingIdsRef = useRef<Set<number>>(new Set());
   const [artistManagers, setArtistManagers] = useState<string[]>([]);
+  // Track recently updated artists (key = rowIndex string, value = timestamp)
+  const [artistRecentlyUpdated, setArtistRecentlyUpdated] = useState<Record<string, number>>({});
+  // Ref for loadArtists to access artistRecentlyUpdated without being a dependency
+  const artistRecentlyUpdatedRef = useRef<Record<string, number>>({});
 
   useEffect(() => {
     artistUpdatingIdsRef.current = artistUpdatingIds;
   }, [artistUpdatingIds]);
+  useEffect(() => {
+    artistRecentlyUpdatedRef.current = artistRecentlyUpdated;
+  }, [artistRecentlyUpdated]);
 
 
 
@@ -681,7 +688,38 @@ function App() {
         (a) => a["Full Name"] && a["Full Name"].trim() !== ""
       );
       const sorted = [...validArtists].sort((a, b) => (b.rowIndex || 0) - (a.rowIndex || 0));
-      setArtists(sorted);
+
+      // Preserve optimistically updated artists and recently-updated artists (30-sec lock)
+      const currentArtistUpdatingIds = artistUpdatingIdsRef.current;
+      const currentArtistRecentlyUpdated = artistRecentlyUpdatedRef.current;
+      const LOCK_DURATION = 30000;
+      setArtists((prev) => {
+        if (currentArtistUpdatingIds.size === 0 && Object.keys(currentArtistRecentlyUpdated).length === 0) {
+          // No pending updates or recently locked, use fresh data directly
+          return sorted;
+        }
+        // Create map of current artists for quick lookup
+        const prevMap = new Map(prev.map((a) => [a.rowIndex, a]));
+        // Merge: use fresh data except for items being updated or locked
+        const merged: Artist[] = [];
+        for (const a of sorted) {
+          const pending = prevMap.get(a.rowIndex);
+          const rowId = String(a.rowIndex);
+          const isLocked = currentArtistRecentlyUpdated[rowId] &&
+            (Date.now() - currentArtistRecentlyUpdated[rowId] < LOCK_DURATION);
+          // If artist is locked but not in prev, it was filtered out - skip it
+          if (isLocked && !prevMap.has(a.rowIndex)) {
+            continue;
+          }
+          if ((pending && currentArtistUpdatingIds.has(a.rowIndex)) || isLocked) {
+            // Don't overwrite - preserve the local version
+            merged.push(pending || a);
+          } else {
+            merged.push(a);
+          }
+        }
+        return merged;
+      });
       setArtistLastUpdated(new Date());
     } catch (err) {
       console.error("Error loading artists:", err);
@@ -701,21 +739,60 @@ function App() {
   }, [loadArtists]);
 
   const handleArtistStatusUpdate = async (row: number, status: string) => {
+    console.log(`[handleArtistStatusUpdate] row=${row}, status="${status}"`);
+    if (typeof row !== 'number' || isNaN(row) || row < 1) {
+      toast.error(`Invalid row number: ${row}`);
+      return;
+    }
+    // Get old status before update for reference
+    const oldStatus = artists.find((a) => a.rowIndex === row)?.["Status "];
+
+    // STEP 1: Instant UI update - update local state immediately
+    setArtists((prev) => {
+      const updated = prev.map((a) =>
+        a.rowIndex === row ? { ...a, "Status ": status } : a
+      );
+      // If a specific status filter is active and artist no longer matches, remove it
+      if (activeTile && activeTile !== "all") {
+        // Get the new status value once to avoid multiple find calls and ensure consistency
+        const newArtistStatus = updated.find((a) => a.rowIndex === row)?.["Status "];
+        // For "New" filter: artist matches if Status is empty/undefined OR Status === "New"
+        // For other filters: artist matches if Status === filter value
+        const matchesNewStatus =
+          activeTile === "New"
+            ? !newArtistStatus || newArtistStatus === "New"
+            : newArtistStatus === activeTile;
+        // Check if old status matched the filter
+        const matchedOld =
+          activeTile === "New"
+            ? !oldStatus || oldStatus === "New"
+            : oldStatus === activeTile;
+        // If old status matched but new status doesn't, filter out the artist immediately
+        if (matchedOld && !matchesNewStatus) {
+          return updated.filter((a) => a.rowIndex !== row);
+        }
+      }
+      return updated;
+    });
+
+    // STEP 2: THEN apply lock AFTER UI update - prevents auto-refetch from overwriting optimistic update
+    // Track in both artistPendingUpdates (for components) and artistUpdatingIds (for loadArtists)
     setArtistPendingUpdates((prev) => ({ ...prev, [row]: "status" }));
     setArtistUpdatingIds((prev) => new Set(prev).add(row));
-    const original = artists.find((a) => a.rowIndex === row);
-    setArtists((prev) =>
-      prev.map((a) => (a.rowIndex === row ? { ...a, "Status ": status } : a))
-    );
+    // Add 30-sec lock to prevent auto-refetch from overwriting optimistic update
+    setArtistRecentlyUpdated((prev) => ({ ...prev, [String(row)]: Date.now() }));
+
     try {
       await updateArtistStatus(row, status);
-      toast.success(`Status updated to ${status}`);
+      toast.success(`Status updated to "${status}"`);
     } catch (err) {
+      // Revert on failure
       setArtists((prev) => {
-        const restored = prev.map((a) =>
-          a.rowIndex === row ? { ...a, Status: original?.Status || "New" } : a
+        const original = prev.find((a) => a.rowIndex === row);
+        if (!original) return prev;
+        return prev.map((a) =>
+          a.rowIndex === row ? { ...a, "Status ": original["Status "] } : a
         );
-        return restored;
       });
       toast.error("Failed to update status. Please try again.");
       console.error(err);
