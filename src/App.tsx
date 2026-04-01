@@ -1073,6 +1073,12 @@ function App() {
               Models
             </button>
             <button
+              onClick={() => setActiveTab("artists")}
+              className={`nav-tab ${activeTab === "artists" || activeTab === "artist-profile" ? "nav-tab-active" : ""}`}
+            >
+              Artists
+            </button>
+            <button
               onClick={() => setActiveTab("contracts")}
               className={`nav-tab ${activeTab === "contracts" ? "nav-tab-active" : ""}`}
             >
@@ -1083,12 +1089,6 @@ function App() {
               className={`nav-tab ${activeTab === "documents" ? "nav-tab-active" : ""}`}
             >
               Docs
-            </button>
-            <button
-              onClick={() => setActiveTab("artists")}
-              className={`nav-tab ${activeTab === "artists" || activeTab === "artist-profile" ? "nav-tab-active" : ""}`}
-            >
-              Artists
             </button>
           </div>
           {/* Right: Settings icon only */}
