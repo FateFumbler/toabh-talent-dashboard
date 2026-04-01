@@ -1104,7 +1104,8 @@ function App() {
       </div>
 
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
-        {/* Stats Cards */}
+        {/* Models Stats Cards - only show on Models tab */}
+        {activeTab === "talent-master" && (
         <div className="stats-scroll mb-6 stagger-children">
           <StatCard
             label="Total Models"
@@ -1139,6 +1140,7 @@ function App() {
             icon={<User className="h-4 w-4" />}
           />
         </div>
+        )}
 
         {/* Error Message */}
         {error && (
