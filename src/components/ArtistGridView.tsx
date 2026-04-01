@@ -65,14 +65,13 @@ function extractDriveFileId(url: string): string | null {
 function getDriveThumbnailUrl(url: string): string | null {
   const fileId = extractDriveFileId(url);
   if (!fileId) return null;
-  return `https://drive.google.com/thumbnail?id=${fileId}&sz=w400`;
+  return `https://drive.google.com/thumbnail?id=${fileId}&sz=w300`;
 }
 
-
-function getDrivePreviewUrl(url: string): string | null {
+function getModalImageUrl(url: string): string | undefined {
   const fileId = extractDriveFileId(url);
-  if (!fileId) return null;
-  return `https://lh3.googleusercontent.com/d/${fileId}=w1200`;
+  if (!fileId) return undefined;
+  return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
 }
 
 function parseInstagram(value: string): string {
@@ -161,7 +160,7 @@ export function ArtistGridView({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const imageCountRef = useRef(0);
   const [modalImageItems, setModalImageItems] = useState<string[]>([]);
-  const [modalImageLoading, setModalImageLoading] = useState(true);
+
 
   const getUniqueValues = (arr: Artist[], key: keyof Artist): string[] => {
     const values = arr.map(a => (a[key] || "").toString().trim()).filter(v => v.length > 0);
@@ -270,7 +269,6 @@ export function ArtistGridView({
     setModalImageItems(imageItems);
     imageCountRef.current = imageItems.length;
     setCurrentImageIndex(index);
-    setModalImageLoading(true);
     setIsModalOpen(true);
   };
 
@@ -279,7 +277,6 @@ export function ArtistGridView({
   const goToPrevious = useCallback(() => {
     setCurrentImageIndex((prev) => {
       const newIndex = prev === 0 ? imageCountRef.current - 1 : prev - 1;
-      setModalImageLoading(true);
       return newIndex;
     });
   }, []);
@@ -287,7 +284,6 @@ export function ArtistGridView({
   const goToNext = useCallback(() => {
     setCurrentImageIndex((prev) => {
       const newIndex = prev === imageCountRef.current - 1 ? 0 : prev + 1;
-      setModalImageLoading(true);
       return newIndex;
     });
   }, []);
@@ -598,29 +594,14 @@ export function ArtistGridView({
               {currentImageIndex + 1} of {modalImageItems.length}
             </div>
 
-            {/* Loading spinner — shown while image loads */}
-            {modalImageLoading && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-white/60" />
-              </div>
-            )}
-
             <img
               key={currentImageIndex}
-              src={getDrivePreviewUrl(modalImageItems[currentImageIndex]) || ""}
+              src={getModalImageUrl(modalImageItems[currentImageIndex]) || ""}
               alt={`Photo ${currentImageIndex + 1}`}
               className="image-modal-image"
               loading="lazy"
-              style={{ opacity: modalImageLoading ? 0 : 1, transition: "opacity 0.2s ease" }}
-              onLoad={() => setModalImageLoading(false)}
               onError={(e) => {
                 const img = e.currentTarget;
-                const thumbUrl = getDriveThumbnailUrl(modalImageItems[currentImageIndex]);
-                if (thumbUrl && img.src !== thumbUrl) {
-                  img.src = thumbUrl;
-                  return;
-                }
-                setModalImageLoading(false);
                 img.style.display = "none";
                 const fallback = img.parentElement?.querySelector(".fallback-div") as HTMLElement | null;
                 if (fallback) fallback.classList.remove("hidden");

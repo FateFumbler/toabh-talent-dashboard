@@ -24,6 +24,7 @@ export async function fetchAllDocuments(): Promise<DocumentUser[]> {
   const text = await res.text();
   const data: DocumentsAllResponse = JSON.parse(text);
   if (data.error) throw new Error(data.error);
-  // Oldest first = original API order (first data source row at top)
-  return data.documents ?? [];
+  const docs = data.documents ?? [];
+  // Newest first = reverse so last data source row appears at top
+  return docs.reverse();
 }
