@@ -76,7 +76,7 @@ export async function updateArtistStatus(row: number, status: string): Promise<v
   }
 
   const formData = new URLSearchParams();
-  formData.append('action', 'update-artist-status');
+  formData.append('action', 'update-status');
   formData.append('row', String(row));
   formData.append('status', status);
 
@@ -93,7 +93,7 @@ export async function updateArtistStatus(row: number, status: string): Promise<v
 
 export async function assignArtistManager(row: number, manager: string): Promise<void> {
   const formData = new URLSearchParams();
-  formData.append('action', 'assign-artist-manager');
+  formData.append('action', 'assign-manager');
   formData.append('row', String(row));
   formData.append('manager', manager);
 
