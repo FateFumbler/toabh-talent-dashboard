@@ -18,6 +18,7 @@ import {
   ChevronRight,
   ChevronDown,
   ExternalLink,
+  Image as ImageIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { Contract } from "@/types/contract";
@@ -1250,7 +1251,18 @@ export function TalentProfileDialog({
                             )}
                             alt={`Photo ${currentImageIndex + 1}`}
                             className="image-modal-image"
+                            onError={(e) => {
+                              const img = e.currentTarget;
+                              img.style.display = "none";
+                              const fallback = img.parentElement?.querySelector(
+                                ".fallback-div"
+                              ) as HTMLElement | null;
+                              if (fallback) fallback.classList.remove("hidden");
+                            }}
                           />
+                          <div className="hidden fallback-div absolute inset-0 flex items-center justify-center bg-black/50">
+                            <ImageIcon className="h-12 w-12 text-white/60" />
+                          </div>
 
                           {polaroidLinks.length > 1 && (
                             <>
