@@ -107,13 +107,19 @@ function extractDriveFileId(url: string): string | null {
 function getDriveThumbnailUrl(url: string): string | null {
   const fileId = extractDriveFileId(url);
   if (!fileId) return null;
-  return `https://drive.google.com/thumbnail?id=${fileId}&sz=w300`;
+  return `https://drive.google.com/thumbnail?id=${fileId}&sz=w400`;
 }
 
-function getModalImageUrl(url: string): string | undefined {
+function getDriveImageUrl(url: string): string | null {
   const fileId = extractDriveFileId(url);
-  if (!fileId) return undefined;
-  return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+  if (!fileId) return null;
+  return `https://drive.google.com/uc?export=view&id=${fileId}`;
+}
+
+function getDrivePreviewUrl(url: string): string | null {
+  const fileId = extractDriveFileId(url);
+  if (!fileId) return null;
+  return `https://lh3.googleusercontent.com/d/${fileId}=w1200`;
 }
 
 const MANAGER_COLORS = [
@@ -841,10 +847,24 @@ export function ArtistProfileDialog({
                             </div>
 
                             <img
-                              src={getModalImageUrl(currentModalImage)}
+                              src={getDrivePreviewUrl(currentModalImage) || getDriveThumbnailUrl(currentModalImage) || ""}
                               alt={`Photo ${currentImageIndex + 1}`}
                               className="image-modal-image"
+                              onError={(e) => {
+                                const img = e.currentTarget;
+                                const thumbUrl = getDriveThumbnailUrl(currentModalImage);
+                                if (thumbUrl && img.src !== thumbUrl) {
+                                  img.src = thumbUrl;
+                                  return;
+                                }
+                                img.style.display = "none";
+                                const fallback = img.parentElement?.querySelector(".fallback-div") as HTMLElement | null;
+                                if (fallback) fallback.classList.remove("hidden");
+                              }}
                             />
+                            <div className="hidden fallback-div absolute inset-0 flex items-center justify-center bg-black/50">
+                              <ImageIcon className="h-12 w-12 text-white/60" />
+                            </div>
 
                             {imageItems.length > 1 && (
                               <>

@@ -65,7 +65,7 @@ function extractDriveFileId(url: string): string | null {
 function getDriveThumbnailUrl(url: string): string | null {
   const fileId = extractDriveFileId(url);
   if (!fileId) return null;
-  return `https://drive.google.com/thumbnail?id=${fileId}&sz=w300`;
+  return `https://drive.google.com/thumbnail?id=${fileId}&sz=w400`;
 }
 
 function parsePortfolioLinks(field: unknown): string[] {
@@ -75,10 +75,16 @@ function parsePortfolioLinks(field: unknown): string[] {
   return str.split(/[,\n]/).map((s) => s.trim()).filter(Boolean);
 }
 
-function getModalImageUrl(url: string): string | undefined {
+function getDriveImageUrl(url: string): string | null {
   const fileId = extractDriveFileId(url);
-  if (!fileId) return undefined;
-  return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+  if (!fileId) return null;
+  return `https://drive.google.com/uc?export=view&id=${fileId}`;
+}
+
+function getDrivePreviewUrl(url: string): string | null {
+  const fileId = extractDriveFileId(url);
+  if (!fileId) return null;
+  return `https://lh3.googleusercontent.com/d/${fileId}=w1200`;
 }
 
 function parseInstagram(value: string): string {
@@ -407,18 +413,23 @@ export function ArtistGridView({
                               openModal(0, portfolioLinks);
                             }
                           }}
-                          className="block hover:opacity-80 transition-opacity"
+                          className="block hover:opacity-80 transition-opacity relative"
                           title="View portfolio"
                         >
                           <img
                             src={profileImageUrl}
                             alt={artist["Full Name"]}
                             className="h-10 w-10 object-cover rounded-md"
-                            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                            onError={(e) => {
+                              e.currentTarget.style.display = "none";
+                              e.currentTarget.nextElementSibling?.classList.remove("hidden");
+                            }}
                           />
+                          <div className="hidden h-10 w-10 flex items-center justify-center">
+                            <User className="h-5 w-5 text-muted-foreground" />
+                          </div>
                         </button>
-                      ) : null}
-                      {!profileImageUrl && (
+                      ) : (
                         <div className="h-10 w-10 flex items-center justify-center">
                           <User className="h-5 w-5 text-muted-foreground" />
                         </div>
@@ -561,11 +572,19 @@ export function ArtistGridView({
             </div>
 
             <img
-              src={getModalImageUrl(modalImageItems[currentImageIndex])}
+              src={getDrivePreviewUrl(modalImageItems[currentImageIndex]) || getDriveThumbnailUrl(modalImageItems[currentImageIndex]) || ""}
               alt={`Photo ${currentImageIndex + 1}`}
               className="image-modal-image"
               onError={(e) => {
                 const img = e.currentTarget;
+                // Try fallback: if preview URL fails, try thumbnail URL
+                const currentUrl = modalImageItems[currentImageIndex];
+                const thumbUrl = getDriveThumbnailUrl(currentUrl);
+                if (thumbUrl && img.src !== thumbUrl) {
+                  img.src = thumbUrl;
+                  return;
+                }
+                // Both failed — show fallback icon
                 img.style.display = "none";
                 const fallback = img.parentElement?.querySelector(".fallback-div") as HTMLElement | null;
                 if (fallback) fallback.classList.remove("hidden");
