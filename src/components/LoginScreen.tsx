@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { PwaInstallPrompt } from "./PwaInstallPrompt";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 
@@ -113,6 +114,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           TOABH Models Dashboard — Internal Use Only
         </p>
       </Card>
+      <PwaInstallPrompt />
     </div>
   );
 }
