@@ -107,6 +107,8 @@ const getStatusDot = (status: string): string => {
       return "bg-orange-400";
     case "KYC Required":
       return "bg-blue-500";
+    case "Contract Signed":
+      return "bg-indigo-500";
     case "Rejected":
       return "bg-red-500";
     case "New":
@@ -124,6 +126,8 @@ const getStatusVariant = (
     case "Meeting Required":
       return "warning";
     case "KYC Required":
+      return "info";
+    case "Contract Signed":
       return "info";
     case "Rejected":
       return "destructive";

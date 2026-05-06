@@ -40,6 +40,7 @@ function getStatusVariant(status: string): "default" | "success" | "warning" | "
     case "Onboarded": return "success";
     case "Meeting Required": return "warning";
     case "KYC Required": return "info";
+    case "Contract Signed": return "info";
     case "Rejected": return "destructive";
     case "New": return "default";
     default: return "default";

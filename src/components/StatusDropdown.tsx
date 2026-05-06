@@ -44,6 +44,11 @@ const statusStyles: Record<
       "bg-blue-100/15 text-blue-400 border-blue-500/40 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-500/30",
     dotClass: "bg-blue-400 dark:bg-blue-300",
   },
+  "Contract Signed": {
+    btnClass:
+      "bg-indigo-100/15 text-indigo-400 border-indigo-500/40 dark:bg-indigo-900/20 dark:text-indigo-300 dark:border-indigo-500/30",
+    dotClass: "bg-indigo-400 dark:bg-indigo-300",
+  },
   Onboarded: {
     btnClass:
       "bg-green-100/15 text-green-400 border-green-500/40 dark:bg-green-900/20 dark:text-green-300 dark:border-green-500/30",

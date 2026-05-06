@@ -7,6 +7,13 @@ export interface Contract {
   source: 'sheet' | 'local'; // to know origin
   createdAt?: string; // for local contracts
   rowIndex?: number;
+  rowNumber?: number;
+  zohoRequestId?: string;
+  zohoStatus?: string;
+  zohoSentAt?: string;
+  zohoError?: string;
+  signedPdfUrl?: string;
+  version?: string;
 }
 
 const API_URL = 'https://script.google.com/macros/s/AKfycbx6WHG6jE3ZqQoa-1V4PoeWcwsDnv22ZXlEnIWB4F84ujg4lojZUretZ0gOYsdJGDF5EA/exec';

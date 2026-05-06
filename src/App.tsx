@@ -286,6 +286,8 @@ function getStatusVariant(
       return "warning";
     case "KYC Required":
       return "info";
+    case "Contract Signed":
+      return "info";
     case "Rejected":
       return "destructive";
     case "New":
@@ -874,6 +876,9 @@ function App() {
   const artistKycRequiredCount = artists.filter(
     (a) => a["Status "] === "KYC Required"
   ).length;
+  const artistContractSignedCount = artists.filter(
+    (a) => a["Status "] === "Contract Signed"
+  ).length;
 
   const handleViewModeChange = (mode: "list" | "grid") => {
     setViewMode(mode);
@@ -912,6 +917,9 @@ function App() {
   ).length;
   const kycRequiredCount = talents.filter(
     (t) => t["Status"] === "KYC Required"
+  ).length;
+  const contractSignedCount = talents.filter(
+    (t) => t["Status"] === "Contract Signed"
   ).length;
 
   const profileSearchResults = useMemo(() => {
@@ -1125,10 +1133,10 @@ function App() {
           />
           <StatCard
             label="Contract Signing"
-            value={kycRequiredCount}
+            value={contractSignedCount}
             color="orange"
-            isActive={activeTile === "KYC Required"}
-            onClick={() => handleTileClick("KYC Required")}
+            isActive={activeTile === "Contract Signed"}
+            onClick={() => handleTileClick("Contract Signed")}
             icon={<FileText className="h-4 w-4" />}
           />
           <StatCard
@@ -1268,10 +1276,10 @@ function App() {
               />
               <StatCard
                 label="Contract Signing"
-                value={artistKycRequiredCount}
+                value={artistContractSignedCount}
                 color="orange"
-                isActive={activeTile === "KYC Required"}
-                onClick={() => handleTileClick("KYC Required")}
+                isActive={activeTile === "Contract Signed"}
+                onClick={() => handleTileClick("Contract Signed")}
                 icon={<FileText className="h-4 w-4" />}
               />
               <StatCard

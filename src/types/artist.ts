@@ -18,12 +18,13 @@ export interface Artist {
   [key: string]: string | number;
 }
 
-export type ArtistStatusValue = "New" | "Meeting Required" | "KYC Required" | "Onboarded" | "Rejected";
+export type ArtistStatusValue = "New" | "Meeting Required" | "KYC Required" | "Contract Signed" | "Onboarded" | "Rejected";
 
 export const ARTIST_STATUS_VALUES: ArtistStatusValue[] = [
   "New",
   "Meeting Required",
   "KYC Required",
+  "Contract Signed",
   "Onboarded",
   "Rejected",
 ];
@@ -33,6 +34,7 @@ export const ARTIST_MANAGERS = ["Aryan", "Saloni Kale", "Jhalak", "Prashant", "A
 export const ARTIST_ACTION_STATUSES: ArtistStatusValue[] = [
   "Meeting Required",
   "KYC Required",
+  "Contract Signed",
   "Onboarded",
   "Rejected",
 ];

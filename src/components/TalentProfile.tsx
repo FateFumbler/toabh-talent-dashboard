@@ -96,6 +96,7 @@ export const STATUS_OPTIONS: StatusValue[] = [
   "New",
   "Meeting Required",
   "KYC Required",
+  "Contract Signed",
   "Onboarded",
   "Rejected",
 ];
@@ -104,6 +105,7 @@ const STATUS_COLORS: Record<StatusValue, { dot: string; bg: string; border: stri
   "New": { dot: "bg-muted-foreground", bg: "bg-muted", border: "border-muted", text: "text-muted-foreground" },
   "Meeting Required": { dot: "bg-orange-400 dark:bg-orange-300", bg: "bg-orange-100/15 dark:bg-orange-900/20", border: "border-orange-500/40", text: "text-orange-400 dark:text-orange-300" },
   "KYC Required": { dot: "bg-blue-400 dark:bg-blue-300", bg: "bg-blue-100/15 dark:bg-blue-900/20", border: "border-blue-500/40", text: "text-blue-400 dark:text-blue-300" },
+  "Contract Signed": { dot: "bg-indigo-400 dark:bg-indigo-300", bg: "bg-indigo-100/15 dark:bg-indigo-900/20", border: "border-indigo-500/40", text: "text-indigo-400 dark:text-indigo-300" },
   "Onboarded": { dot: "bg-green-400 dark:bg-green-300", bg: "bg-green-100/15 dark:bg-green-900/20", border: "border-green-500/40", text: "text-green-400 dark:text-green-300" },
   "Rejected": { dot: "bg-red-400 dark:bg-red-300", bg: "bg-red-100/15 dark:bg-red-900/20", border: "border-red-500/40", text: "text-red-400 dark:text-red-300" },
 };
@@ -591,6 +593,8 @@ export function TalentProfileDialog({
       case "Meeting Required":
         return "warning";
       case "KYC Required":
+        return "info";
+      case "Contract Signed":
         return "info";
       case "Rejected":
         return "destructive";
