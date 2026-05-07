@@ -229,11 +229,17 @@ export function ContractsTab() {
   const sortedContracts = useMemo(() => {
     return [...filteredContracts].sort((a, b) => {
       const getSortRow = (contract: Contract) => contract.rowNumber ?? contract.rowIndex ?? 0;
+      const getNewestFirstRank = (contract: Contract) => {
+        if (contract.source === 'sheet') return getSortRow(contract);
+        const createdAt = contract.createdAt ? new Date(contract.createdAt).getTime() : 0;
+        return Number.isNaN(createdAt) ? 0 : createdAt;
+      };
+
       switch (sortBy) {
         case 'newest':
-          return getSortRow(b) - getSortRow(a);
+          return getNewestFirstRank(b) - getNewestFirstRank(a);
         case 'oldest':
-          return getSortRow(a) - getSortRow(b);
+          return getNewestFirstRank(a) - getNewestFirstRank(b);
         case 'name-az':
           return (a.name || '').localeCompare(b.name || '');
         case 'name-za':

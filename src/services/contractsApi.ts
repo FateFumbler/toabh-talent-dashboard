@@ -15,15 +15,15 @@ export async function fetchContracts(): Promise<Contract[]> {
   try {
     const response = await fetch(`${API_URL}?action=contracts`);
     const data = await response.json();
-    // Mark sheet contracts with source: 'sheet' and implicit rowIndex
-    // Reverse so last row from data source appears first (Ainesh's requirement)
-    const raw = data.contracts || [];
-    const contracts: Contract[] = raw.reverse().map((c: Contract, i: number) => ({
+    const raw = Array.isArray(data.contracts) ? data.contracts : [];
+
+    const contracts: Contract[] = raw.map((c: Contract, index: number) => ({
       ...c,
       source: 'sheet' as const,
-      rowIndex: i + 1,
+      rowNumber: c.rowNumber ?? index + 1,
     }));
-    return contracts;
+
+    return contracts.sort((a, b) => (b.rowNumber ?? 0) - (a.rowNumber ?? 0));
   } catch (error) {
     console.error('Failed to fetch contracts:', error);
     return [];
