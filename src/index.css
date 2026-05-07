@@ -520,23 +520,26 @@ html, body {
 
 .image-modal-content {
   position: relative;
-  max-width: 90vw;
-  max-height: 90vh;
+  max-width: calc(100vw - 120px);
+  max-height: calc(100vh - 96px);
   animation: scaleIn 0.2s ease-out;
   pointer-events: auto;
 }
 
 .image-modal-image {
-  max-width: 90vw;
-  max-height: 85vh;
+  display: block;
+  max-width: calc(100vw - 120px);
+  max-height: calc(100vh - 96px);
+  width: auto;
+  height: auto;
   object-fit: contain;
   border-radius: 8px;
 }
 
 .image-modal-close {
-  position: absolute;
-  top: -12px;
-  right: -12px;
+  position: fixed;
+  top: 24px;
+  right: 24px;
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -590,9 +593,27 @@ html, body {
 .image-modal-nav-prev { left: -60px; }
 .image-modal-nav-next { right: -60px; }
 
-@media (max-width: 640px) {
+@media (max-width: 900px) {
+  .image-modal-content {
+    max-width: calc(100vw - 32px);
+    max-height: calc(100vh - 96px);
+  }
+
+  .image-modal-image {
+    max-width: calc(100vw - 32px);
+    max-height: calc(100vh - 96px);
+  }
+
+  .image-modal-close {
+    top: 16px;
+    right: 16px;
+  }
+
   .image-modal-nav-prev { left: 8px; }
   .image-modal-nav-next { right: 8px; }
+}
+
+@media (max-width: 640px) {
   .image-modal-nav { width: 40px; height: 40px; }
 }
 
