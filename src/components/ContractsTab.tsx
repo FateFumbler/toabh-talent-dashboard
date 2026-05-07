@@ -261,11 +261,13 @@ export function ContractsTab() {
     });
   }, [talents, talentSearch]);
 
-  const ContractMeta = ({ contract }: { contract: Contract }) => (
+  const ContractMeta = ({ contract, showSource = true }: { contract: Contract; showSource?: boolean }) => (
     <div className="flex flex-wrap gap-2 mt-2">
-      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs ${getSourceClasses(contract.source)}`}>
-        {contract.source === 'sheet' ? 'Sheet' : 'Local'}
-      </span>
+      {showSource && (
+        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs ${getSourceClasses(contract.source)}`}>
+          {contract.source === 'sheet' ? 'Sheet' : 'Local'}
+        </span>
+      )}
       {contract.version && (
         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-muted text-foreground border border-border">
           {contract.version}
@@ -373,7 +375,7 @@ export function ContractsTab() {
           <h3 className="font-semibold text-foreground mb-1">{contract.name || 'N/A'}</h3>
           <p className="text-muted-foreground text-sm">{contract.phone || 'N/A'}</p>
           <p className="text-muted-foreground text-xs break-all mt-1">{contract.email || 'N/A'}</p>
-          <ContractMeta contract={contract} />
+          <ContractMeta contract={contract} showSource={false} />
           {contract.zohoSentAt && (
             <p className="text-[11px] text-muted-foreground mt-2">Sent: {contract.zohoSentAt}</p>
           )}
