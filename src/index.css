@@ -575,14 +575,17 @@ html, body {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  color: var(--text-primary);
+  background: rgba(17, 24, 39, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.15s;
+  z-index: 6;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(8px);
 }
 
 .image-modal-nav:hover {
@@ -590,8 +593,8 @@ html, body {
   border-color: var(--primary);
 }
 
-.image-modal-nav-prev { left: -60px; }
-.image-modal-nav-next { right: -60px; }
+.image-modal-nav-prev { left: 16px; }
+.image-modal-nav-next { right: 16px; }
 
 @media (max-width: 900px) {
   .image-modal-content {
@@ -609,8 +612,8 @@ html, body {
     right: 16px;
   }
 
-  .image-modal-nav-prev { left: 8px; }
-  .image-modal-nav-next { right: 8px; }
+  .image-modal-nav-prev { left: 12px; }
+  .image-modal-nav-next { right: 12px; }
 }
 
 @media (max-width: 640px) {
