@@ -59,7 +59,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           <img
             src="/logo_white.png"
             alt="TOABH"
-            className="h-12 w-auto mb-4"
+            className="h-10 w-auto mb-4"
           />
           <h1 className="text-xl font-bold text-foreground">Toabh Scouting Dashboard</h1>
           <p className="text-sm text-muted-foreground mt-1">Enter password to access</p>
@@ -130,7 +130,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
 
         {/* Footer */}
         <p className="text-xs text-muted-foreground text-center mt-8">
-          - for internal use only
+          For internal use only
         </p>
       </Card>
       <PwaInstallPrompt />
