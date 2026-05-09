@@ -130,7 +130,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
 
         {/* Footer */}
         <p className="text-xs text-muted-foreground text-center mt-8">
-          For internal use only
+          Toabh Scouting Dashboard - Internal Use Only
         </p>
       </Card>
       <PwaInstallPrompt />
