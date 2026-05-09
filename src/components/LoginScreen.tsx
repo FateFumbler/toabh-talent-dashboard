@@ -61,7 +61,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             alt="TOABH"
             className="h-12 w-auto mb-4"
           />
-          <h1 className="text-xl font-bold text-foreground">Models Dashboard</h1>
+          <h1 className="text-xl font-bold text-foreground">Toabh Scouting Dashboard</h1>
           <p className="text-sm text-muted-foreground mt-1">Enter password to access</p>
         </div>
 
@@ -116,7 +116,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             onChange={(e) => setRememberMe(e.target.checked)}
             className="h-4 w-4 rounded border-border accent-primary"
           />
-          Remember me for 24 days
+          Remember me
         </label>
 
         {/* Submit Button */}
@@ -130,7 +130,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
 
         {/* Footer */}
         <p className="text-xs text-muted-foreground text-center mt-8">
-          TOABH Models Dashboard — Internal Use Only
+          - for internal use only
         </p>
       </Card>
       <PwaInstallPrompt />
