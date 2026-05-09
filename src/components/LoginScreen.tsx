@@ -6,6 +6,9 @@ import { Button } from "./ui/button";
 
 const DEFAULT_PASSWORD = "talents";
 const PASSWORD_STORAGE_KEY = "toabh-dashboard-password";
+const AUTH_SESSION_KEY = "toabh-authenticated";
+const AUTH_REMEMBER_KEY = "toabh-authenticated-until";
+const REMEMBER_DURATION_MS = 24 * 24 * 60 * 60 * 1000;
 
 export function getDashboardPassword(): string {
   if (typeof window === "undefined") return DEFAULT_PASSWORD;
@@ -24,12 +27,18 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
 
   const handleSubmit = () => {
     const correctPassword = getDashboardPassword();
     if (password === correctPassword) {
       setError(false);
-      sessionStorage.setItem("toabh-authenticated", "true");
+      sessionStorage.setItem(AUTH_SESSION_KEY, "true");
+      if (rememberMe) {
+        localStorage.setItem(AUTH_REMEMBER_KEY, String(Date.now() + REMEMBER_DURATION_MS));
+      } else {
+        localStorage.removeItem(AUTH_REMEMBER_KEY);
+      }
       onLogin();
     } else {
       setError(true);
@@ -48,7 +57,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
           <img
-            src="/logo_black.png"
+            src="/logo_white.png"
             alt="TOABH"
             className="h-12 w-auto mb-4"
           />
@@ -100,6 +109,16 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           )}
         </div>
 
+        <label className="mt-4 flex items-center gap-2 text-sm text-muted-foreground select-none">
+          <input
+            type="checkbox"
+            checked={rememberMe}
+            onChange={(e) => setRememberMe(e.target.checked)}
+            className="h-4 w-4 rounded border-border accent-primary"
+          />
+          Remember me for 24 days
+        </label>
+
         {/* Submit Button */}
         <Button
           onClick={handleSubmit}
@@ -121,9 +140,20 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
 
 export function checkIsAuthenticated(): boolean {
   if (typeof window === "undefined") return false;
-  return sessionStorage.getItem("toabh-authenticated") === "true";
+
+  if (sessionStorage.getItem(AUTH_SESSION_KEY) === "true") return true;
+
+  const rememberedUntil = Number(localStorage.getItem(AUTH_REMEMBER_KEY));
+  if (rememberedUntil && rememberedUntil > Date.now()) {
+    sessionStorage.setItem(AUTH_SESSION_KEY, "true");
+    return true;
+  }
+
+  localStorage.removeItem(AUTH_REMEMBER_KEY);
+  return false;
 }
 
 export function logout(): void {
-  sessionStorage.removeItem("toabh-authenticated");
+  sessionStorage.removeItem(AUTH_SESSION_KEY);
+  localStorage.removeItem(AUTH_REMEMBER_KEY);
 }
