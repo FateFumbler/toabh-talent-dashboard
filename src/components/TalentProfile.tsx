@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef, Component } from "react";
-import type { ReactNode } from "react";
+import type { ReactNode, TouchEvent } from "react";
 import ReactDOM from "react-dom";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
@@ -240,6 +240,8 @@ export function TalentProfileDialog({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const imageCountRef = useRef(0);
+  const touchStartXRef = useRef<number | null>(null);
+  const touchStartYRef = useRef<number | null>(null);
 
   // ==========================================
   // FRESH DROPDOWN IMPLEMENTATION - MANAGER
@@ -429,6 +431,26 @@ export function TalentProfileDialog({
       prev === imageCountRef.current - 1 ? 0 : prev + 1
     );
   }, []);
+
+  const handleModalTouchStart = useCallback((e: TouchEvent<HTMLDivElement>) => {
+    const touch = e.touches[0];
+    touchStartXRef.current = touch.clientX;
+    touchStartYRef.current = touch.clientY;
+  }, []);
+
+  const handleModalTouchEnd = useCallback((e: TouchEvent<HTMLDivElement>) => {
+    if (imageCountRef.current <= 1 || touchStartXRef.current === null || touchStartYRef.current === null) return;
+
+    const touch = e.changedTouches[0];
+    const deltaX = touch.clientX - touchStartXRef.current;
+    const deltaY = touch.clientY - touchStartYRef.current;
+    touchStartXRef.current = null;
+    touchStartYRef.current = null;
+
+    if (Math.abs(deltaX) < 50 || Math.abs(deltaX) < Math.abs(deltaY)) return;
+    if (deltaX > 0) goToPrevious();
+    else goToNext();
+  }, [goToPrevious, goToNext]);
 
   useEffect(() => {
     if (!isModalOpen) return;
@@ -1236,6 +1258,8 @@ export function TalentProfileDialog({
                         <div
                           className="image-modal-content"
                           onClick={(e) => e.stopPropagation()}
+                          onTouchStart={handleModalTouchStart}
+                          onTouchEnd={handleModalTouchEnd}
                         >
                           <button
                             onClick={closeModal}
