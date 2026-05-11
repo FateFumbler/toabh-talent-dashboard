@@ -1250,40 +1250,41 @@ export function TalentProfileDialog({
             <div className="talent-profile space-y-5 p-6">
               {/* Header */}
               <div className="profile-header">
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                  <h2 className="text-xl sm:text-2xl font-bold text-foreground break-words">
-                    {profileName}
-                  </h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-foreground break-words">
+                  {profileName}
+                </h2>
+                <div className="flex items-end justify-between gap-3 mt-3">
+                  <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-3">
+                    {/* Static Manager Badge */}
+                    {profileManager ? (
+                      <Badge variant="outline" className="text-xs sm:text-sm break-words">
+                        Manager: {profileManager}
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-xs sm:text-sm text-muted-foreground">
+                        No Manager Assigned
+                      </Badge>
+                    )}
+
+                    {/* Static Status Badge */}
+                    <Badge variant={getStatusVariant(profileStatus)} className="text-xs sm:text-sm">
+                      {profileStatus}
+                    </Badge>
+                  </div>
                   <Button
                     type="button"
-                    variant="outline"
-                    size="sm"
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Share talent profile"
+                    title="Share"
                     onClick={(e) => {
                       e.stopPropagation();
                       void handleShareProfile();
                     }}
-                    className="gap-2 self-start shrink-0"
+                    className="h-8 w-8 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
                   >
                     <Share2 className="h-4 w-4" />
-                    Share
                   </Button>
-                </div>
-                <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-3 mt-3">
-                  {/* Static Manager Badge */}
-                  {profileManager ? (
-                    <Badge variant="outline" className="text-xs sm:text-sm break-words">
-                      Manager: {profileManager}
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="text-xs sm:text-sm text-muted-foreground">
-                      No Manager Assigned
-                    </Badge>
-                  )}
-
-                  {/* Static Status Badge */}
-                  <Badge variant={getStatusVariant(profileStatus)} className="text-xs sm:text-sm">
-                    {profileStatus}
-                  </Badge>
                 </div>
               </div>
 
