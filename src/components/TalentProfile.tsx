@@ -18,6 +18,7 @@ import {
   ChevronRight,
   ChevronDown,
   ExternalLink,
+  Share2,
   Image as ImageIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -216,6 +217,44 @@ function safeField(value: unknown): string | undefined {
   if (Array.isArray(value)) return value.join(", ") || undefined;
   if (typeof value === "object") return JSON.stringify(value);
   return String(value);
+}
+
+function buildShareText(
+  profile: Record<string, unknown>,
+  imageLinks: string[],
+  contractLinks: Contract[]
+): string {
+  const lines = ["TOABH Talent Profile"];
+  const name = safeField(profile["Full Name"]);
+  if (name) lines.push(name);
+  lines.push("");
+
+  Object.entries(profile).forEach(([key, value]) => {
+    const fieldValue = safeField(value);
+    if (!fieldValue) return;
+    if (/upload polaroids/i.test(key)) return;
+    lines.push(`${key.trim()}: ${fieldValue}`);
+  });
+
+  if (imageLinks.length > 0) {
+    lines.push("", "Images / Polaroids:");
+    imageLinks.forEach((link, index) => {
+      lines.push(`${index + 1}. ${link}`);
+    });
+  }
+
+  const visibleContractLinks = contractLinks
+    .map((contract) => contract.contractLink)
+    .filter((link): link is string => Boolean(link));
+
+  if (visibleContractLinks.length > 0) {
+    lines.push("", "Contracts:");
+    visibleContractLinks.forEach((link, index) => {
+      lines.push(`${index + 1}. ${link}`);
+    });
+  }
+
+  return lines.join("\n");
 }
 
 // ==========================================
@@ -984,6 +1023,32 @@ export function TalentProfileDialog({
 
   const currentStatusColor = STATUS_COLORS[profileStatus as StatusValue] || STATUS_COLORS["New"];
 
+  const handleShareProfile = useCallback(async () => {
+    if (!profile) return;
+
+    const text = buildShareText(profileAny, polaroidLinks, contracts);
+    const title = `${profileName} - TOABH Talent Profile`;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, text });
+        return;
+      }
+
+      await navigator.clipboard?.writeText(text);
+      toast.success("Profile copied. Opening WhatsApp share…");
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
+    } catch (error) {
+      if ((error as Error).name === "AbortError") return;
+      try {
+        await navigator.clipboard?.writeText(text);
+        toast.success("Profile copied to clipboard");
+      } catch {
+        toast.error("Could not open share sheet");
+      }
+    }
+  }, [profile, profileAny, polaroidLinks, contracts, profileName]);
+
   const handleImageClick = useCallback((e: React.MouseEvent) => {
     // Only open image viewer when clicking directly on an image element
     const target = e.target as HTMLElement;
@@ -1185,9 +1250,24 @@ export function TalentProfileDialog({
             <div className="talent-profile space-y-5 p-6">
               {/* Header */}
               <div className="profile-header">
-                <h2 className="text-xl sm:text-2xl font-bold text-foreground break-words">
-                  {profileName}
-                </h2>
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                  <h2 className="text-xl sm:text-2xl font-bold text-foreground break-words">
+                    {profileName}
+                  </h2>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void handleShareProfile();
+                    }}
+                    className="gap-2 self-start shrink-0"
+                  >
+                    <Share2 className="h-4 w-4" />
+                    Share
+                  </Button>
+                </div>
                 <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-3 mt-3">
                   {/* Static Manager Badge */}
                   {profileManager ? (
