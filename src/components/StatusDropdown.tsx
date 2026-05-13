@@ -59,6 +59,11 @@ const statusStyles: Record<
       "bg-red-100/15 text-red-400 border-red-500/40 dark:bg-red-900/20 dark:text-red-300 dark:border-red-500/30",
     dotClass: "bg-red-400 dark:bg-red-300",
   },
+  Freelance: {
+    btnClass:
+      "bg-red-100/15 text-red-400 border-red-500/40 dark:bg-red-900/20 dark:text-red-300 dark:border-red-500/30",
+    dotClass: "bg-red-400 dark:bg-red-300",
+  },
 };
 
 interface StatusDropdownProps {

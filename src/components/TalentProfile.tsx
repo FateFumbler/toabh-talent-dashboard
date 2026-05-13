@@ -100,6 +100,7 @@ export const STATUS_OPTIONS: StatusValue[] = [
   "Contract Signed",
   "Onboarded",
   "Rejected",
+  "Freelance",
 ];
 
 const STATUS_COLORS: Record<StatusValue, { dot: string; bg: string; border: string; text: string }> = {
@@ -109,6 +110,7 @@ const STATUS_COLORS: Record<StatusValue, { dot: string; bg: string; border: stri
   "Contract Signed": { dot: "bg-indigo-400 dark:bg-indigo-300", bg: "bg-indigo-100/15 dark:bg-indigo-900/20", border: "border-indigo-500/40", text: "text-indigo-400 dark:text-indigo-300" },
   "Onboarded": { dot: "bg-green-400 dark:bg-green-300", bg: "bg-green-100/15 dark:bg-green-900/20", border: "border-green-500/40", text: "text-green-400 dark:text-green-300" },
   "Rejected": { dot: "bg-red-400 dark:bg-red-300", bg: "bg-red-100/15 dark:bg-red-900/20", border: "border-red-500/40", text: "text-red-400 dark:text-red-300" },
+  "Freelance": { dot: "bg-red-400 dark:bg-red-300", bg: "bg-red-100/15 dark:bg-red-900/20", border: "border-red-500/40", text: "text-red-400 dark:text-red-300" },
 };
 
 // ==========================================
@@ -658,6 +660,7 @@ export function TalentProfileDialog({
       case "Contract Signed":
         return "info";
       case "Rejected":
+      case "Freelance":
         return "destructive";
       case "New":
         return "default";

@@ -110,6 +110,7 @@ const getStatusDot = (status: string): string => {
     case "Contract Signed":
       return "bg-indigo-500";
     case "Rejected":
+    case "Freelance":
       return "bg-red-500";
     case "New":
     default:
@@ -130,6 +131,7 @@ const getStatusVariant = (
     case "Contract Signed":
       return "info";
     case "Rejected":
+    case "Freelance":
       return "destructive";
     case "New":
       return "default";
@@ -203,25 +205,29 @@ export function TalentTable({
   const visibleColumns = externalVisibleColumns || getInitialColumns();
 
   const uniqueStatuses = getUniqueValues(talents, "Status");
-  // Always include "New" as an option in the status filter
-  if (!uniqueStatuses.includes("New")) {
-    uniqueStatuses.unshift("New");
-  }
+  // Always include core statuses as filter options even before rows exist for them.
+  ["New", "Freelance"].reverse().forEach((status) => {
+    if (!uniqueStatuses.includes(status)) {
+      uniqueStatuses.unshift(status);
+    }
+  });
   const uniqueManagers = getAllManagers(talents, managers);
   const uniqueCities = getUniqueValues(talents, "City");
 
   const filteredTalents = useMemo(() => {
     let filtered = talents.filter((talent) => {
       const searchLower = search.toLowerCase();
+      const hasSearch = search.trim().length > 0;
       const matchesSearch =
-        !search ||
+        !hasSearch ||
         talent["Full Name"]?.toLowerCase().includes(searchLower) ||
         talent["Instagram"]?.toLowerCase().includes(searchLower) ||
         talent["City"]?.toLowerCase().includes(searchLower);
 
-      const matchesStatus =
-        statusFilter === "all"
-          ? talent["Status"] !== "Rejected" && talent["Status"] !== "Onboarded"
+      const matchesStatus = hasSearch
+        ? true
+        : statusFilter === "all"
+          ? talent["Status"] !== "Rejected" && talent["Status"] !== "Freelance" && talent["Status"] !== "Onboarded"
           : statusFilter === "New"
             ? !talent["Status"] || talent["Status"] === "New"
             : talent["Status"] === statusFilter;

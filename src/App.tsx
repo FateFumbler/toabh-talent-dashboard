@@ -289,6 +289,7 @@ function getStatusVariant(
     case "Contract Signed":
       return "info";
     case "Rejected":
+    case "Freelance":
       return "destructive";
     case "New":
       return "default";
@@ -1857,10 +1858,12 @@ function TalentGridView({
   };
 
   const uniqueStatuses = getUniqueValues(talents, "Status");
-  // Always include "New" as an option in the status filter
-  if (!uniqueStatuses.includes("New")) {
-    uniqueStatuses.unshift("New");
-  }
+  // Always include core statuses as filter options even before rows exist for them.
+  ["New", "Freelance"].reverse().forEach((status) => {
+    if (!uniqueStatuses.includes(status)) {
+      uniqueStatuses.unshift(status);
+    }
+  });
   const uniqueManagers = getAllManagers(talents, managers);
   const uniqueCities = getUniqueValues(talents, "City");
 
@@ -1884,7 +1887,7 @@ function TalentGridView({
       const matchesStatus = hasSearch
         ? true // Search ignores status filter
         : statusFilter === "all"
-          ? talent["Status"] !== "Rejected" && talent["Status"] !== "Onboarded"
+          ? talent["Status"] !== "Rejected" && talent["Status"] !== "Freelance" && talent["Status"] !== "Onboarded"
           : statusFilter === "New"
             ? !talent["Status"] || talent["Status"] === "New"
             : talent["Status"] === statusFilter;

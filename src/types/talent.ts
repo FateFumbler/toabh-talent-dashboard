@@ -128,10 +128,10 @@ export interface TalentProfile extends Talent {
   "Polaroid 6"?: string;
 }
 
-export type StatusValue = "New" | "Meeting Required" | "KYC Required" | "Contract Signed" | "Onboarded" | "Rejected";
+export type StatusValue = "New" | "Meeting Required" | "KYC Required" | "Contract Signed" | "Onboarded" | "Rejected" | "Freelance";
 
-export const STATUS_VALUES: StatusValue[] = ["New", "Meeting Required", "KYC Required", "Contract Signed", "Onboarded", "Rejected"];
+export const STATUS_VALUES: StatusValue[] = ["New", "Meeting Required", "KYC Required", "Contract Signed", "Onboarded", "Rejected", "Freelance"];
 
 export const MANAGERS = ["Aryan", "Saloni Kale", "Jhalak", "Prashant", "Anvitha", "Khadija"];
 
-export const ACTION_STATUSES: StatusValue[] = ["Meeting Required", "KYC Required", "Contract Signed", "Onboarded", "Rejected"];
+export const ACTION_STATUSES: StatusValue[] = ["Meeting Required", "KYC Required", "Contract Signed", "Onboarded", "Rejected", "Freelance"];
