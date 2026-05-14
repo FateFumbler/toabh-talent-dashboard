@@ -226,17 +226,142 @@ function buildShareText(
   imageLinks: string[],
   contractLinks: Contract[]
 ): string {
-  const lines = ["TOABH Talent Profile"];
-  const name = safeField(profile["Full Name"]);
-  if (name) lines.push(name);
-  lines.push("");
+  const getField = (...keys: string[]): string | undefined => {
+    for (const key of keys) {
+      const value = safeField(profile[key]);
+      if (value) return value;
+    }
+    return undefined;
+  };
 
-  Object.entries(profile).forEach(([key, value]) => {
-    const fieldValue = safeField(value);
-    if (!fieldValue) return;
-    if (/upload polaroids/i.test(key)) return;
-    lines.push(`${key.trim()}: ${fieldValue}`);
-  });
+  const addSection = (
+    lines: string[],
+    title: string,
+    fields: { label: string; value?: string }[]
+  ) => {
+    const visibleFields = fields.filter((field) => field.value);
+    if (visibleFields.length === 0) return;
+
+    lines.push("", title);
+    visibleFields.forEach((field) => {
+      lines.push(`${field.label}: ${field.value}`);
+    });
+  };
+
+  const lines = ["TOABH Talent Profile"];
+  const name = getField("Full Name");
+  if (name) lines.push(name);
+
+  addSection(lines, "Basic Information", [
+    { label: "Full Name", value: name },
+    {
+      label: "City",
+      value: getField("City & State (Current location)", "City & State", "City"),
+    },
+    { label: "Gender", value: getField("Gender") },
+    { label: "Age", value: getField("Age") },
+    {
+      label: "Height",
+      value: getField("Height (in feet & inches)", "Height"),
+    },
+  ]);
+
+  addSection(lines, "Contact & Social", [
+    { label: "Email", value: getField("Email Address", "Email ", "Email") },
+    { label: "Phone", value: getField("Phone Number", "Phone") },
+    { label: "Instagram", value: getField("Instagram Link", "Instagram") },
+    {
+      label: "YouTube",
+      value: getField("YouTube Channel (if any)", "YouTube Channel", "YouTube"),
+    },
+    {
+      label: "IMDb/Wikipedia",
+      value: getField("IMDb / Wikipedia Page (if any) ", "IMDb", "Wikipedia"),
+    },
+  ]);
+
+  addSection(lines, "Measurements", [
+    { label: "Chest/Bust", value: getField("Chest/Bust (in inches)") },
+    { label: "Waist", value: getField("Waist (in inches)") },
+    { label: "Hips", value: getField("Hips (in inches)") },
+    { label: "Shoe Size", value: getField("Shoe Size (UK)") },
+    { label: "Hair Color", value: getField("Hair Color") },
+    { label: "Eye Color", value: getField("Eye Color") },
+    { label: "Skin Tone", value: getField("Skin Tone") },
+  ]);
+
+  addSection(lines, "Experience", [
+    {
+      label: "Modeling Experience",
+      value: getField("Do you have any prior modeling or acting experience?", "Prior modelling/acting experience"),
+    },
+    {
+      label: "Experience Details",
+      value: getField("If Yes, briefly describe your experience or list any brands/projects"),
+    },
+    { label: "Previous Agency", value: getField("Any Previous Agency?", "Previous Agency") },
+    {
+      label: "Acting Workshop",
+      value: getField("Any Acting Workshop Attended?  ", "Acting Workshop Attended"),
+    },
+    {
+      label: "Union Card",
+      value: getField("Do you have a CINTAA / Union Card?", "CINTAA/Union Card"),
+    },
+    { label: "Languages", value: getField("Languages Known") },
+    { label: "Dance", value: getField("Dance Forms Known (if any)", "Dance Forms") },
+    {
+      label: "Extra-Curricular",
+      value: getField("Extra-Curricular Activities (if any)", "Extra-Curricular"),
+    },
+  ]);
+
+  addSection(lines, "Work & Availability", [
+    {
+      label: "Scope",
+      value: getField("Scope of Work Interested In (e.g., TV, Web, Fashion, Commercials)", "Scope of Work Interested In"),
+    },
+    { label: "Abroad", value: getField("Are you open for placement abroad?", "Open for placement abroad") },
+    { label: "Passport", value: getField("Valid Passport?") },
+    {
+      label: "2 Wheeler",
+      value: getField("Can you drive a 2-wheeler? (Geared / Non-Geared)", "Can drive 2-wheeler"),
+    },
+    {
+      label: "4 Wheeler",
+      value: getField("Can you drive a 4-wheeler? ", "Can drive 4-wheeler"),
+    },
+    { label: "Swim", value: getField("Can you swim?  ", "Can Swim") },
+    { label: "Gamer", value: getField("Are you a Gamer?", "Gamer") },
+    { label: "Current Contracts", value: getField("Current Contracts") },
+  ]);
+
+  addSection(lines, "Comfort & Consent", [
+    {
+      label: "Bikini/Lingerie",
+      value: getField("Comfortable with lingerie / bikini / briefs shoots?", "Lingerie/bikini shoots"),
+    },
+    {
+      label: "Bold Content",
+      value: getField("Comfortable with bold content for web series or films?", "Bold content for web/films"),
+    },
+    {
+      label: "Condom Brands",
+      value: getField("Comfortable with condom brand promotions or awareness campaigns?", "Condom brand promotions"),
+    },
+    {
+      label: "Alcohol Brands",
+      value: getField("Comfortable with alcohol brand shoots or commercials?", "Alcohol brand shoots"),
+    },
+    { label: "Reality TV", value: getField("Comfortable participating in reality TV shows?", "Reality TV shows") },
+    { label: "Daily Soaps", value: getField("Comfortable working in daily soaps or TV roles?", "Daily soaps") },
+    {
+      label: "Mother/Father Roles",
+      value: getField("Comfortable playing mother or father roles? (for applicants aged 23+)", "Mother/father roles"),
+    },
+    { label: "Haircut", value: getField("Comfortable with haircut?", "Haircut") },
+    { label: "Hair Color Changes", value: getField("Comfortable with hair color changes?", "Hair color changes") },
+  ]);
 
   if (imageLinks.length > 0) {
     lines.push("", "Images / Polaroids:");
