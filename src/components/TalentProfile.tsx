@@ -246,7 +246,7 @@ function buildShareText(
   }
 
   const visibleContractLinks = contractLinks
-    .map((contract) => contract.contractLink)
+    .map((contract) => contract.signedPdfUrl || contract.contractLink)
     .filter((link): link is string => Boolean(link));
 
   if (visibleContractLinks.length > 0) {
@@ -946,66 +946,68 @@ export function TalentProfileDialog({
           Contracts ({contracts.length})
         </h3>
         <div className="space-y-3">
-          {contracts.map((contract, idx) => (
-            <div
-              key={contract.id || idx}
-              className="border border-border rounded-xl p-4 bg-card hover:border-primary/40 transition-colors"
-            >
-              <div className="flex items-start gap-3">
-                {/* Document Icon */}
-                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <FileText className="w-5 h-5 text-primary" />
-                </div>
+          {contracts.map((contract, idx) => {
+            const displayLink = contract.signedPdfUrl || contract.contractLink;
+            const isSigned = Boolean(contract.signedPdfUrl);
 
-                {/* Contract Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-semibold text-foreground">
-                      {contract.name || "Unnamed Contract"}
-                    </span>
-                    <Badge
-                      variant="secondary"
-                      className={`text-xs px-2 py-0.5 ${
-                        contract.source === 'local'
-                          ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
-                          : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
-                      }`}
+            return (
+              <div
+                key={contract.id || idx}
+                className="border border-border rounded-xl p-4 bg-card hover:border-primary/40 transition-colors"
+              >
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <FileText className="w-5 h-5 text-primary" />
+                    </div>
+
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-semibold text-foreground truncate">
+                          {contract.name || "Talent Management Agreement"}
+                        </span>
+                        <Badge
+                          variant={isSigned ? "success" : "secondary"}
+                          className="text-xs px-2 py-0.5"
+                        >
+                          {isSigned ? "Signed PDF" : "Contract"}
+                        </Badge>
+                        <Badge
+                          variant="secondary"
+                          className={`text-xs px-2 py-0.5 ${
+                            contract.source === 'local'
+                              ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
+                              : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
+                          }`}
+                        >
+                          {contract.source === 'local' ? 'Local' : 'Sheet'}
+                        </Badge>
+                      </div>
+
+                      <div className="mt-1 flex flex-col gap-0.5 text-xs text-muted-foreground">
+                        {contract.email && <span className="truncate">{contract.email}</span>}
+                        {contract.phone && <span className="truncate">{contract.phone}</span>}
+                      </div>
+                    </div>
+                  </div>
+
+                  {displayLink && (
+                    <Button
+                      variant={isSigned ? "default" : "outline"}
+                      size="sm"
+                      onClick={() =>
+                        window.open(displayLink, "_blank", "noopener,noreferrer")
+                      }
+                      className="w-full sm:w-auto shrink-0 gap-1.5"
                     >
-                      {contract.source === 'local' ? 'Local' : 'Sheet'}
-                    </Badge>
-                  </div>
-
-                  <div className="mt-1 flex flex-col gap-0.5 text-xs text-muted-foreground">
-                    {contract.email && (
-                      <span className="truncate">{contract.email}</span>
-                    )}
-                    {contract.phone && (
-                      <span className="truncate">{contract.phone}</span>
-                    )}
-                  </div>
+                      {isSigned ? "Open Signed Contract" : "Open Contract"}
+                      <ExternalLink className="h-3 w-3" />
+                    </Button>
+                  )}
                 </div>
-
-                {/* CTA Button */}
-                {contract.contractLink && (
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() =>
-                      window.open(
-                        contract.contractLink,
-                        "_blank",
-                        "noopener,noreferrer"
-                      )
-                    }
-                    className="flex-shrink-0 gap-1.5"
-                  >
-                    View Talent Management Agreement
-                    <ExternalLink className="h-3 w-3" />
-                  </Button>
-                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     );
