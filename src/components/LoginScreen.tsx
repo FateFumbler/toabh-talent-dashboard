@@ -4,7 +4,7 @@ import { PwaInstallPrompt } from "./PwaInstallPrompt";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 
-const DEFAULT_PASSWORD = "talents";
+const DEFAULT_PASSWORD = "toabh369";
 const PASSWORD_STORAGE_KEY = "toabh-dashboard-password";
 const AUTH_SESSION_KEY = "toabh-authenticated";
 const AUTH_REMEMBER_KEY = "toabh-authenticated-until";
