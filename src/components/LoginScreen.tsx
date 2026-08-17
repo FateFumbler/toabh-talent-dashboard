@@ -5,9 +5,9 @@ import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 
 const DEFAULT_PASSWORD = "toabh369";
-const PASSWORD_STORAGE_KEY = "toabh-dashboard-password";
-const AUTH_SESSION_KEY = "toabh-authenticated";
-const AUTH_REMEMBER_KEY = "toabh-authenticated-until";
+const PASSWORD_STORAGE_KEY = "toabh-dashboard-password-v2";
+const AUTH_SESSION_KEY = "toabh-authenticated-v2";
+const AUTH_REMEMBER_KEY = "toabh-authenticated-until-v2";
 const REMEMBER_DURATION_MS = 24 * 24 * 60 * 60 * 1000;
 
 export function getDashboardPassword(): string {
